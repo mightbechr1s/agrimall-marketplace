@@ -1,5 +1,8 @@
 <?php
 // src/Core/bootstrap.php — boots every public page. Frontend/Backend: add features below.
+if (!defined('APP_BOOTSTRAPPED')) {
+    define('APP_BOOTSTRAPPED', true);
+}
 session_start();
 
 require_once __DIR__ . '/helpers.php';
