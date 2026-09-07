@@ -1,0 +1,28 @@
+# Local configuration — never commit credentials
+config/config.php
+
+# Uploaded user content
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Runtime logs
+logs/*
+!logs/.gitkeep
+
+# Editor / OS junk
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Dependencies (only if we adopt Composer)
+vendor/
+
+# Tooling artifacts
+.hallmark/
+node_modules/
+
+# PHP
+*.log
