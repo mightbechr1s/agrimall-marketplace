@@ -8,6 +8,10 @@
 </head>
 <body>
 
+<?php foreach (flash_pull() as $message): ?>
+  <div class="flash flash-<?= e($message['type']) ?>"><?= e($message['message']) ?></div>
+<?php endforeach; ?>
+
 <nav class="nav">
   <a class="brand" href="<?= e(url('index.php')) ?>"><?= e(config('app.name', 'AnimalMarketplace')) ?></a>
   <div class="nav-links">

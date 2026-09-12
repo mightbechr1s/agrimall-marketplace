@@ -17,21 +17,19 @@ class AdminController
 
         $stmt = $pdo->query("
             SELECT
-                id,
-                name,
-                email,
-                role,
-                phone,
-                location,
-                is_verified,
-                created_at
-            FROM users
-            ORDER BY created_at DESC
+                u.id,
+                u.name,
+                u.email,
+                r.slug AS role,
+                u.created_at
+            FROM users u
+            INNER JOIN roles r
+                ON r.id = u.role_id
+            ORDER BY u.created_at DESC
         ");
 
         return $stmt->fetchAll();
     }
-
 
     public static function deleteUser(int $userId): bool
     {
@@ -40,7 +38,11 @@ class AdminController
         $stmt = $pdo->prepare("
             DELETE FROM users
             WHERE id = ?
-              AND role != 'admin'
+              AND role_id != (
+                SELECT id
+                FROM roles
+                WHERE slug = 'admin'
+              )
         ");
 
         $stmt->execute([$userId]);
@@ -62,7 +64,6 @@ class AdminController
         return true;
     }
 
-
     /*
      * =========================
      * FARMER VERIFICATION
@@ -75,34 +76,46 @@ class AdminController
 
         $stmt = $pdo->query("
             SELECT
-                id,
-                name,
-                email,
-                phone,
-                location,
-                is_verified,
-                created_at
-            FROM users
-            WHERE role = 'farmer'
-            ORDER BY created_at DESC
+                u.id,
+                u.name,
+                u.email,
+                f.id AS farm_id,
+                f.farm_name,
+                f.location,
+                f.verification_status,
+                f.verified_at,
+                u.created_at
+            FROM users u
+            INNER JOIN roles r
+                ON r.id = u.role_id
+            INNER JOIN farms f
+                ON f.user_id = u.id
+            WHERE r.slug = 'farmer'
+            ORDER BY u.created_at DESC
         ");
 
         return $stmt->fetchAll();
     }
 
-
-    public static function verifyFarmer(int $farmerId): bool
-    {
+    public static function verifyFarmer(
+        int $farmerId,
+        int $adminId
+    ): bool {
         $pdo = DB::pdo();
 
         $stmt = $pdo->prepare("
-            UPDATE users
-            SET is_verified = 1
-            WHERE id = ?
-              AND role = 'farmer'
+            UPDATE farms
+            SET
+                verification_status = 'verified',
+                verified_by = ?,
+                verified_at = NOW()
+            WHERE user_id = ?
         ");
 
-        $stmt->execute([$farmerId]);
+        $stmt->execute([
+            $adminId,
+            $farmerId
+        ]);
 
         if ($stmt->rowCount() === 0) {
             flash(
@@ -121,16 +134,16 @@ class AdminController
         return true;
     }
 
-
     public static function rejectFarmer(int $farmerId): bool
     {
         $pdo = DB::pdo();
 
         $stmt = $pdo->prepare("
-            UPDATE users
-            SET is_verified = 0
-            WHERE id = ?
-              AND role = 'farmer'
+            UPDATE farms
+            SET
+                verification_status = 'rejected',
+                verified_at = NULL
+            WHERE user_id = ?
         ");
 
         $stmt->execute([$farmerId]);
@@ -142,7 +155,6 @@ class AdminController
 
         return true;
     }
-
 
     /*
      * =========================
@@ -165,7 +177,6 @@ class AdminController
 
         return $stmt->fetchAll();
     }
-
 
     public static function createCategory(
         string $name
@@ -215,7 +226,6 @@ class AdminController
 
         return true;
     }
-
 
     public static function deleteCategory(
         int $categoryId
@@ -269,7 +279,6 @@ class AdminController
         return true;
     }
 
-
     /*
      * =========================
      * LISTING MANAGEMENT
@@ -284,19 +293,21 @@ class AdminController
             SELECT
                 l.*,
                 c.name AS category_name,
+                f.farm_name,
                 u.name AS farmer_name,
                 u.email AS farmer_email
             FROM listings l
             INNER JOIN categories c
                 ON c.id = l.category_id
+            INNER JOIN farms f
+                ON f.id = l.farm_id
             INNER JOIN users u
-                ON u.id = l.farmer_id
+                ON u.id = f.user_id
             ORDER BY l.created_at DESC
         ");
 
         return $stmt->fetchAll();
     }
-
 
     public static function updateListingStatus(
         int $listingId,
@@ -347,7 +358,6 @@ class AdminController
         return true;
     }
 
-
     /*
      * =========================
      * ORDER MANAGEMENT
@@ -360,23 +370,29 @@ class AdminController
 
         $stmt = $pdo->query("
             SELECT
-                o.*,
+                o.id,
+                o.quantity,
+                o.unit_price,
+                IFNULL(o.delivery_fee, 0) AS delivery_fee,
+                (o.quantity * o.unit_price) + IFNULL(o.delivery_fee, 0) AS subtotal,
+                o.order_method,
+                o.status,
+                o.created_at,
                 l.name AS listing_name,
                 u_buyer.name AS buyer_name,
-                u_farmer.name AS farmer_name
+                f.farm_name AS farm_name
             FROM orders o
             INNER JOIN listings l
                 ON l.id = o.listing_id
+            INNER JOIN farms f
+                ON f.id = l.farm_id
             INNER JOIN users u_buyer
                 ON u_buyer.id = o.buyer_id
-            INNER JOIN users u_farmer
-                ON u_farmer.id = o.farmer_id
             ORDER BY o.created_at DESC
         ");
 
         return $stmt->fetchAll();
     }
-
 
     public static function updateOrderStatus(
         int $orderId,
@@ -393,7 +409,8 @@ class AdminController
             'out_for_delivery',
             'completed',
             'rejected',
-            'cancelled'
+            'cancelled',
+            'on_hold'
         ];
 
         if (!in_array($status, $allowedStatuses, true)) {
@@ -433,7 +450,6 @@ class AdminController
         return true;
     }
 
-
     /*
      * =========================
      * ADMIN DASHBOARD
@@ -453,28 +469,30 @@ class AdminController
 
         $stats['farmers'] = (int)$pdo->query("
             SELECT COUNT(*)
-            FROM users
-            WHERE role = 'farmer'
+            FROM users u
+            INNER JOIN roles r
+                ON r.id = u.role_id
+            WHERE r.slug = 'farmer'
         ")->fetchColumn();
 
         $stats['verified_farmers'] = (int)$pdo->query("
             SELECT COUNT(*)
-            FROM users
-            WHERE role = 'farmer'
-              AND is_verified = 1
+            FROM farms
+            WHERE verification_status = 'verified'
         ")->fetchColumn();
 
         $stats['pending_farmers'] = (int)$pdo->query("
             SELECT COUNT(*)
-            FROM users
-            WHERE role = 'farmer'
-              AND is_verified = 0
+            FROM farms
+            WHERE verification_status = 'pending'
         ")->fetchColumn();
 
         $stats['buyers'] = (int)$pdo->query("
             SELECT COUNT(*)
-            FROM users
-            WHERE role = 'buyer'
+            FROM users u
+            INNER JOIN roles r
+                ON r.id = u.role_id
+            WHERE r.slug = 'buyer'
         ")->fetchColumn();
 
         $stats['listings'] = (int)$pdo->query("
@@ -508,7 +526,6 @@ class AdminController
         return $stats;
     }
 
-
     /*
      * =========================
      * RECENT ACTIVITY
@@ -524,20 +541,20 @@ class AdminController
 
         $stmt = $pdo->query("
             SELECT
-                id,
-                name,
-                email,
-                role,
-                is_verified,
-                created_at
-            FROM users
-            ORDER BY created_at DESC
+                u.id,
+                u.name,
+                u.email,
+                r.slug AS role,
+                u.created_at
+            FROM users u
+            INNER JOIN roles r
+                ON r.id = u.role_id
+            ORDER BY u.created_at DESC
             LIMIT {$limit}
         ");
 
         return $stmt->fetchAll();
     }
-
 
     public static function getRecentOrders(
         int $limit = 5
@@ -550,21 +567,21 @@ class AdminController
             SELECT
                 o.id,
                 o.quantity,
-                o.subtotal,
-                o.delivery_fee,
+                o.unit_price,
+                IFNULL(o.delivery_fee, 0) AS delivery_fee,
+                o.order_method,
                 o.status,
-                o.fulfillment_type,
                 o.created_at,
                 l.name AS listing_name,
                 u_buyer.name AS buyer_name,
-                u_farmer.name AS farmer_name
+                f.farm_name AS farm_name
             FROM orders o
             INNER JOIN listings l
                 ON l.id = o.listing_id
+            INNER JOIN farms f
+                ON f.id = l.farm_id
             INNER JOIN users u_buyer
                 ON u_buyer.id = o.buyer_id
-            INNER JOIN users u_farmer
-                ON u_farmer.id = o.farmer_id
             ORDER BY o.created_at DESC
             LIMIT {$limit}
         ");

@@ -78,3 +78,20 @@ function csrf_check(): void
         exit('Invalid CSRF token.');
     }
 }
+
+function flash(string $type, string $message): void
+{
+    $_SESSION['flash'][] = [
+        'type'    => $type,
+        'message' => $message
+    ];
+}
+
+function flash_pull(): array
+{
+    $messages = $_SESSION['flash'] ?? [];
+
+    unset($_SESSION['flash']);
+
+    return $messages;
+}
