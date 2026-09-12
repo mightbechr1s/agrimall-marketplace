@@ -26,7 +26,6 @@ class DashboardController
         );
     }
 
-
     private static function adminDashboard(
         PDO $pdo
     ): array {
@@ -37,21 +36,30 @@ class DashboardController
 
         $farmers = $pdo->query("
             SELECT COUNT(*) AS total
-            FROM users
-            WHERE role = 'farmer'
+            FROM users u
+            INNER JOIN roles r
+                ON r.id = u.role_id
+            WHERE r.slug = 'farmer'
         ")->fetch()['total'];
 
         $pendingFarmers = $pdo->query("
             SELECT COUNT(*) AS total
-            FROM users
-            WHERE role = 'farmer'
-              AND is_verified = 0
+            FROM farms
+            WHERE verification_status = 'pending'
+        ")->fetch()['total'];
+
+        $verifiedFarmers = $pdo->query("
+            SELECT COUNT(*) AS total
+            FROM farms
+            WHERE verification_status = 'verified'
         ")->fetch()['total'];
 
         $buyers = $pdo->query("
             SELECT COUNT(*) AS total
-            FROM users
-            WHERE role = 'buyer'
+            FROM users u
+            INNER JOIN roles r
+                ON r.id = u.role_id
+            WHERE r.slug = 'buyer'
         ")->fetch()['total'];
 
         $listings = $pdo->query("
@@ -86,6 +94,7 @@ class DashboardController
             'users' => (int)$users,
             'farmers' => (int)$farmers,
             'pending_farmers' => (int)$pendingFarmers,
+            'verified_farmers' => (int)$verifiedFarmers,
             'buyers' => (int)$buyers,
             'listings' => (int)$listings,
             'active_listings' => (int)$activeListings,
@@ -95,74 +104,99 @@ class DashboardController
         ];
     }
 
-
     private static function farmerDashboard(
         PDO $pdo,
         int $farmerId
     ): array {
         $stmt = $pdo->prepare("
-            SELECT COUNT(*) AS total
-            FROM listings
-            WHERE farmer_id = ?
+            SELECT id
+            FROM farms
+            WHERE user_id = ?
+            LIMIT 1
         ");
 
         $stmt->execute([$farmerId]);
+
+        $farm = $stmt->fetch();
+
+        if (!$farm) {
+            return [
+                'farm' => null,
+                'listings' => 0,
+                'active_listings' => 0,
+                'orders' => 0,
+                'pending_orders' => 0,
+                'completed_orders' => 0,
+                'recent_orders' => []
+            ];
+        }
+
+        $farmId = (int)$farm['id'];
+
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) AS total
+            FROM listings
+            WHERE farm_id = ?
+        ");
+
+        $stmt->execute([$farmId]);
 
         $listings = $stmt->fetch()['total'];
 
-
         $stmt = $pdo->prepare("
             SELECT COUNT(*) AS total
             FROM listings
-            WHERE farmer_id = ?
+            WHERE farm_id = ?
               AND status = 'active'
         ");
 
-        $stmt->execute([$farmerId]);
+        $stmt->execute([$farmId]);
 
         $activeListings = $stmt->fetch()['total'];
 
+        $left = "
+            FROM orders o
+            INNER JOIN listings l
+                ON l.id = o.listing_id
+            WHERE l.farm_id = ?
+        ";
 
         $stmt = $pdo->prepare("
             SELECT COUNT(*) AS total
-            FROM orders
-            WHERE farmer_id = ?
+            {$left}
         ");
 
-        $stmt->execute([$farmerId]);
+        $stmt->execute([$farmId]);
 
         $orders = $stmt->fetch()['total'];
 
-
         $stmt = $pdo->prepare("
             SELECT COUNT(*) AS total
-            FROM orders
-            WHERE farmer_id = ?
-              AND status = 'pending'
+            {$left}
+              AND o.status = 'pending'
         ");
 
-        $stmt->execute([$farmerId]);
+        $stmt->execute([$farmId]);
 
         $pendingOrders = $stmt->fetch()['total'];
 
-
         $stmt = $pdo->prepare("
             SELECT COUNT(*) AS total
-            FROM orders
-            WHERE farmer_id = ?
-              AND status = 'completed'
+            {$left}
+              AND o.status = 'completed'
         ");
 
-        $stmt->execute([$farmerId]);
+        $stmt->execute([$farmId]);
 
         $completedOrders = $stmt->fetch()['total'];
-
 
         $stmt = $pdo->prepare("
             SELECT
                 o.id,
                 o.quantity,
-                o.subtotal,
+                o.unit_price,
+                IFNULL(o.delivery_fee, 0) AS delivery_fee,
+                o.order_method,
                 o.status,
                 o.created_at,
                 l.name AS listing_name,
@@ -172,17 +206,17 @@ class DashboardController
                 ON l.id = o.listing_id
             INNER JOIN users u
                 ON u.id = o.buyer_id
-            WHERE o.farmer_id = ?
+            WHERE l.farm_id = ?
             ORDER BY o.created_at DESC
             LIMIT 5
         ");
 
-        $stmt->execute([$farmerId]);
+        $stmt->execute([$farmId]);
 
         $recentOrders = $stmt->fetchAll();
 
-
         return [
+            'farm' => $farm,
             'listings' => (int)$listings,
             'active_listings' => (int)$activeListings,
             'orders' => (int)$orders,
@@ -191,7 +225,6 @@ class DashboardController
             'recent_orders' => $recentOrders
         ];
     }
-
 
     private static function buyerDashboard(
         PDO $pdo,
@@ -207,7 +240,6 @@ class DashboardController
 
         $orders = $stmt->fetch()['total'];
 
-
         $stmt = $pdo->prepare("
             SELECT COUNT(*) AS total
             FROM orders
@@ -218,7 +250,6 @@ class DashboardController
         $stmt->execute([$buyerId]);
 
         $pendingOrders = $stmt->fetch()['total'];
-
 
         $stmt = $pdo->prepare("
             SELECT COUNT(*) AS total
@@ -231,7 +262,6 @@ class DashboardController
 
         $completedOrders = $stmt->fetch()['total'];
 
-
         $stmt = $pdo->prepare("
             SELECT COUNT(*) AS total
             FROM orders
@@ -243,23 +273,22 @@ class DashboardController
 
         $deliveryReviews = $stmt->fetch()['total'];
 
-
         $stmt = $pdo->prepare("
             SELECT
                 o.id,
                 o.quantity,
-                o.subtotal,
-                o.delivery_fee,
-                o.fulfillment_type,
+                o.unit_price,
+                IFNULL(o.delivery_fee, 0) AS delivery_fee,
+                o.order_method,
                 o.status,
                 o.created_at,
                 l.name AS listing_name,
-                u.name AS farmer_name
+                f.farm_name AS farm_name
             FROM orders o
             INNER JOIN listings l
                 ON l.id = o.listing_id
-            INNER JOIN users u
-                ON u.id = o.farmer_id
+            INNER JOIN farms f
+                ON f.id = l.farm_id
             WHERE o.buyer_id = ?
             ORDER BY o.created_at DESC
             LIMIT 5
@@ -268,7 +297,6 @@ class DashboardController
         $stmt->execute([$buyerId]);
 
         $recentOrders = $stmt->fetchAll();
-
 
         return [
             'orders' => (int)$orders,

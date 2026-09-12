@@ -5,18 +5,44 @@ require_once dirname(__DIR__, 2) . '/Core/bootstrap.php';
 
 class AuthController
 {
+    /**
+     * Map a role slug to a roles.id.
+     */
+    private static function roleId(string $slug): ?int
+    {
+        $pdo = DB::pdo();
+
+        $stmt = $pdo->prepare("
+            SELECT id
+            FROM roles
+            WHERE slug = ?
+            LIMIT 1
+        ");
+
+        $stmt->execute([$slug]);
+
+        $row = $stmt->fetch();
+
+        return $row ? (int)$row['id'] : null;
+    }
+
+    /**
+     * A farmer can log in only when their farm is verified.
+     */
     public static function login(
         string $email,
         string $password
     ): bool {
         $pdo = DB::pdo();
 
-        $stmt = $pdo->prepare(
-            "SELECT id, name, email, password, role, is_verified
-             FROM users
-             WHERE email = ?
-             LIMIT 1"
-        );
+        $stmt = $pdo->prepare("
+            SELECT u.id, u.name, u.email, u.password_hash, r.slug AS role
+            FROM users u
+            INNER JOIN roles r
+                ON r.id = u.role_id
+            WHERE u.email = ?
+            LIMIT 1
+        ");
 
         $stmt->execute([$email]);
 
@@ -27,42 +53,64 @@ class AuthController
             return false;
         }
 
-        if (!password_verify($password, $user['password'])) {
+        if (!password_verify($password, $user['password_hash'])) {
             flash('error', 'Invalid email or password.');
             return false;
         }
 
-        if (
-            $user['role'] === 'farmer' &&
-            (int)$user['is_verified'] !== 1
-        ) {
-            flash(
-                'error',
-                'Your farmer account has not been verified by the administrator.'
-            );
+        $verified = 0;
 
-            return false;
+        if ($user['role'] === 'farmer') {
+            $stmt = $pdo->prepare("
+                SELECT verification_status
+                FROM farms
+                WHERE user_id = ?
+                LIMIT 1
+            ");
+
+            $stmt->execute([$user['id']]);
+
+            $farm = $stmt->fetch();
+
+            if ($farm && $farm['verification_status'] === 'verified') {
+                $verified = 1;
+            } else {
+                flash(
+                    'error',
+                    'Your farm has not been verified by the administrator yet.'
+                );
+
+                return false;
+            }
+        } else {
+            $verified = 1;
         }
 
         session_regenerate_id(true);
 
         $_SESSION['user'] = [
-            'id' => (int)$user['id'],
-            'name' => $user['name'],
-            'email' => $user['email'],
-            'role' => $user['role'],
-            'is_verified' => (int)$user['is_verified']
+            'id'          => (int)$user['id'],
+            'name'        => $user['name'],
+            'email'       => $user['email'],
+            'role'        => $user['role'],
+            'is_verified' => $verified
         ];
 
         return true;
     }
 
+    /**
+     * Register a buyer or a farmer.
+     *
+     * Farmers pass their farm name and location so a farm row can be
+     * created right away with verification_status = 'pending'.
+     */
     public static function register(
         string $name,
         string $email,
         string $password,
         string $role,
-        string $phone = '',
+        string $farmName = '',
         string $location = ''
     ): bool {
         $pdo = DB::pdo();
@@ -86,12 +134,19 @@ class AuthController
             return false;
         }
 
-        $stmt = $pdo->prepare(
-            "SELECT id
-             FROM users
-             WHERE email = ?
-             LIMIT 1"
-        );
+        $roleId = self::roleId($role);
+
+        if ($roleId === null) {
+            flash('error', 'Invalid account type.');
+            return false;
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT id
+            FROM users
+            WHERE email = ?
+            LIMIT 1
+        ");
 
         $stmt->execute([$email]);
 
@@ -104,45 +159,83 @@ class AuthController
             return false;
         }
 
-        /*
-         * Farmers require administrator verification.
-         * Buyers are automatically verified.
-         */
-        $verified = $role === 'buyer' ? 1 : 0;
+        if ($role === 'farmer') {
+            $farmName = trim($farmName);
+            $location = trim($location);
+
+            if ($farmName === '' || $location === '') {
+                flash(
+                    'error',
+                    'Farm name and location are required to register as a farmer.'
+                );
+
+                return false;
+            }
+        }
 
         $hashedPassword = password_hash(
             $password,
             PASSWORD_DEFAULT
         );
 
-        $stmt = $pdo->prepare(
-            "INSERT INTO users
-            (
-                name,
-                email,
-                password,
-                role,
-                phone,
-                location,
-                is_verified
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?)"
-        );
+        try {
+            $pdo->beginTransaction();
 
-        $stmt->execute([
-            $name,
-            $email,
-            $hashedPassword,
-            $role,
-            $phone !== '' ? $phone : null,
-            $location !== '' ? $location : null,
-            $verified
-        ]);
+            $stmt = $pdo->prepare("
+                INSERT INTO users
+                (
+                    role_id,
+                    name,
+                    email,
+                    password_hash
+                )
+                VALUES (?, ?, ?, ?)
+            ");
+
+            $stmt->execute([
+                $roleId,
+                $name,
+                $email,
+                $hashedPassword
+            ]);
+
+            $userId = (int)$pdo->lastInsertId();
+
+            if ($role === 'farmer') {
+                $stmt = $pdo->prepare("
+                    INSERT INTO farms
+                    (
+                        user_id,
+                        farm_name,
+                        location,
+                        verification_status
+                    )
+                    VALUES (?, ?, ?, 'pending')
+                ");
+
+                $stmt->execute([
+                    $userId,
+                    $farmName,
+                    $location
+                ]);
+            }
+
+            $pdo->commit();
+
+        } catch (Throwable $e) {
+
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            flash('error', 'Registration failed. Please try again.');
+            return false;
+        }
 
         if ($role === 'farmer') {
             flash(
                 'success',
-                'Registration successful. Your farmer account is waiting for administrator verification.'
+                'Registration successful. Your farm is waiting for administrator verification.'
             );
         } else {
             flash(

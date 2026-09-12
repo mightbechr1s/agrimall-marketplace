@@ -1,5 +1,5 @@
-i<?php
-// src/Features/Orders/OrderController.php
+<?php
+// src/Features/Order/OrderController.php
 
 require_once dirname(__DIR__, 2) . '/Core/bootstrap.php';
 
@@ -7,12 +7,15 @@ class OrderController
 {
     /**
      * Create a new order request.
+     *
+     * Order total is computed at read time:
+     * (quantity * unit_price) + IFNULL(delivery_fee, 0).
      */
     public static function create(
         int $buyerId,
         int $listingId,
         float $quantity,
-        string $fulfillmentType
+        string $orderMethod
     ): bool {
         $pdo = DB::pdo();
 
@@ -21,29 +24,34 @@ class OrderController
             return false;
         }
 
-        $allowedFulfillment = [
+        $allowedOrderMethods = [
             'pickup',
             'local_delivery'
         ];
 
-        if (!in_array($fulfillmentType, $allowedFulfillment, true)) {
-            flash('error', 'Invalid fulfillment type.');
+        if (!in_array($orderMethod, $allowedOrderMethods, true)) {
+            flash('error', 'Invalid order method.');
             return false;
         }
 
         /*
-         * Get listing information.
+         * Get listing information including farm owner.
          */
         $stmt = $pdo->prepare("
             SELECT
-                id,
-                farmer_id,
-                name,
-                quantity,
-                price,
-                status
-            FROM listings
-            WHERE id = ?
+                l.id,
+                l.farm_id,
+                l.name,
+                l.quantity_available,
+                l.price,
+                l.status,
+                u.id AS owner_id
+            FROM listings l
+            INNER JOIN farms f
+                ON f.id = l.farm_id
+            INNER JOIN users u
+                ON u.id = f.user_id
+            WHERE l.id = ?
             LIMIT 1
         ");
 
@@ -61,54 +69,35 @@ class OrderController
             return false;
         }
 
-        if ((float)$listing['quantity'] < $quantity) {
+        if ((float)$listing['quantity_available'] < $quantity) {
             flash('error', 'Not enough stock available.');
             return false;
         }
 
-        if ((int)$listing['farmer_id'] === $buyerId) {
+        if ((int)$listing['owner_id'] === $buyerId) {
             flash('error', 'You cannot order your own listing.');
             return false;
         }
 
-        $subtotal = $quantity * (float)$listing['price'];
-
-        /*
-         * Pickup starts as pending.
-         *
-         * Local delivery starts as pending too.
-         * The farmer can later provide a delivery fee.
-         */
-        $status = 'pending';
-
-        $deliveryFee = 0;
-
         $stmt = $pdo->prepare("
             INSERT INTO orders
             (
-                listing_id,
                 buyer_id,
-                farmer_id,
+                listing_id,
                 quantity,
                 unit_price,
-                subtotal,
-                fulfillment_type,
-                delivery_fee,
+                order_method,
                 status
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, 'pending')
         ");
 
         $stmt->execute([
-            $listingId,
             $buyerId,
-            $listing['farmer_id'],
+            $listingId,
             $quantity,
             $listing['price'],
-            $subtotal,
-            $fulfillmentType,
-            $deliveryFee,
-            $status
+            $orderMethod
         ]);
 
         flash(
@@ -118,7 +107,6 @@ class OrderController
 
         return true;
     }
-
 
     /**
      * Get buyer orders.
@@ -130,15 +118,15 @@ class OrderController
         $stmt = $pdo->prepare("
             SELECT
                 o.*,
+                (o.quantity * o.unit_price) + IFNULL(o.delivery_fee, 0) AS subtotal,
                 l.name AS listing_name,
                 l.unit,
-                u.name AS farmer_name,
-                u.phone AS farmer_phone
+                f.farm_name AS farm_name
             FROM orders o
             INNER JOIN listings l
                 ON l.id = o.listing_id
-            INNER JOIN users u
-                ON u.id = o.farmer_id
+            INNER JOIN farms f
+                ON f.id = l.farm_id
             WHERE o.buyer_id = ?
             ORDER BY o.created_at DESC
         ");
@@ -147,7 +135,6 @@ class OrderController
 
         return $stmt->fetchAll();
     }
-
 
     /**
      * Get farmer orders.
@@ -159,17 +146,19 @@ class OrderController
         $stmt = $pdo->prepare("
             SELECT
                 o.*,
+                (o.quantity * o.unit_price) + IFNULL(o.delivery_fee, 0) AS subtotal,
                 l.name AS listing_name,
                 l.unit,
                 u.name AS buyer_name,
-                u.email AS buyer_email,
-                u.phone AS buyer_phone
+                u.email AS buyer_email
             FROM orders o
             INNER JOIN listings l
                 ON l.id = o.listing_id
+            INNER JOIN farms f
+                ON f.id = l.farm_id
             INNER JOIN users u
                 ON u.id = o.buyer_id
-            WHERE o.farmer_id = ?
+            WHERE f.user_id = ?
             ORDER BY o.created_at DESC
         ");
 
@@ -178,9 +167,8 @@ class OrderController
         return $stmt->fetchAll();
     }
 
-
     /**
-     * Get a single order.
+     * Get a single order, scoped to the requesting user.
      */
     public static function getById(
         int $orderId,
@@ -192,23 +180,22 @@ class OrderController
         $sql = "
             SELECT
                 o.*,
+                (o.quantity * o.unit_price) + IFNULL(o.delivery_fee, 0) AS subtotal,
                 l.name AS listing_name,
                 l.description,
                 l.unit,
-                l.location AS listing_location,
+                f.farm_name AS farm_name,
+                f.location AS listing_location,
                 u_buyer.name AS buyer_name,
                 u_buyer.email AS buyer_email,
-                u_buyer.phone AS buyer_phone,
-                u_farmer.name AS farmer_name,
-                u_farmer.email AS farmer_email,
-                u_farmer.phone AS farmer_phone
+                f.farm_name AS seller_name
             FROM orders o
             INNER JOIN listings l
                 ON l.id = o.listing_id
+            INNER JOIN farms f
+                ON f.id = l.farm_id
             INNER JOIN users u_buyer
                 ON u_buyer.id = o.buyer_id
-            INNER JOIN users u_farmer
-                ON u_farmer.id = o.farmer_id
             WHERE o.id = ?
         ";
 
@@ -218,7 +205,7 @@ class OrderController
             $sql .= " AND o.buyer_id = ?";
             $params[] = $userId;
         } elseif ($role === 'farmer') {
-            $sql .= " AND o.farmer_id = ?";
+            $sql .= " AND f.user_id = ?";
             $params[] = $userId;
         }
 
@@ -231,7 +218,6 @@ class OrderController
 
         return $order ?: null;
     }
-
 
     /**
      * Farmer accepts pickup order.
@@ -248,12 +234,15 @@ class OrderController
             $stmt = $pdo->prepare("
                 SELECT
                     o.*,
-                    l.quantity AS stock
+                    l.quantity_available AS stock,
+                    l.farm_id
                 FROM orders o
                 INNER JOIN listings l
                     ON l.id = o.listing_id
+                INNER JOIN farms f
+                    ON f.id = l.farm_id
                 WHERE o.id = ?
-                  AND o.farmer_id = ?
+                  AND f.user_id = ?
                 FOR UPDATE
             ");
 
@@ -282,7 +271,7 @@ class OrderController
                 return false;
             }
 
-            if ($order['fulfillment_type'] !== 'pickup') {
+            if ($order['order_method'] !== 'pickup') {
                 $pdo->rollBack();
 
                 flash(
@@ -309,7 +298,7 @@ class OrderController
              */
             $stmt = $pdo->prepare("
                 UPDATE listings
-                SET quantity = quantity - ?
+                SET quantity_available = quantity_available - ?
                 WHERE id = ?
             ");
 
@@ -325,7 +314,7 @@ class OrderController
                 UPDATE listings
                 SET status =
                     CASE
-                        WHEN quantity <= 0 THEN 'sold_out'
+                        WHEN quantity_available <= 0 THEN 'sold_out'
                         ELSE status
                     END
                 WHERE id = ?
@@ -372,7 +361,6 @@ class OrderController
         }
     }
 
-
     /**
      * Farmer provides a local delivery fee.
      */
@@ -393,10 +381,17 @@ class OrderController
         }
 
         $stmt = $pdo->prepare("
-            SELECT id, status, fulfillment_type
-            FROM orders
-            WHERE id = ?
-              AND farmer_id = ?
+            SELECT
+                o.id,
+                o.status,
+                o.order_method
+            FROM orders o
+            INNER JOIN listings l
+                ON l.id = o.listing_id
+            INNER JOIN farms f
+                ON f.id = l.farm_id
+            WHERE o.id = ?
+              AND f.user_id = ?
             LIMIT 1
         ");
 
@@ -421,7 +416,7 @@ class OrderController
             return false;
         }
 
-        if ($order['fulfillment_type'] !== 'local_delivery') {
+        if ($order['order_method'] !== 'local_delivery') {
             flash(
                 'error',
                 'This order is not a local delivery order.'
@@ -436,14 +431,22 @@ class OrderController
                 delivery_fee = ?,
                 status = 'delivery_fee_review'
             WHERE id = ?
-              AND farmer_id = ?
+              AND status = 'pending'
         ");
 
         $stmt->execute([
             $deliveryFee,
-            $orderId,
-            $farmerId
+            $orderId
         ]);
+
+        if ($stmt->rowCount() === 0) {
+            flash(
+                'error',
+                'The delivery fee could not be saved.'
+            );
+
+            return false;
+        }
 
         flash(
             'success',
@@ -452,7 +455,6 @@ class OrderController
 
         return true;
     }
-
 
     /**
      * Buyer accepts delivery fee.
@@ -470,7 +472,7 @@ class OrderController
             $stmt = $pdo->prepare("
                 SELECT
                     o.*,
-                    l.quantity AS stock
+                    l.quantity_available AS stock
                 FROM orders o
                 INNER JOIN listings l
                     ON l.id = o.listing_id
@@ -520,7 +522,7 @@ class OrderController
              */
             $stmt = $pdo->prepare("
                 UPDATE listings
-                SET quantity = quantity - ?
+                SET quantity_available = quantity_available - ?
                 WHERE id = ?
             ");
 
@@ -536,7 +538,7 @@ class OrderController
                 UPDATE listings
                 SET status =
                     CASE
-                        WHEN quantity <= 0 THEN 'sold_out'
+                        WHEN quantity_available <= 0 THEN 'sold_out'
                         ELSE status
                     END
                 WHERE id = ?
@@ -585,7 +587,6 @@ class OrderController
         }
     }
 
-
     /**
      * Buyer declines delivery fee.
      */
@@ -625,7 +626,6 @@ class OrderController
         return true;
     }
 
-
     /**
      * Farmer changes confirmed order to preparing.
      */
@@ -636,11 +636,15 @@ class OrderController
         $pdo = DB::pdo();
 
         $stmt = $pdo->prepare("
-            UPDATE orders
-            SET status = 'preparing'
-            WHERE id = ?
-              AND farmer_id = ?
-              AND status = 'confirmed'
+            UPDATE orders o
+            INNER JOIN listings l
+                ON l.id = o.listing_id
+            INNER JOIN farms f
+                ON f.id = l.farm_id
+            SET o.status = 'preparing'
+            WHERE o.id = ?
+              AND f.user_id = ?
+              AND o.status = 'confirmed'
         ");
 
         $stmt->execute([
@@ -665,7 +669,6 @@ class OrderController
         return true;
     }
 
-
     /**
      * Farmer marks pickup order ready.
      */
@@ -676,12 +679,16 @@ class OrderController
         $pdo = DB::pdo();
 
         $stmt = $pdo->prepare("
-            UPDATE orders
-            SET status = 'ready_for_pickup'
-            WHERE id = ?
-              AND farmer_id = ?
-              AND fulfillment_type = 'pickup'
-              AND status = 'preparing'
+            UPDATE orders o
+            INNER JOIN listings l
+                ON l.id = o.listing_id
+            INNER JOIN farms f
+                ON f.id = l.farm_id
+            SET o.status = 'ready_for_pickup'
+            WHERE o.id = ?
+              AND f.user_id = ?
+              AND o.order_method = 'pickup'
+              AND o.status = 'preparing'
         ");
 
         $stmt->execute([
@@ -706,7 +713,6 @@ class OrderController
         return true;
     }
 
-
     /**
      * Farmer marks local delivery order out for delivery.
      */
@@ -717,12 +723,16 @@ class OrderController
         $pdo = DB::pdo();
 
         $stmt = $pdo->prepare("
-            UPDATE orders
-            SET status = 'out_for_delivery'
-            WHERE id = ?
-              AND farmer_id = ?
-              AND fulfillment_type = 'local_delivery'
-              AND status = 'preparing'
+            UPDATE orders o
+            INNER JOIN listings l
+                ON l.id = o.listing_id
+            INNER JOIN farms f
+                ON f.id = l.farm_id
+            SET o.status = 'out_for_delivery'
+            WHERE o.id = ?
+              AND f.user_id = ?
+              AND o.order_method = 'local_delivery'
+              AND o.status = 'preparing'
         ");
 
         $stmt->execute([
@@ -747,7 +757,6 @@ class OrderController
         return true;
     }
 
-
     /**
      * Complete an order.
      *
@@ -768,7 +777,7 @@ class OrderController
                 SET status = 'completed'
                 WHERE id = ?
                   AND buyer_id = ?
-                  AND fulfillment_type = 'pickup'
+                  AND order_method = 'pickup'
                   AND status = 'ready_for_pickup'
             ");
 
@@ -780,12 +789,16 @@ class OrderController
         } elseif ($role === 'farmer') {
 
             $stmt = $pdo->prepare("
-                UPDATE orders
-                SET status = 'completed'
-                WHERE id = ?
-                  AND farmer_id = ?
-                  AND fulfillment_type = 'local_delivery'
-                  AND status = 'out_for_delivery'
+                UPDATE orders o
+                INNER JOIN listings l
+                    ON l.id = o.listing_id
+                INNER JOIN farms f
+                    ON f.id = l.farm_id
+                SET o.status = 'completed'
+                WHERE o.id = ?
+                  AND f.user_id = ?
+                  AND o.order_method = 'local_delivery'
+                  AND o.status = 'out_for_delivery'
             ");
 
             $stmt->execute([
@@ -818,7 +831,6 @@ class OrderController
 
         return true;
     }
-
 
     /**
      * Buyer cancellation.
@@ -861,7 +873,6 @@ class OrderController
         return true;
     }
 
-
     /**
      * Farmer cancellation.
      *
@@ -875,13 +886,17 @@ class OrderController
 
         $stmt = $pdo->prepare("
             SELECT
-                id,
-                listing_id,
-                quantity,
-                status
-            FROM orders
-            WHERE id = ?
-              AND farmer_id = ?
+                o.id,
+                o.listing_id,
+                o.quantity,
+                o.status
+            FROM orders o
+            INNER JOIN listings l
+                ON l.id = o.listing_id
+            INNER JOIN farms f
+                ON f.id = l.farm_id
+            WHERE o.id = ?
+              AND f.user_id = ?
             LIMIT 1
         ");
 
@@ -923,7 +938,7 @@ class OrderController
 
                 $stmt = $pdo->prepare("
                     UPDATE listings
-                    SET quantity = quantity + ?
+                    SET quantity_available = quantity_available + ?
                     WHERE id = ?
                 ");
 
@@ -939,7 +954,7 @@ class OrderController
                     UPDATE listings
                     SET status = 'active'
                     WHERE id = ?
-                      AND quantity > 0
+                      AND quantity_available > 0
                       AND status = 'sold_out'
                 ");
 
@@ -952,12 +967,10 @@ class OrderController
                 UPDATE orders
                 SET status = 'cancelled'
                 WHERE id = ?
-                  AND farmer_id = ?
             ");
 
             $stmt->execute([
-                $orderId,
-                $farmerId
+                $orderId
             ]);
 
             $pdo->commit();
@@ -983,7 +996,6 @@ class OrderController
             return false;
         }
     }
-
 
     /**
      * Admin cancellation / hold.
@@ -1036,7 +1048,7 @@ class OrderController
 
                 $stmt = $pdo->prepare("
                     UPDATE listings
-                    SET quantity = quantity + ?
+                    SET quantity_available = quantity_available + ?
                     WHERE id = ?
                 ");
 
@@ -1049,7 +1061,7 @@ class OrderController
                     UPDATE listings
                     SET status = 'active'
                     WHERE id = ?
-                      AND quantity > 0
+                      AND quantity_available > 0
                       AND status = 'sold_out'
                 ");
 
@@ -1092,6 +1104,39 @@ class OrderController
         }
     }
 
+    /**
+     * Admin hold.
+     */
+    public static function adminHold(
+        int $orderId
+    ): bool {
+        $pdo = DB::pdo();
+
+        $stmt = $pdo->prepare("
+            UPDATE orders
+            SET status = 'on_hold'
+            WHERE id = ?
+              AND status NOT IN ('completed', 'cancelled', 'rejected')
+        ");
+
+        $stmt->execute([$orderId]);
+
+        if ($stmt->rowCount() === 0) {
+            flash(
+                'error',
+                'Order cannot be put on hold.'
+            );
+
+            return false;
+        }
+
+        flash(
+            'success',
+            'Order placed on hold.'
+        );
+
+        return true;
+    }
 
     /**
      * Count orders by status.
@@ -1117,7 +1162,6 @@ class OrderController
         return $result;
     }
 
-
     /**
      * Get all orders for administrators.
      */
@@ -1128,16 +1172,17 @@ class OrderController
         $stmt = $pdo->query("
             SELECT
                 o.*,
+                (o.quantity * o.unit_price) + IFNULL(o.delivery_fee, 0) AS subtotal,
                 l.name AS listing_name,
                 u_buyer.name AS buyer_name,
-                u_farmer.name AS farmer_name
+                f.farm_name AS farm_name
             FROM orders o
             INNER JOIN listings l
                 ON l.id = o.listing_id
+            INNER JOIN farms f
+                ON f.id = l.farm_id
             INNER JOIN users u_buyer
                 ON u_buyer.id = o.buyer_id
-            INNER JOIN users u_farmer
-                ON u_farmer.id = o.farmer_id
             ORDER BY o.created_at DESC
         ");
 

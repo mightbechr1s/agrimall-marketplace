@@ -5,6 +5,27 @@ require_once dirname(__DIR__, 2) . '/Core/bootstrap.php';
 
 class ListingController
 {
+    /**
+     * The farm owned by a user, if any.
+     */
+    private static function farmByOwner(int $userId): ?array
+    {
+        $pdo = DB::pdo();
+
+        $stmt = $pdo->prepare("
+            SELECT *
+            FROM farms
+            WHERE user_id = ?
+            LIMIT 1
+        ");
+
+        $stmt->execute([$userId]);
+
+        $farm = $stmt->fetch();
+
+        return $farm ?: null;
+    }
+
     public static function getActiveListings(array $filters = []): array
     {
         $pdo = DB::pdo();
@@ -13,14 +34,18 @@ class ListingController
             SELECT
                 l.*,
                 c.name AS category_name,
-                u.name AS farmer_name
+                f.farm_name AS farm_name,
+                u.name AS farmer_name,
+                f.location AS location
             FROM listings l
             INNER JOIN categories c
                 ON c.id = l.category_id
+            INNER JOIN farms f
+                ON f.id = l.farm_id
             INNER JOIN users u
-                ON u.id = l.farmer_id
+                ON u.id = f.user_id
             WHERE l.status = 'active'
-              AND u.is_verified = 1
+              AND f.verification_status = 'verified'
         ";
 
         $params = [];
@@ -30,13 +55,11 @@ class ListingController
                 AND (
                     l.name LIKE ?
                     OR l.description LIKE ?
-                    OR u.name LIKE ?
                 )
             ";
 
             $search = '%' . $filters['search'] . '%';
 
-            $params[] = $search;
             $params[] = $search;
             $params[] = $search;
         }
@@ -47,7 +70,7 @@ class ListingController
         }
 
         if (!empty($filters['location'])) {
-            $sql .= " AND l.location LIKE ?";
+            $sql .= " AND f.location LIKE ?";
             $params[] = '%' . $filters['location'] . '%';
         }
 
@@ -73,7 +96,18 @@ class ListingController
         }
 
         if (!empty($filters['date'])) {
-            $sql .= " AND l.availability_date = ?";
+            $sql .= "
+                AND (
+                    l.available_from IS NULL
+                    OR l.available_from <= ?
+                )
+                AND (
+                    l.available_until IS NULL
+                    OR l.available_until >= ?
+                )
+            ";
+
+            $params[] = $filters['date'];
             $params[] = $filters['date'];
         }
 
@@ -85,7 +119,6 @@ class ListingController
         return $stmt->fetchAll();
     }
 
-
     public static function getById(int $id): ?array
     {
         $pdo = DB::pdo();
@@ -94,14 +127,17 @@ class ListingController
             SELECT
                 l.*,
                 c.name AS category_name,
+                f.farm_name AS farm_name,
+                f.location AS location,
                 u.name AS farmer_name,
-                u.email AS farmer_email,
-                u.phone AS farmer_phone
+                u.email AS farmer_email
             FROM listings l
             INNER JOIN categories c
                 ON c.id = l.category_id
+            INNER JOIN farms f
+                ON f.id = l.farm_id
             INNER JOIN users u
-                ON u.id = l.farmer_id
+                ON u.id = f.user_id
             WHERE l.id = ?
             LIMIT 1
         ");
@@ -113,9 +149,36 @@ class ListingController
         return $listing ?: null;
     }
 
+    public static function getFarmerId(int $listingId): ?int
+    {
+        $pdo = DB::pdo();
+
+        $stmt = $pdo->prepare("
+            SELECT u.id
+            FROM listings l
+            INNER JOIN farms f
+                ON f.id = l.farm_id
+            INNER JOIN users u
+                ON u.id = f.user_id
+            WHERE l.id = ?
+            LIMIT 1
+        ");
+
+        $stmt->execute([$listingId]);
+
+        $row = $stmt->fetch();
+
+        return $row ? (int)$row['id'] : null;
+    }
 
     public static function getFarmerListings(int $farmerId): array
     {
+        $farm = self::farmByOwner($farmerId);
+
+        if (!$farm) {
+            return [];
+        }
+
         $pdo = DB::pdo();
 
         $stmt = $pdo->prepare("
@@ -125,31 +188,49 @@ class ListingController
             FROM listings l
             INNER JOIN categories c
                 ON c.id = l.category_id
-            WHERE l.farmer_id = ?
+            WHERE l.farm_id = ?
             ORDER BY l.created_at DESC
         ");
 
-        $stmt->execute([$farmerId]);
+        $stmt->execute([$farm['id']]);
 
         return $stmt->fetchAll();
     }
-
 
     public static function create(
         int $farmerId,
         array $data
     ): bool {
+        $farm = self::farmByOwner($farmerId);
+
+        if (!$farm) {
+            flash(
+                'error',
+                'You need a verified farm before you can list produce.'
+            );
+
+            return false;
+        }
+
         $pdo = DB::pdo();
 
         $name = trim($data['name'] ?? '');
         $description = trim($data['description'] ?? '');
         $categoryId = (int)($data['category_id'] ?? 0);
-        $quantity = (float)($data['quantity'] ?? 0);
+        $quantityAvailable = (float)($data['quantity_available'] ?? 0);
         $unit = trim($data['unit'] ?? '');
         $price = (float)($data['price'] ?? 0);
-        $location = trim($data['location'] ?? '');
-        $availabilityDate = $data['availability_date'] ?? null;
-        $image = $data['image'] ?? null;
+        $availableFrom = $data['available_from'] ?? null;
+        $availableUntil = $data['available_until'] ?? null;
+        $imagePath = $data['image_path'] ?? null;
+
+        $allowedUnits = [
+            'kg',
+            'piece',
+            'bundle',
+            'sack',
+            'box'
+        ];
 
         if ($name === '') {
             flash('error', 'Product name is required.');
@@ -161,13 +242,13 @@ class ListingController
             return false;
         }
 
-        if ($quantity <= 0) {
+        if ($quantityAvailable <= 0) {
             flash('error', 'Quantity must be greater than zero.');
             return false;
         }
 
-        if ($unit === '') {
-            flash('error', 'Unit is required.');
+        if (!in_array($unit, $allowedUnits, true)) {
+            flash('error', 'Please select a valid unit.');
             return false;
         }
 
@@ -179,32 +260,32 @@ class ListingController
         $stmt = $pdo->prepare("
             INSERT INTO listings
             (
-                farmer_id,
+                farm_id,
                 category_id,
                 name,
                 description,
-                quantity,
+                quantity_available,
                 unit,
                 price,
-                location,
-                availability_date,
-                image,
+                available_from,
+                available_until,
+                image_path,
                 status
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
         ");
 
         $stmt->execute([
-            $farmerId,
+            $farm['id'],
             $categoryId,
             $name,
             $description !== '' ? $description : null,
-            $quantity,
+            $quantityAvailable,
             $unit,
             $price,
-            $location !== '' ? $location : null,
-            $availabilityDate ?: null,
-            $image
+            $availableFrom ?: null,
+            $availableUntil ?: null,
+            $imagePath
         ]);
 
         flash(
@@ -215,28 +296,38 @@ class ListingController
         return true;
     }
 
-
     public static function update(
         int $listingId,
         int $farmerId,
         array $data
     ): bool {
+        $farm = self::farmByOwner($farmerId);
+
+        if (!$farm) {
+            flash(
+                'error',
+                'You do not have permission to edit this listing.'
+            );
+
+            return false;
+        }
+
         $pdo = DB::pdo();
 
-        $check = $pdo->prepare("
+        $stmt = $pdo->prepare("
             SELECT id
             FROM listings
             WHERE id = ?
-              AND farmer_id = ?
+              AND farm_id = ?
             LIMIT 1
         ");
 
-        $check->execute([
+        $stmt->execute([
             $listingId,
-            $farmerId
+            $farm['id']
         ]);
 
-        if (!$check->fetch()) {
+        if (!$stmt->fetch()) {
             flash(
                 'error',
                 'You do not have permission to edit this listing.'
@@ -248,11 +339,11 @@ class ListingController
         $name = trim($data['name'] ?? '');
         $description = trim($data['description'] ?? '');
         $categoryId = (int)($data['category_id'] ?? 0);
-        $quantity = (float)($data['quantity'] ?? 0);
+        $quantityAvailable = (float)($data['quantity_available'] ?? 0);
         $unit = trim($data['unit'] ?? '');
         $price = (float)($data['price'] ?? 0);
-        $location = trim($data['location'] ?? '');
-        $availabilityDate = $data['availability_date'] ?? null;
+        $availableFrom = $data['available_from'] ?? null;
+        $availableUntil = $data['available_until'] ?? null;
         $status = $data['status'] ?? 'active';
 
         $allowedStatuses = [
@@ -275,7 +366,7 @@ class ListingController
             return false;
         }
 
-        if ($quantity < 0) {
+        if ($quantityAvailable < 0) {
             flash('error', 'Quantity cannot be negative.');
             return false;
         }
@@ -286,28 +377,28 @@ class ListingController
                 category_id = ?,
                 name = ?,
                 description = ?,
-                quantity = ?,
+                quantity_available = ?,
                 unit = ?,
                 price = ?,
-                location = ?,
-                availability_date = ?,
+                available_from = ?,
+                available_until = ?,
                 status = ?
             WHERE id = ?
-              AND farmer_id = ?
+              AND farm_id = ?
         ");
 
         $stmt->execute([
             $categoryId,
             $name,
             $description !== '' ? $description : null,
-            $quantity,
+            $quantityAvailable,
             $unit,
             $price,
-            $location !== '' ? $location : null,
-            $availabilityDate ?: null,
+            $availableFrom ?: null,
+            $availableUntil ?: null,
             $status,
             $listingId,
-            $farmerId
+            $farm['id']
         ]);
 
         flash(
@@ -318,22 +409,32 @@ class ListingController
         return true;
     }
 
-
     public static function delete(
         int $listingId,
         int $farmerId
     ): bool {
+        $farm = self::farmByOwner($farmerId);
+
+        if (!$farm) {
+            flash(
+                'error',
+                'Listing could not be deleted.'
+            );
+
+            return false;
+        }
+
         $pdo = DB::pdo();
 
         $stmt = $pdo->prepare("
             DELETE FROM listings
             WHERE id = ?
-              AND farmer_id = ?
+              AND farm_id = ?
         ");
 
         $stmt->execute([
             $listingId,
-            $farmerId
+            $farm['id']
         ]);
 
         if ($stmt->rowCount() === 0) {
@@ -352,7 +453,6 @@ class ListingController
 
         return true;
     }
-
 
     public static function getCategories(): array
     {

@@ -60,6 +60,20 @@ body {
   margin: 24px 0;
 }
 
+.flash {
+  padding: 12px 20px;
+  margin: 0 24px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.flash + .flash { margin-top: 8px; }
+
+.flash-success { border-color: var(--brand); color: var(--brand); background: #f0f7f3; }
+.flash-error { border-color: #b3261e; color: #b3261e; background: #fdf1f0; }
+
 .footer {
   border-top: 1px solid var(--line);
   padding: 20px 24px;
