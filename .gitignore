@@ -1,15 +1,20 @@
-# Local configuration — never commit credentials
+# -------------------------------
+# AniMAL — Philippine Agricultural Marketplace
+# -------------------------------
+
+# --- Local configuration (contains credentials) ---
+# Never commit real credentials. Copy config.example.php over config.php locally.
 config/config.php
 
-# Uploaded user content
+# --- Uploaded user content ---
 public/uploads/*
 !public/uploads/.gitkeep
 
-# Runtime logs
+# --- Runtime logs ---
 logs/*
 !logs/.gitkeep
 
-# Editor / OS junk
+# --- Editors & OS junk ---
 .vscode/
 .idea/
 *.swp
@@ -17,12 +22,14 @@ logs/*
 .DS_Store
 Thumbs.db
 
-# Dependencies (only if we adopt Composer)
-vendor/
-
-# Tooling artifacts
+# --- Tooling artifacts ---
 .hallmark/
 node_modules/
 
-# PHP
+# --- Environment secrets ---
+.env
+.env.*
+!.env.example
+
+# --- PHP specifics ---
 *.log

@@ -1,0 +1,9 @@
+# AniMAL robots.txt
+User-agent: *
+Allow: /
+
+Disallow: /dashboard
+Disallow: /uploads
+Disallow: /admin
+
+Sitemap: /sitemap.xml
