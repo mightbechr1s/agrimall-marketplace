@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AniMAL - Direct Agricultural Marketplace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            'deep-green': '#2E7D32',
+            'fresh-green': '#66BB6A',
+            'warm-yellow': '#F9A825',
+            'soft-white': '#F8FAF7',
+            'dark-charcoal': '#263238',
+            'muted-gray': '#78909C'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-soft-white text-dark-charcoal font-sans min-h-screen flex flex-col">
+
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-6">
+      <a href="index.html" class="flex items-center gap-2">
+        <div class="w-10 h-10 bg-deep-green text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-md">🌱</div>
+        <span class="text-2xl font-extrabold text-deep-green tracking-tight">AniMAL</span>
+      </a>
+
+      <div class="flex-1 max-w-xl relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-muted-gray"></i>
+        <input type="text" placeholder="Search fresh produce, vegetables, grains, or farmers..." class="w-full pl-11 pr-4 py-2.5 bg-soft-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-deep-green transition-all" />
+      </div>
+
+      <div class="flex items-center gap-6">
+        <a href="catalog.html" class="text-sm font-semibold text-dark-charcoal hover:text-deep-green transition-colors">Browse Produce</a>
+        <a href="#" class="px-5 py-2.5 bg-deep-green hover:bg-[#256729] text-white text-sm font-semibold rounded-full shadow-sm transition-all">Login / Register</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full space-y-12">
+    <section class="relative overflow-hidden bg-gradient-to-r from-deep-green to-[#1b4d1f] rounded-3xl p-10 md:p-14 text-white shadow-xl">
+      <div class="relative z-10 max-w-2xl space-y-6">
+        <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 text-fresh-green text-xs font-semibold backdrop-blur-md">
+          <i class="fa-solid fa-shield-halved"></i> Direct Agricultural Marketplace
+        </span>
+        <h1 class="text-4xl md:text-5xl font-extrabold leading-tight tracking-tight">Direct Market Access for Farmers & Bulk Buyers</h1>
+        <p class="text-emerald-100 text-base md:text-lg opacity-90">Empowering local agricultural producers with fair pricing, verified listings, and direct buyer requests.</p>
+        <div class="pt-2">
+          <a href="catalog.html" class="inline-flex items-center gap-3 px-8 py-3.5 bg-warm-yellow text-dark-charcoal font-bold text-base rounded-full shadow-lg">
+            <span>Explore Produce</span>
+            <i class="fa-solid fa-arrow-right text-sm"></i>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="space-y-5">
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-dark-charcoal tracking-tight">Choose Your Featured Categories</h2>
+        <a href="catalog.html" class="text-sm font-semibold text-deep-green hover:underline">View All &rarr;</a>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        <a href="catalog.html?category=vegetables" class="bg-white p-5 rounded-2xl border border-gray-200/80 hover:border-fresh-green shadow-sm text-center group flex flex-col items-center gap-3">
+          <div class="w-14 h-14 bg-emerald-50 text-deep-green rounded-full flex items-center justify-center text-2xl group-hover:bg-deep-green group-hover:text-white transition-all">🥦</div>
+          <span class="font-semibold text-sm text-dark-charcoal group-hover:text-deep-green">Vegetables</span>
+        </a>
+
+        <a href="catalog.html?category=fruits" class="bg-white p-5 rounded-2xl border border-gray-200/80 hover:border-fresh-green shadow-sm text-center group flex flex-col items-center gap-3">
+          <div class="w-14 h-14 bg-amber-50 text-warm-yellow rounded-full flex items-center justify-center text-2xl group-hover:bg-warm-yellow group-hover:text-dark-charcoal transition-all">🍎</div>
+          <span class="font-semibold text-sm text-dark-charcoal group-hover:text-deep-green">Fruits</span>
+        </a>
+
+        <a href="catalog.html?category=grains" class="bg-white p-5 rounded-2xl border border-gray-200/80 hover:border-fresh-green shadow-sm text-center group flex flex-col items-center gap-3">
+          <div class="w-14 h-14 bg-yellow-50 text-amber-700 rounded-full flex items-center justify-center text-2xl group-hover:bg-amber-700 group-hover:text-white transition-all">🌾</div>
+          <span class="font-semibold text-sm text-dark-charcoal group-hover:text-deep-green">Grains</span>
+        </a>
+
+        <a href="catalog.html?category=root-crops" class="bg-white p-5 rounded-2xl border border-gray-200/80 hover:border-fresh-green shadow-sm text-center group flex flex-col items-center gap-3">
+          <div class="w-14 h-14 bg-orange-50 text-orange-600 rounded-full flex items-center justify-center text-2xl group-hover:bg-orange-600 group-hover:text-white transition-all">🥔</div>
+          <span class="font-semibold text-sm text-dark-charcoal group-hover:text-deep-green">Root Crops</span>
+        </a>
+
+        <a href="catalog.html" class="bg-white p-5 rounded-2xl border border-gray-200/80 hover:border-fresh-green shadow-sm text-center group flex flex-col items-center gap-3">
+          <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl group-hover:bg-blue-600 group-hover:text-white transition-all">🐄</div>
+          <span class="font-semibold text-sm text-dark-charcoal group-hover:text-deep-green">Livestock</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="space-y-5">
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-dark-charcoal tracking-tight">Today's Best Selling Products!</h2>
+        <a href="catalog.html" class="text-sm font-semibold text-deep-green hover:underline">Browse Catalog &rarr;</a>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <a href="product-detail.html" class="bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group">
+          <div class="h-44 bg-gray-100 relative overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=600&q=80" alt="Fresh Tomatoes" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+            <span class="absolute top-3 left-3 bg-white/90 px-2.5 py-1 rounded-full text-xs font-semibold text-deep-green"><i class="fa-solid fa-circle-check"></i> Verified</span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+            <div>
+              <p class="text-xs font-medium text-muted-gray mb-1">📍 La Union • Mang Juan Farm</p>
+              <h3 class="font-bold text-dark-charcoal text-base group-hover:text-deep-green transition-colors">Fresh Red Tomatoes</h3>
+              <p class="text-xs text-muted-gray mt-1">Available: 500 kg batch</p>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+              <span class="text-lg font-extrabold text-deep-green">₱80 <span class="text-xs font-normal text-muted-gray">/ kg</span></span>
+              <span class="px-4 py-2 bg-soft-white group-hover:bg-deep-green group-hover:text-white border border-gray-200 text-xs font-bold rounded-xl transition-all">View Item</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="products/yellow-corn.html" class="bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group">
+          <div class="h-44 bg-gray-100 relative overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&w=600&q=80" alt="Sweet Yellow Corn" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+            <span class="absolute top-3 left-3 bg-white/90 px-2.5 py-1 rounded-full text-xs font-semibold text-deep-green"><i class="fa-solid fa-circle-check"></i> Verified</span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+            <div>
+              <p class="text-xs font-medium text-muted-gray mb-1">📍 Pangasinan • Aling Rosa</p>
+              <h3 class="font-bold text-dark-charcoal text-base group-hover:text-deep-green transition-colors">Sweet Yellow Corn</h3>
+              <p class="text-xs text-muted-gray mt-1">Available: 1,200 kg batch</p>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+              <span class="text-lg font-extrabold text-deep-green">₱60 <span class="text-xs font-normal text-muted-gray">/ kg</span></span>
+              <span class="px-4 py-2 bg-soft-white group-hover:bg-deep-green group-hover:text-white border border-gray-200 text-xs font-bold rounded-xl transition-all">View Item</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="products/red-onions.html" class="bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group">
+          <div class="h-44 bg-gray-100 relative overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1508747703725-719777637510?auto=format&fit=crop&w=600&q=80" alt="Fresh Red Onions" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+            <span class="absolute top-3 left-3 bg-white/90 px-2.5 py-1 rounded-full text-xs font-semibold text-deep-green"><i class="fa-solid fa-circle-check"></i> Verified</span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+            <div>
+              <p class="text-xs font-medium text-muted-gray mb-1">📍 Nueva Ecija • Ben's Farm</p>
+              <h3 class="font-bold text-dark-charcoal text-base group-hover:text-deep-green transition-colors">Fresh Red Onions</h3>
+              <p class="text-xs text-muted-gray mt-1">Available: 800 kg batch</p>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+              <span class="text-lg font-extrabold text-deep-green">₱120 <span class="text-xs font-normal text-muted-gray">/ kg</span></span>
+              <span class="px-4 py-2 bg-soft-white group-hover:bg-deep-green group-hover:text-white border border-gray-200 text-xs font-bold rounded-xl transition-all">View Item</span>
+            </div>
+          </div>
+        </a>
+
+        <a href="products/native-potatoes.html" class="bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group">
+          <div class="h-44 bg-gray-100 relative overflow-hidden">
+            <img src="https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=600&q=80" alt="Native Potatoes" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+            <span class="absolute top-3 left-3 bg-white/90 px-2.5 py-1 rounded-full text-xs font-semibold text-deep-green"><i class="fa-solid fa-circle-check"></i> Verified</span>
+          </div>
+          <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+            <div>
+              <p class="text-xs font-medium text-muted-gray mb-1">📍 Benguet • Highland Co-op</p>
+              <h3 class="font-bold text-dark-charcoal text-base group-hover:text-deep-green transition-colors">Native Potatoes</h3>
+              <p class="text-xs text-muted-gray mt-1">Available: 450 kg batch</p>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+              <span class="text-lg font-extrabold text-deep-green">₱95 <span class="text-xs font-normal text-muted-gray">/ kg</span></span>
+              <span class="px-4 py-2 bg-soft-white group-hover:bg-deep-green group-hover:text-white border border-gray-200 text-xs font-bold rounded-xl transition-all">View Item</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-dark-charcoal text-white mt-16 py-8 border-t border-gray-800 text-xs text-muted-gray text-center">
+    © 2026 AniMAL Marketplace — Direct Access Platform
+  </footer>
+</body>
+</html>

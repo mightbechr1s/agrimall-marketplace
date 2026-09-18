@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AniMAL - Product Details</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            'deep-green': '#2E7D32',
+            'fresh-green': '#66BB6A',
+            'warm-yellow': '#F9A825',
+            'soft-white': '#F8FAF7',
+            'dark-charcoal': '#263238',
+            'muted-gray': '#78909C'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-soft-white text-dark-charcoal font-sans min-h-screen flex flex-col">
+
+  <!-- NAVBAR -->
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-6">
+      <a href="index.html" class="flex items-center gap-2">
+        <div class="w-10 h-10 bg-deep-green text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-md">🌱</div>
+        <span class="text-2xl font-extrabold text-deep-green tracking-tight">AniMAL</span>
+      </a>
+
+      <div class="flex-1 max-w-xl relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-muted-gray"></i>
+        <input type="text" placeholder="Search fresh produce, location, or farm..." class="w-full pl-11 pr-4 py-2.5 bg-soft-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-deep-green transition-all" />
+      </div>
+
+      <div class="flex items-center gap-6">
+        <a href="catalog.html" class="text-sm font-bold text-deep-green">Browse Produce</a>
+        <a href="#" class="px-5 py-2.5 bg-deep-green text-white text-sm font-semibold rounded-full hover:bg-[#256729] transition-all">Login / Register</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- BREADCRUMB -->
+  <div class="max-w-7xl mx-auto px-6 pt-6">
+    <nav class="text-xs font-semibold text-muted-gray flex items-center gap-2">
+      <a href="index.html" class="hover:text-deep-green">Home</a>
+      <span>/</span>
+      <a href="catalog.html" class="hover:text-deep-green">Catalog</a>
+      <span>/</span>
+      <span class="text-dark-charcoal">Fresh Red Tomatoes</span>
+    </nav>
+  </div>
+
+  <!-- MAIN PRODUCT SECTION -->
+  <main class="max-w-7xl mx-auto px-6 py-6 flex-1 w-full space-y-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 bg-white p-8 rounded-3xl border border-gray-200/80 shadow-sm">
+      
+      <!-- Left Column: Product Image Gallery -->
+      <div class="space-y-4">
+        <div class="h-96 rounded-2xl overflow-hidden bg-gray-100 relative">
+          <img src="https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=800&q=80" alt="Fresh Tomatoes" class="w-full h-full object-cover"/>
+          <span class="absolute top-4 left-4 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-deep-green shadow-sm flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-check text-fresh-green"></i> Verified Harvest Batch
+          </span>
+        </div>
+      </div>
+
+      <!-- Right Column: Produce Info & Order Card -->
+      <div class="space-y-6 flex flex-col justify-between">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="px-3 py-1 bg-emerald-100/70 text-deep-green text-xs font-bold rounded-full">Vegetables</span>
+            <span class="text-xs font-bold text-warm-yellow bg-dark-charcoal px-2.5 py-1 rounded-full">★ 4.9 (18 Reviews)</span>
+          </div>
+
+          <h1 class="text-3xl font-black text-dark-charcoal tracking-tight">Fresh Grade A Red Tomatoes</h1>
+          
+          <!-- Farm Origin Info -->
+          <div class="flex items-center gap-3 p-3 bg-soft-white rounded-xl border border-gray-200/60">
+            <div class="w-10 h-10 bg-deep-green text-white rounded-full flex items-center justify-center font-bold text-sm">👨‍🌾</div>
+            <div>
+              <p class="text-xs font-bold text-dark-charcoal">Mang Juan Farm</p>
+              <p class="text-[11px] text-muted-gray">📍 San Fernando, La Union • <span class="text-fresh-green font-semibold">Verified Direct Farmer</span></p>
+            </div>
+          </div>
+
+          <p class="text-sm text-muted-gray leading-relaxed">
+            Organically harvested ripe red tomatoes grown in La Union. Ideal for bulk buyers, restaurants, and market vendors seeking fresh, direct farm supply.
+          </p>
+
+          <!-- Spec Grid -->
+          <div class="grid grid-cols-2 gap-4 pt-2">
+            <div class="p-3 bg-gray-50 rounded-xl">
+              <span class="text-[10px] font-bold text-muted-gray uppercase block">Available Stock</span>
+              <span class="text-sm font-bold text-dark-charcoal">500 kg batch</span>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-xl">
+              <span class="text-[10px] font-bold text-muted-gray uppercase block">Min. Order</span>
+              <span class="text-sm font-bold text-dark-charcoal">20 kg minimum</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pricing and Order CTA -->
+        <div class="pt-6 border-t border-gray-100 space-y-4">
+          <div class="flex items-baseline justify-between">
+            <div>
+              <span class="text-xs font-bold text-muted-gray uppercase block">Wholesale Price</span>
+              <span class="text-3xl font-black text-deep-green">₱80 <span class="text-sm font-medium text-muted-gray">/ kg</span></span>
+            </div>
+            <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-lg">No Middleman Markup</span>
+          </div>
+
+          <div class="flex gap-4">
+            <a href="farmer-dashboard.html" class="flex-1 py-3.5 bg-deep-green hover:bg-[#256729] text-white text-center font-extrabold text-sm rounded-xl shadow-md transition-all">
+              Submit Direct Order Request
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-dark-charcoal text-white mt-12 py-6 border-t border-gray-800 text-xs text-muted-gray text-center">
+    © 2026 AniMAL Marketplace — Direct Access Platform
+  </footer>
+
+</body>
+</html>

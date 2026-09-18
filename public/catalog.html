@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AniMAL - Product Catalog</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            'deep-green': '#2E7D32',
+            'fresh-green': '#66BB6A',
+            'warm-yellow': '#F9A825',
+            'soft-white': '#F8FAF7',
+            'dark-charcoal': '#263238',
+            'muted-gray': '#78909C'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-soft-white text-dark-charcoal font-sans min-h-screen flex flex-col">
+
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-6">
+      <a href="index.html" class="flex items-center gap-2">
+        <div class="w-10 h-10 bg-deep-green text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-md">🌱</div>
+        <span class="text-2xl font-extrabold text-deep-green tracking-tight">AniMAL</span>
+      </a>
+
+      <div class="flex-1 max-w-xl relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-muted-gray"></i>
+        <input type="text" placeholder="Search fresh produce, location, or farm..." class="w-full pl-11 pr-4 py-2.5 bg-soft-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-deep-green transition-all" />
+      </div>
+
+      <div class="flex items-center gap-6">
+        <a href="catalog.html" class="text-sm font-bold text-deep-green">Browse Produce</a>
+        <a href="#" class="px-5 py-2.5 bg-deep-green text-white text-sm font-semibold rounded-full hover:bg-[#256729] transition-all">Login / Register</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full space-y-8">
+    <div>
+      <h1 class="text-3xl font-extrabold text-dark-charcoal tracking-tight">Product Catalog</h1>
+      <p class="text-sm text-muted-gray mt-1">Explore verified local produce available directly from regional farmers.</p>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm flex flex-wrap items-center gap-4">
+      <div class="flex-1 min-w-[160px]">
+        <label class="block text-xs font-semibold text-muted-gray mb-1">Category</label>
+        <select id="categoryFilter" class="w-full bg-soft-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:border-deep-green">
+          <option value="all">All Categories</option>
+          <option value="vegetables">Vegetables</option>
+          <option value="fruits">Fruits</option>
+          <option value="grains">Grains</option>
+          <option value="root-crops">Root Crops</option>
+        </select>
+      </div>
+
+      <div class="flex-1 min-w-[160px]">
+        <label class="block text-xs font-semibold text-muted-gray mb-1">Location</label>
+        <select class="w-full bg-soft-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:border-deep-green">
+          <option>All Locations</option>
+          <option>La Union</option>
+          <option>Pangasinan</option>
+          <option>Nueva Ecija</option>
+          <option>Benguet</option>
+        </select>
+      </div>
+
+      <div class="flex-1 min-w-[160px]">
+        <label class="block text-xs font-semibold text-muted-gray mb-1">Price Range</label>
+        <select class="w-full bg-soft-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:border-deep-green">
+          <option>All Prices</option>
+          <option>Under ₱50 / kg</option>
+          <option>₱50 - ₱100 / kg</option>
+          <option>Above ₱100 / kg</option>
+        </select>
+      </div>
+
+      <div class="flex-1 min-w-[160px]">
+        <label class="block text-xs font-semibold text-muted-gray mb-1">Sort By</label>
+        <select class="w-full bg-soft-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:border-deep-green">
+          <option>Latest Listings</option>
+          <option>Price: Low to High</option>
+          <option>Price: High to Low</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
+      <a href="products/fresh-tomatoes.html" data-category="vegetables" class="product-card bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group">
+        <div class="h-36 bg-gray-100 relative overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=600&q=80" alt="Fresh Red Tomatoes" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+          <span class="absolute top-2 left-2 bg-white/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-deep-green"><i class="fa-solid fa-circle-check"></i> Verified</span>
+        </div>
+        <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+          <div>
+            <p class="text-[11px] font-medium text-muted-gray">La Union • Mang Juan</p>
+            <h3 class="font-bold text-dark-charcoal text-sm group-hover:text-deep-green transition-colors">Fresh Red Tomatoes</h3>
+          </div>
+          <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
+            <span class="text-base font-extrabold text-deep-green">₱80 <span class="text-[10px] font-normal text-muted-gray">/ kg</span></span>
+            <span class="text-xs font-bold text-deep-green group-hover:underline">View &rarr;</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="products/yellow-corn.html" data-category="grains" class="product-card bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group">
+        <div class="h-36 bg-gray-100 relative overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&w=600&q=80" alt="Sweet Yellow Corn" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+          <span class="absolute top-2 left-2 bg-white/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-deep-green"><i class="fa-solid fa-circle-check"></i> Verified</span>
+        </div>
+        <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+          <div>
+            <p class="text-[11px] font-medium text-muted-gray">Pangasinan • Aling Rosa</p>
+            <h3 class="font-bold text-dark-charcoal text-sm group-hover:text-deep-green transition-colors">Sweet Yellow Corn</h3>
+          </div>
+          <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
+            <span class="text-base font-extrabold text-deep-green">₱60 <span class="text-[10px] font-normal text-muted-gray">/ kg</span></span>
+            <span class="text-xs font-bold text-deep-green group-hover:underline">View &rarr;</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="products/red-onions.html" data-category="vegetables" class="product-card bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group">
+        <div class="h-36 bg-gray-100 relative overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1508747703725-719777637510?auto=format&fit=crop&w=600&q=80" alt="Fresh Red Onions" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+          <span class="absolute top-2 left-2 bg-white/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-deep-green"><i class="fa-solid fa-circle-check"></i> Verified</span>
+        </div>
+        <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+          <div>
+            <p class="text-[11px] font-medium text-muted-gray">Nueva Ecija • Ben's Farm</p>
+            <h3 class="font-bold text-dark-charcoal text-sm group-hover:text-deep-green transition-colors">Fresh Red Onions</h3>
+          </div>
+          <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
+            <span class="text-base font-extrabold text-deep-green">₱120 <span class="text-[10px] font-normal text-muted-gray">/ kg</span></span>
+            <span class="text-xs font-bold text-deep-green group-hover:underline">View &rarr;</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="products/native-potatoes.html" data-category="root-crops" class="product-card bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group">
+        <div class="h-36 bg-gray-100 relative overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=600&q=80" alt="Native Potatoes" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+          <span class="absolute top-2 left-2 bg-white/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-deep-green"><i class="fa-solid fa-circle-check"></i> Verified</span>
+        </div>
+        <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+          <div>
+            <p class="text-[11px] font-medium text-muted-gray">Benguet • Highland Co-op</p>
+            <h3 class="font-bold text-dark-charcoal text-sm group-hover:text-deep-green transition-colors">Native Potatoes</h3>
+          </div>
+          <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
+            <span class="text-base font-extrabold text-deep-green">₱95 <span class="text-[10px] font-normal text-muted-gray">/ kg</span></span>
+            <span class="text-xs font-bold text-deep-green group-hover:underline">View &rarr;</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="products/cabbage.html" data-category="vegetables" class="product-card bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group">
+        <div class="h-36 bg-gray-100 relative overflow-hidden">
+          <img src="https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?auto=format&fit=crop&w=600&q=80" alt="Green Cabbage" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+          <span class="absolute top-2 left-2 bg-white/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-deep-green"><i class="fa-solid fa-circle-check"></i> Verified</span>
+        </div>
+        <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+          <div>
+            <p class="text-[11px] font-medium text-muted-gray">La Union • Cruz Farm</p>
+            <h3 class="font-bold text-dark-charcoal text-sm group-hover:text-deep-green transition-colors">Green Cabbage</h3>
+          </div>
+          <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
+            <span class="text-base font-extrabold text-deep-green">₱55 <span class="text-[10px] font-normal text-muted-gray">/ kg</span></span>
+            <span class="text-xs font-bold text-deep-green group-hover:underline">View &rarr;</span>
+          </div>
+        </div>
+      </a>
+    </div>
+  </main>
+
+  <footer class="bg-dark-charcoal text-white mt-12 py-6 border-t border-gray-800 text-xs text-muted-gray text-center">
+    © 2026 AniMAL Marketplace — Direct Access Platform
+  </footer>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const categoryFilter = document.getElementById("categoryFilter");
+      const cards = document.querySelectorAll(".product-card");
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlCategory = urlParams.get("category");
+
+      if (urlCategory && categoryFilter) {
+        categoryFilter.value = urlCategory;
+        filterProducts(urlCategory);
+      }
+
+      if (categoryFilter) {
+        categoryFilter.addEventListener("change", function () {
+          filterProducts(this.value);
+        });
+      }
+
+      function filterProducts(category) {
+        cards.forEach((card) => {
+          const cardCategory = card.getAttribute("data-category");
+          if (category === "all" || cardCategory === category) {
+            card.style.display = "flex";
+          } else {
+            card.style.display = "none";
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
