@@ -46,6 +46,25 @@ function makeUser(PDO $pdo, string $email): int
     return (int) $pdo->lastInsertId();
 }
 
+function makeAdmin(PDO $pdo, string $email, string $password): int
+{
+    $existing = userIdByEmail($pdo, $email);
+    if ($existing !== null) {
+        return $existing;
+    }
+    $stmt = $pdo->prepare(
+        'INSERT INTO users (email, password_hash, role, status)
+         VALUES (:email, :hash, :role, :status)'
+    );
+    $stmt->execute([
+        'email' => $email,
+        'hash' => password_hash($password, PASSWORD_DEFAULT),
+        'role' => 'admin',
+        'status' => 'active',
+    ]);
+    return (int) $pdo->lastInsertId();
+}
+
 function makeBuyer(PDO $pdo, string $email, string $fullName, string $phone): int
 {
     $existing = userIdByEmail($pdo, $email);
@@ -211,8 +230,28 @@ try {
         'valid_id_number' => 'NAID-2002-2019',
     ]);
 
+    makeAdmin($pdo, 'admin@animal.local', 'admin123');
+
+    $farmer3 = makeUser($pdo, 'sundalong.farmer@example.com');
+    makeFarmerProfile($pdo, $farmer3, [
+        'farm_name' => 'Sundalong Organic Farm',
+        'farm_description' => 'Organic vegetables and free-range chicken from Calamba, Laguna.',
+        'contact_person' => 'Juan Sundalong',
+        'contact_phone' => '+639175551234',
+        'contact_email' => 'sundalong.farmer@example.com',
+        'address' => 'Brgy. San Isidro, Purok 3, Calamba, Laguna',
+        'barangay' => 'San Isidro',
+        'municipality_city' => 'Calamba',
+        'province' => 'Laguna',
+        'region' => 'CALABARZON (Region IV-A)',
+        'valid_id_number' => 'NAID-3003-2018',
+    ]);
+
     $buyer1 = makeBuyer($pdo, 'mercado@animal.local', 'Marites Mercado', '09175551234');
     $buyer2 = makeBuyer($pdo, 'dizon@animal.local', 'Karlo Dizon', '09163334444');
+    $buyer3 = makeBuyer($pdo, 'maria.buyer@example.com', 'Maria Santos', '09175550001');
+    $buyer4 = makeBuyer($pdo, 'villanueva@example.com', 'Liza Villanueva', '09173335555');
+    $buyer5 = makeBuyer($pdo, 'reyes@example.com', 'Ramon Reyes', '09179998888');
 
     $l1 = makeListing($pdo, $farmer1, [
         'category_id' => $vegetables,
@@ -282,6 +321,31 @@ try {
         'expiry_date' => date('Y-m-d', strtotime('+30 days')),
     ]);
 
+    $l7 = makeListing($pdo, $farmer3, [
+        'category_id' => $vegetables,
+        'unit_id' => $pc,
+        'name' => 'Free-Range Duck Eggs',
+        'description' => 'Free-range duck eggs (itlog na itik) from a small Calamba poultry run, great for leche flan and salted eggs.',
+        'price_per_unit' => 18.00,
+        'available_quantity' => 240,
+        'minimum_order_qty' => 12,
+        'is_organic' => 1,
+        'harvest_date' => date('Y-m-d'),
+        'expiry_date' => date('Y-m-d', strtotime('+21 days')),
+    ]);
+    $l8 = makeListing($pdo, $farmer3, [
+        'category_id' => $leafy,
+        'unit_id' => $bundle,
+        'name' => 'Alugbati (Malabar Spinach)',
+        'description' => 'Tender alugbati leaves, picked to order. Excellent for sinabawang gulay and adobong alugbati.',
+        'price_per_unit' => 30.00,
+        'available_quantity' => 90,
+        'minimum_order_qty' => 1,
+        'is_organic' => 1,
+        'harvest_date' => date('Y-m-d'),
+        'expiry_date' => date('Y-m-d', strtotime('+4 days')),
+    ]);
+
     makeOrder($pdo, $buyer1, $farmer1, $l1, 3, 45.00, 0.00, 'pickup', 'completed', null);
     makeOrder($pdo, $buyer2, $farmer2, $l4, 2, 2450.00, 0.00, 'farmer_delivery', 'pending', 'Purok 5, Camiling, Tarlac');
     makeOrder($pdo, $buyer1, $farmer2, $l5, 5, 60.00, 20.00, 'farmer_delivery', 'confirmed', '123 Mabini St, San Fernando, Pampanga');
@@ -289,9 +353,10 @@ try {
     $pdo->commit();
 
     echo "Seed complete." . PHP_EOL;
-    echo "  Farmers: delagracia@animal.local, encarnacion@animal.local (password123)" . PHP_EOL;
-    echo "  Buyers:  mercado@animal.local, dizon@animal.local (password123)" . PHP_EOL;
-    echo "  6 listings, 3 orders inserted." . PHP_EOL;
+    echo "  Admin:   admin@animal.local (admin123)" . PHP_EOL;
+    echo "  Farmers: delagracia@animal.local, encarnacion@animal.local, sundalong.farmer@example.com (password123)" . PHP_EOL;
+    echo "  Buyers:  maria.buyer@example.com, mercado@animal.local, dizon@animal.local, villanueva@example.com, reyes@example.com (password123)" . PHP_EOL;
+    echo "  8 listings, 3 orders inserted." . PHP_EOL;
 } catch (Throwable $ex) {
     $pdo->rollBack();
     fwrite(STDERR, 'Seed failed: ' . $ex->getMessage() . PHP_EOL);

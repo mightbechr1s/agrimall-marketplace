@@ -347,10 +347,6 @@ INSERT INTO `quantity_units` (`name`, `symbol`, `type`, `base_factor`, `step`) V
 ('Liter', 'L', 'volume', 1.0000, 0.01),
 ('Milliliter', 'mL', 'volume', 0.0010, 1.00);
 
--- Default admin user (password: admin123 - change in production!)
-INSERT INTO `users` (`email`, `password_hash`, `role`, `status`) VALUES
-('admin@animal.local', '$2y$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.PZvO.S', 'admin', 'active');
-
 -- =====================================================================
 -- VIEWS FOR COMMON QUERIES
 -- =====================================================================
