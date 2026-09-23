@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>AniMAL - Farmer Order Requests</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="farmer.css">
+<script src="farmer.js" defer></script>
+</head>
+
+<body>
+
+<header>
+<nav>
+
+  <a class="brand" href="dashboard.html">
+    AniMAL
+  </a>
+
+  <div class="links">
+    <a href="dashboard.html">
+      Dashboard
+    </a>
+
+    <a href="listings.html">
+      My Listings
+    </a>
+
+    <a class="active" href="order-requests.html">
+      Order Requests
+    </a>
+  </div>
+
+  <a class="home" href="../index.html">
+    ← Marketplace
+  </a>
+
+</nav>
+</header>
+
+
+<main class="wrap">
+
+  <div class="heading">
+
+    <div>
+      <span class="eyebrow">
+        FARMER CENTER
+      </span>
+
+      <h1>Order Requests</h1>
+
+      <p class="muted">
+        Review buyer requests and manage order fulfillment.
+      </p>
+    </div>
+
+
+    <select id="statusFilter">
+      <option>All</option>
+      <option>Pending</option>
+      <option>Awaiting Buyer</option>
+      <option>Confirmed</option>
+      <option>Preparing</option>
+      <option>Ready for Pickup</option>
+      <option>Out for Delivery</option>
+      <option>Completed</option>
+      <option>Rejected</option>
+      <option>Cancelled</option>
+    </select>
+
+  </div>
+
+
+  <section id="requestList"></section>
+
+</main>
+
+
+<!-- REJECTION MODAL -->
+
+<div id="rejectModal" class="modal">
+
+  <div class="modal-box">
+
+    <span class="eyebrow">
+      DECLINE REQUEST
+    </span>
+
+    <h2>Why are you declining this order?</h2>
+
+    <p class="muted">
+      Choose a reason and provide an explanation for the buyer.
+    </p>
+
+
+    <form id="rejectForm" class="reject-form">
+
+
+      <label class="reason-option">
+
+        <input
+          type="radio"
+          name="rejectReason"
+          value="Insufficient stock">
+
+        <span>
+          <b>Insufficient stock</b>
+
+          <small>
+            There is not enough produce available.
+          </small>
+        </span>
+
+      </label>
+
+
+      <label class="reason-option">
+
+        <input
+          type="radio"
+          name="rejectReason"
+          value="Produce unavailable">
+
+        <span>
+          <b>Produce unavailable</b>
+
+          <small>
+            The requested produce is currently unavailable.
+          </small>
+        </span>
+
+      </label>
+
+
+      <label class="reason-option">
+
+        <input
+          type="radio"
+          name="rejectReason"
+          value="Unable to fulfill requested quantity">
+
+        <span>
+          <b>Unable to fulfill quantity</b>
+
+          <small>
+            The requested quantity cannot be fulfilled.
+          </small>
+        </span>
+
+      </label>
+
+
+      <label class="reason-option">
+
+        <input
+          type="radio"
+          name="rejectReason"
+          value="Fulfillment unavailable">
+
+        <span>
+          <b>Fulfillment unavailable</b>
+
+          <small>
+            Pickup or delivery cannot currently be accommodated.
+          </small>
+        </span>
+
+      </label>
+
+
+      <label class="reason-option">
+
+        <input
+          type="radio"
+          name="rejectReason"
+          value="Other">
+
+        <span>
+          <b>Other</b>
+
+          <small>
+            Another issue prevents this order from being accepted.
+          </small>
+        </span>
+
+      </label>
+
+
+      <label class="note-label" for="rejectNote">
+        Additional explanation
+      </label>
+
+      <textarea
+        id="rejectNote"
+        maxlength="300"
+        placeholder="Explain why you cannot accept this order..."></textarea>
+
+
+      <p id="rejectError" class="form-error" hidden>
+        Please select a reason and provide an explanation.
+      </p>
+
+
+      <div class="modal-actions">
+
+        <button
+          type="button"
+          id="cancelReject"
+          class="btn light">
+          Go Back
+        </button>
+
+        <button
+          type="button"
+          id="confirmReject"
+          class="btn danger">
+          Reject Order
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+</body>
+</html>

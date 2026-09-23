@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AniMAL | My Orders</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="buyer.css">
+  <script src="buyer.js" defer></script>
+</head>
+
+<body>
+
+<header>
+  <nav>
+    <a class="brand" href="../index.html">AniMAL</a>
+
+    <div class="links">
+      <a href="../catalog.html">Browse Produce</a>
+      <a class="active" href="my-orders.html">My Orders</a>
+    </div>
+
+    <a class="home back-link" href="../index.html">
+        <span>←</span> Marketplace
+    </a>
+  </nav>
+</header>
+
+<main class="wrap">
+
+  <div class="heading">
+    <div>
+      <span class="eyebrow">YOUR PURCHASES</span>
+      <h1>My Orders</h1>
+      <p class="muted">Track your requests and respond to farmer updates.</p>
+    </div>
+
+    <select id="statusFilter">
+      <option>All</option>
+      <option>Pending</option>
+      <option>Awaiting Buyer</option>
+      <option>Confirmed</option>
+      <option>Preparing</option>
+      <option>Ready for Pickup</option>
+      <option>Out for Delivery</option>
+      <option>Completed</option>
+      <option>Rejected</option>
+      <option>Cancelled</option>
+    </select>
+  </div>
+
+  <section id="orderList"></section>
+
+</main>
+
+</body>
+</html>

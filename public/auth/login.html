@@ -1,0 +1,111 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AniMAL | Log In</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { theme: { extend: {
+      fontFamily: { sans: ["Inter", "sans-serif"] },
+      colors: { green: "#174D38", cream: "#FFF9EE" }
+    }}};
+  </script>
+  <style>
+    .fade-in { animation: fadeIn .6s ease both; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .fade-in { animation: none; }
+    }
+  </style>
+</head>
+
+<body class="bg-cream font-sans text-gray-900 min-h-screen">
+
+  <!-- NAVIGATION -->
+  <header class="w-[92%] max-w-[1400px] mx-auto py-5 flex items-center justify-between gap-4">
+    <a href="../index.html" class="bg-green text-white font-bold px-7 py-3 rounded-lg">AniMAL</a>
+    <a href="../index.html" class="text-green text-sm font-semibold hover:underline">← Back to Marketplace</a>
+  </header>
+
+  <!-- TWO-COLUMN LAYOUT -->
+  <main class="w-[92%] max-w-[1400px] mx-auto grid lg:grid-cols-2 gap-6 lg:gap-10 items-center py-4 pb-10">
+
+    <!-- LEFT: LOGO AND TEXT ONLY -->
+    <section class="fade-in bg-[#F2F8F0] rounded-3xl min-h-[360px] lg:h-[620px] flex items-center justify-center p-8">
+      <div class="flex flex-col items-center text-center">
+        <img src="../images/animal-logo.png" alt="AniMAL Logo"
+             class="w-40 h-40 md:w-48 md:h-48 object-contain">
+
+        <p class="text-lg md:text-xl text-gray-800 mt-3">
+          Philippine Agricultural Marketplace
+        </p>
+
+        <div class="w-14 h-1 rounded-full bg-green/40 my-5"></div>
+
+        <p class="text-green italic text-lg md:text-xl">
+          Fresh produce, direct from local farmers.
+        </p>
+      </div>
+    </section>
+
+    <!-- RIGHT: CENTERED LOGIN FORM -->
+    <section class="fade-in flex items-center justify-center py-6 lg:py-12">
+      <div class="bg-white border border-green/10 shadow-lg shadow-green/5 rounded-3xl p-7 sm:p-10 w-full max-w-[470px]">
+
+        <h1 class="text-3xl font-bold text-green">Log In</h1>
+        <p class="text-gray-500 text-sm mt-2 mb-8">
+          Welcome back! Please enter your details.
+        </p>
+
+        <form action="#" method="POST" class="space-y-5">
+          <div>
+            <label for="login" class="block text-sm font-semibold mb-2">Username or Email</label>
+            <div class="relative">
+              <i data-lucide="mail" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"></i>
+              <input id="login" name="login" type="text" autocomplete="username" required
+                     placeholder="Enter your username or email"
+                     class="w-full border border-gray-200 rounded-xl py-3.5 pl-12 pr-4 outline-none focus:border-green focus:ring-2 focus:ring-green/15">
+            </div>
+          </div>
+
+          <div>
+            <label for="password" class="block text-sm font-semibold mb-2">Password</label>
+            <div class="relative">
+              <i data-lucide="lock-keyhole" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"></i>
+              <input id="password" name="password" type="password" autocomplete="current-password" required
+                     placeholder="Enter your password"
+                     class="w-full border border-gray-200 rounded-xl py-3.5 pl-12 pr-4 outline-none focus:border-green focus:ring-2 focus:ring-green/15">
+            </div>
+          </div>
+
+          <label class="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="checkbox" name="remember" class="accent-[#174D38]">
+            Remember me
+          </label>
+
+          <button type="submit" class="w-full bg-green text-white font-semibold py-3.5 rounded-xl hover:bg-[#236448] hover:-translate-y-0.5 transition">
+            Log In
+          </button>
+        </form>
+
+        <div class="border-t border-gray-100 mt-8 pt-6 text-center">
+          <p class="text-sm text-gray-600">
+            Don't have an account?
+            <a href="register.html" class="text-green font-semibold hover:underline">Register here</a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>if (window.lucide) lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>AniMAL | Farmer Dashboard</title>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="farmer.css">
+  <script src="farmer.js" defer></script>
+</head>
+
+<body>
+
+  <header>
+    <nav>
+      <a class="brand" href="../index.html">AniMAL</a>
+
+      <div class="links">
+        <a class="active" href="dashboard.html">Dashboard</a>
+        <a href="listings.html">My Listings</a>
+        <a href="order-requests.html">Order Requests</a>
+      </div>
+
+      <a class="home" href="../index.html">← Marketplace</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+
+    <section class="hero">
+      <div>
+        <span class="eyebrow">FARMER CENTER</span>
+        <h2>Welcome back, Farmer!</h2>
+        <p>Manage your produce listings and buyer requests.</p>
+      </div>
+
+      <!-- Goes to My Listings and automatically opens popup -->
+      <a class="btn" href="listings.html?add=true">
+        ＋ Add New Listing
+      </a>
+    </section>
+
+    <section class="grid">
+
+      <article class="card">
+        <span class="eyebrow">LISTINGS</span>
+        <div class="stat" id="listingCount">0</div>
+        <p class="muted">Active produce listings</p>
+        <a class="btn light small" href="listings.html">
+          Manage Listings →
+        </a>
+      </article>
+
+      <article class="card">
+        <span class="eyebrow">PENDING</span>
+        <div class="stat" id="pendingCount">0</div>
+        <p class="muted">Order requests waiting for review</p>
+        <a class="btn light small" href="order-requests.html">
+          View Requests →
+        </a>
+      </article>
+
+      <article class="card">
+        <span class="eyebrow">ACTIVE ORDERS</span>
+        <div class="stat" id="activeCount">0</div>
+        <p class="muted">Orders currently being processed</p>
+        <a class="btn light small" href="order-requests.html">
+          View Orders →
+        </a>
+      </article>
+
+    </section>
+
+    <section class="section">
+      <div class="heading">
+        <div>
+          <span class="eyebrow">ORDERS</span>
+          <h1>Recent Requests</h1>
+        </div>
+
+        <a class="btn light small" href="order-requests.html">
+          View All →
+        </a>
+      </div>
+
+      <div id="recentRequests"></div>
+    </section>
+
+  </main>
+
+</body>
+</html>

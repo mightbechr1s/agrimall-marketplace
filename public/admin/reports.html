@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AniMAL - System Audit & Reports</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+<script src="admin.js" defer></script>
+</head>
+
+<body>
+
+<main class="wrap">
+
+  <a class="back" href="admin-dashboard.html">
+    ← Back to Dashboard
+  </a>
+
+  <div class="heading">
+    <div>
+      <span class="eyebrow">ADMIN</span>
+      <h1>System Audit & Reports</h1>
+      <p class="muted">
+        Review marketplace activity and system records.
+      </p>
+    </div>
+
+    <button id="export" class="btn">
+      Export CSV Report
+    </button>
+  </div>
+
+
+  <!-- STATS -->
+
+  <section class="stats">
+
+    <article class="stat-card">
+
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+
+      <div>
+        <small>Total Users</small>
+        <b id="userCount">0</b>
+      </div>
+
+    </article>
+
+
+    <article class="stat-card">
+
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <path d="m3.27 6.96 8.73 5.05 8.73-5.05M12 22.08V12"/>
+        </svg>
+      </div>
+
+      <div>
+        <small>Total Listings</small>
+        <b id="listingCount">0</b>
+      </div>
+
+    </article>
+
+
+    <article class="stat-card">
+
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M9 5h6M9 9h6M9 13h4"/>
+          <rect x="5" y="3" width="14" height="18" rx="2"/>
+        </svg>
+      </div>
+
+      <div>
+        <small>Total Orders</small>
+        <b id="orderCount">0</b>
+      </div>
+
+    </article>
+
+  </section>
+
+
+  <!-- ACTIVITY -->
+
+  <section class="panel">
+
+    <div class="panel-head">
+
+      <div class="title-with-icon">
+
+        <span class="section-icon">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 7v5l3 2"/>
+          </svg>
+        </span>
+
+        <h2>System Activity Log</h2>
+
+      </div>
+
+    </div>
+
+
+    <div class="table-wrap">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>User</th>
+            <th>Activity</th>
+          </tr>
+        </thead>
+
+        <tbody id="activityRows"></tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+</main>
+
+</body>
+</html>

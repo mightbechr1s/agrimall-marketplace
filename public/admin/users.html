@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AniMAL - Users</title>
+<link rel="stylesheet" href="admin.css">
+<script src="admin.js" defer></script>
+</head>
+
+<body>
+<main>
+  <a class="back" href="admin-dashboard.html">← Back to Dashboard</a>
+
+  <span class="eyebrow">ADMIN</span>
+  <h1>User Management</h1>
+  <p class="subtitle">View and manage Buyer and Farmer accounts.</p>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Registered Users</h2>
+    </div>
+
+    <div class="toolbar">
+      <input id="userSearch" type="search"
+             placeholder="Search by name or email...">
+
+      <select id="userRole">
+        <option>All</option>
+        <option>Buyer</option>
+        <option>Farmer</option>
+      </select>
+
+      <select id="userStatus">
+        <option>All</option>
+        <option>Active</option>
+        <option>Pending</option>
+        <option>Suspended</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="userRows"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<div id="suspendModal" class="modal">
+  <div class="modal-box">
+    <h2>Suspend User</h2>
+
+    <p>
+      You are about to suspend
+      <strong id="suspendName"></strong>.
+      Please provide a reason for this action.
+    </p>
+
+    <label for="suspendReason">Reason for suspension</label>
+
+    <textarea
+      id="suspendReason"
+      maxlength="500"
+      placeholder="Enter the reason for suspension..."
+    ></textarea>
+
+    <p id="suspendError" class="error">
+      A suspension reason is required.
+    </p>
+
+    <div class="modal-actions">
+      <button id="cancelSuspend" class="btn light">
+        Cancel
+      </button>
+
+      <button id="confirmSuspend" class="btn red">
+        Suspend User
+      </button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

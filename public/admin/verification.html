@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AniMAL - Farmer Verification</title>
+<link rel="stylesheet" href="admin.css"><script src="admin.js" defer></script>
+</head>
+<body>
+<main>
+ <a class="back" href="admin-dashboard.html">← Back to Dashboard</a>
+ <span class="eyebrow">ADMIN</span>
+ <h1>Farmer Verification Queue</h1>
+ <p class="subtitle">Review farmer applications before granting marketplace access.</p>
+
+ <section class="stats three">
+  <div class="stat"><span class="stat-mark"></span><div><small>Pending Applications</small><b id="pendingCount">0</b></div></div>
+  <div class="stat"><span class="stat-mark"></span><div><small>Verified Farmers</small><b id="verifiedCount">0</b></div></div>
+  <div class="stat"><span class="stat-mark"></span><div><small>Total Farmers</small><b id="totalCount">0</b></div></div>
+ </section>
+
+ <section class="panel">
+  <div class="panel-head"><h2>Pending Farmer Applications</h2><a class="link" href="reports.html">View System Audit & Reports →</a></div>
+  <div class="table-wrap"><table>
+   <thead><tr><th>Farmer</th><th>Location</th><th>Status</th><th>Action</th></tr></thead>
+   <tbody id="farmerRows"></tbody>
+  </table></div>
+ </section>
+</main>
+</body>
+</html>

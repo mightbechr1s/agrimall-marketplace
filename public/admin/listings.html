@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AniMAL - Listings</title>
+<link rel="stylesheet" href="admin.css"><script src="admin.js" defer></script>
+</head>
+<body>
+<main>
+ <a class="back" href="admin-dashboard.html">← Back to Dashboard</a>
+ <span class="eyebrow">ADMIN</span><h1>Listing Management</h1>
+ <p class="subtitle">Monitor produce listings published by farmers.</p>
+
+ <section class="panel">
+  <div class="panel-head"><h2>Marketplace Listings</h2></div>
+  <div class="toolbar"><input id="listingSearch" type="search" placeholder="Search product or farmer..."></div>
+  <div class="table-wrap"><table>
+   <thead><tr><th>Product</th><th>Farmer</th><th>Category</th><th>Stock</th><th>Status</th><th>Action</th></tr></thead>
+   <tbody id="listingRows"></tbody>
+  </table></div>
+ </section>
+</main>
+</body>
+</html>

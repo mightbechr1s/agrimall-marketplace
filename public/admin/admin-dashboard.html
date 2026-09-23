@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AniMAL - Admin Dashboard</title>
+<link rel="stylesheet" href="admin.css"><script src="admin.js" defer></script>
+</head>
+<body>
+<main>
+ <span class="eyebrow">ADMIN</span>
+ <h1>Admin Dashboard</h1>
+ <p class="subtitle">Overview of activity across the AniMAL marketplace.</p>
+
+ <section id="dashboardStats" class="stats"></section>
+
+ <div class="dashboard-grid">
+  <section class="panel">
+   <div class="panel-head"><h2>Recent Activity</h2><a class="link" href="reports.html">View All →</a></div>
+   <div class="table-wrap"><table>
+    <thead><tr><th>Date</th><th>User</th><th>Activity</th></tr></thead>
+    <tbody id="recentActivity"></tbody>
+   </table></div>
+  </section>
+
+  <section class="panel">
+   <div class="panel-head"><h2>Quick Actions</h2></div>
+   <div class="quick-actions">
+    <a class="quick-action" href="verification.html">Review Farmer Applications <span>→</span></a>
+    <a class="quick-action" href="users.html">Manage Users <span>→</span></a>
+    <a class="quick-action" href="listings.html">Manage Listings <span>→</span></a>
+    <a class="quick-action" href="orders.html">Monitor Orders <span>→</span></a>
+    <a class="quick-action" href="reports.html">View Reports <span>→</span></a>
+   </div>
+  </section>
+ </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AniMAL - Farmer Application</title>
+<link rel="stylesheet" href="admin.css"><script src="admin.js" defer></script>
+</head>
+<body>
+<main>
+ <a class="back" href="verification.html">← Back to Farmer Verification</a>
+ <span class="eyebrow">ADMIN</span>
+ <h1>Farmer Application</h1>
+ <p class="subtitle">Review the farmer's information before making a decision.</p>
+
+ <section class="application">
+  <h2>Farmer Information</h2>
+  <div class="application-box"><div id="application"></div></div>
+ </section>
+
+ <div class="application-actions">
+  <button id="reject" class="btn red">Reject Application</button>
+  <button id="verify" class="btn">Verify Farmer</button>
+ </div>
+</main>
+
+<div id="rejectModal" class="modal">
+ <div class="modal-box">
+  <h2>Reject Farmer Application</h2>
+  <p>Please provide a reason for rejecting this farmer's application. This will also be recorded in the system activity log.</p>
+  <label for="rejectReason">Reason for rejection</label>
+  <textarea id="rejectReason" maxlength="500" placeholder="Enter the reason for rejection..."></textarea>
+  <p id="reasonError" class="error">A rejection reason is required.</p>
+  <div class="modal-actions">
+   <button id="cancelReject" class="btn light">Cancel</button>
+   <button id="confirmReject" class="btn red">Confirm Rejection</button>
+  </div>
+ </div>
+</div>
+</body>
+</html>

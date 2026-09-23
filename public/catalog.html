@@ -4,220 +4,356 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AniMAL - Product Catalog</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { sans: ['Inter', 'sans-serif'] },
-          colors: {
-            'deep-green': '#2E7D32',
-            'fresh-green': '#66BB6A',
-            'warm-yellow': '#F9A825',
-            'soft-white': '#F8FAF7',
-            'dark-charcoal': '#263238',
-            'muted-gray': '#78909C'
-          }
-        }
-      }
-    }
-  </script>
-</head>
-<body class="bg-soft-white text-dark-charcoal font-sans min-h-screen flex flex-col">
 
-  <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-6">
-      <a href="index.html" class="flex items-center gap-2">
-        <div class="w-10 h-10 bg-deep-green text-white rounded-xl flex items-center justify-center font-bold text-xl shadow-md">🌱</div>
-        <span class="text-2xl font-extrabold text-deep-green tracking-tight">AniMAL</span>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config={
+      theme:{extend:{
+        fontFamily:{sans:["Inter","sans-serif"]},
+        colors:{
+          green:"#174D38",
+          sage:"#719681",
+          cream:"#FFF9EE",
+          lightgreen:"#E9F3E8"
+        }
+      }}
+    };
+  </script>
+
+  <style>
+    html{scroll-behavior:smooth}
+    .fade-up,.product-card{animation:fadeUp .65s ease both}
+    @keyframes fadeUp{
+      from{opacity:0;transform:translateY(22px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+    @media(prefers-reduced-motion:reduce){
+      html{scroll-behavior:auto}
+      .fade-up,.product-card{animation:none}
+    }
+  </style>
+</head>
+
+<body class="font-sans bg-cream text-gray-900 min-h-screen flex flex-col">
+
+  <!-- NAVBAR -->
+  <header class="bg-white/95 sticky top-0 z-50 border-b border-green/10">
+    <nav class="w-[92%] max-w-[1500px] mx-auto py-5 flex flex-wrap items-center gap-4 lg:gap-8">
+
+      <a href="index.html"
+         class="bg-green text-white font-bold px-8 py-3 rounded-lg hover:bg-[#236448] transition-colors">
+        AniMAL
       </a>
 
-      <div class="flex-1 max-w-xl relative">
-        <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-muted-gray"></i>
-        <input type="text" placeholder="Search fresh produce, location, or farm..." class="w-full pl-11 pr-4 py-2.5 bg-soft-white border border-gray-200 rounded-full text-sm focus:outline-none focus:border-deep-green transition-all" />
-      </div>
+      <form action="catalog.html" method="GET" class="flex-1 min-w-[180px]">
+        <input
+          id="searchInput"
+          name="search"
+          type="search"
+          placeholder="Search fresh produce, farm, or location..."
+          class="w-full bg-gray-100 rounded-full px-5 py-3 outline-none focus:ring-2 focus:ring-sage"
+        >
+      </form>
 
-      <div class="flex items-center gap-6">
-        <a href="catalog.html" class="text-sm font-bold text-deep-green">Browse Produce</a>
-        <a href="#" class="px-5 py-2.5 bg-deep-green text-white text-sm font-semibold rounded-full hover:bg-[#256729] transition-all">Login / Register</a>
-      </div>
-    </div>
+      <!-- MY ORDERS -->
+      <a href="buyer/my-orders.html"
+         class="bg-gray-100 text-green font-semibold px-6 py-3 rounded-full hover:bg-lightgreen transition-colors whitespace-nowrap">
+        My Orders
+      </a>
+
+      <!-- BROWSE PRODUCE -->
+      <a href="catalog.html"
+         class="bg-lightgreen text-green font-semibold px-6 py-3 rounded-full hover:bg-[#D3E8D7] transition-colors whitespace-nowrap">
+        Browse Produce
+      </a>
+
+      <a href="auth/login.html"
+         class="bg-green text-white px-6 py-3 rounded-full hover:bg-[#236448] transition-colors whitespace-nowrap">
+        Login / Register
+      </a>
+
+    </nav>
   </header>
 
-  <main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full space-y-8">
-    <div>
-      <h1 class="text-3xl font-extrabold text-dark-charcoal tracking-tight">Product Catalog</h1>
-      <p class="text-sm text-muted-gray mt-1">Explore verified local produce available directly from regional farmers.</p>
+  <main class="w-[92%] max-w-[1500px] mx-auto flex-1 py-10">
+
+    <!-- HEADING -->
+    <div class="fade-up mb-9">
+      <span class="inline-block bg-lightgreen text-green text-xs font-bold tracking-widest px-4 py-2 rounded-full mb-4">
+        FRESH FROM LOCAL FARMS
+      </span>
+
+      <h1 class="text-3xl md:text-4xl font-bold text-green">
+        Product Catalog
+      </h1>
+
+      <p class="text-gray-600 mt-3 max-w-2xl leading-relaxed">
+        Explore fresh agricultural products and connect directly with local farmers across the Philippines.
+      </p>
     </div>
 
-    <div class="bg-white p-4 rounded-2xl border border-gray-200/80 shadow-sm flex flex-wrap items-center gap-4">
-      <div class="flex-1 min-w-[160px]">
-        <label class="block text-xs font-semibold text-muted-gray mb-1">Category</label>
-        <select id="categoryFilter" class="w-full bg-soft-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:border-deep-green">
-          <option value="all">All Categories</option>
-          <option value="vegetables">Vegetables</option>
-          <option value="fruits">Fruits</option>
-          <option value="grains">Grains</option>
-          <option value="root-crops">Root Crops</option>
-        </select>
+    <!-- FILTERS -->
+    <section class="fade-up bg-white rounded-2xl p-5 md:p-7 shadow-sm border border-green/10 mb-9">
+
+      <div class="flex items-center justify-between gap-4 mb-5">
+        <h2 class="font-bold text-green text-lg">Find Your Produce</h2>
+
+        <button id="resetFilters"
+                class="text-sm font-semibold text-green hover:underline">
+          Clear Filters
+        </button>
       </div>
 
-      <div class="flex-1 min-w-[160px]">
-        <label class="block text-xs font-semibold text-muted-gray mb-1">Location</label>
-        <select class="w-full bg-soft-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:border-deep-green">
-          <option>All Locations</option>
-          <option>La Union</option>
-          <option>Pangasinan</option>
-          <option>Nueva Ecija</option>
-          <option>Benguet</option>
-        </select>
-      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
-      <div class="flex-1 min-w-[160px]">
-        <label class="block text-xs font-semibold text-muted-gray mb-1">Price Range</label>
-        <select class="w-full bg-soft-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:border-deep-green">
-          <option>All Prices</option>
-          <option>Under ₱50 / kg</option>
-          <option>₱50 - ₱100 / kg</option>
-          <option>Above ₱100 / kg</option>
-        </select>
-      </div>
+        <div>
+          <label class="block text-sm font-semibold mb-2">Category</label>
+          <select id="categoryFilter"
+                  class="filter w-full bg-cream border border-gray-200 rounded-xl px-4 py-3">
+            <option value="all">All Categories</option>
+            <option value="vegetables">Vegetables</option>
+            <option value="fruits">Fruits</option>
+            <option value="grains">Grains</option>
+            <option value="root-crops">Root Crops</option>
+            <option value="livestock">Livestock</option>
+          </select>
+        </div>
 
-      <div class="flex-1 min-w-[160px]">
-        <label class="block text-xs font-semibold text-muted-gray mb-1">Sort By</label>
-        <select class="w-full bg-soft-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:border-deep-green">
-          <option>Latest Listings</option>
-          <option>Price: Low to High</option>
-          <option>Price: High to Low</option>
-        </select>
+        <div>
+          <label class="block text-sm font-semibold mb-2">Location</label>
+          <select id="locationFilter"
+                  class="filter w-full bg-cream border border-gray-200 rounded-xl px-4 py-3">
+            <option value="all">All Locations</option>
+            <option>La Union</option>
+            <option>Pangasinan</option>
+            <option>Nueva Ecija</option>
+            <option>Benguet</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Price Range</label>
+          <select id="priceFilter"
+                  class="filter w-full bg-cream border border-gray-200 rounded-xl px-4 py-3">
+            <option value="all">All Prices</option>
+            <option value="under50">Under ₱50 / kg</option>
+            <option value="50to100">₱50 – ₱100 / kg</option>
+            <option value="above100">Above ₱100 / kg</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Sort By</label>
+          <select id="sortFilter"
+                  class="filter w-full bg-cream border border-gray-200 rounded-xl px-4 py-3">
+            <option value="default">Default Order</option>
+            <option value="low">Price: Low to High</option>
+            <option value="high">Price: High to Low</option>
+            <option value="name">Product Name: A to Z</option>
+          </select>
+        </div>
+
       </div>
+    </section>
+
+    <!-- PRODUCT COUNT -->
+    <div class="flex items-center justify-between gap-4 mb-6">
+      <h2 class="text-xl font-bold text-green">Available Produce</h2>
+      <p id="productCount" class="text-sm text-gray-600"></p>
     </div>
 
-    <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
-      <a href="products/fresh-tomatoes.html" data-category="vegetables" class="product-card bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group">
-        <div class="h-36 bg-gray-100 relative overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=600&q=80" alt="Fresh Red Tomatoes" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
-          <span class="absolute top-2 left-2 bg-white/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-deep-green"><i class="fa-solid fa-circle-check"></i> Verified</span>
-        </div>
-        <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-          <div>
-            <p class="text-[11px] font-medium text-muted-gray">La Union • Mang Juan</p>
-            <h3 class="font-bold text-dark-charcoal text-sm group-hover:text-deep-green transition-colors">Fresh Red Tomatoes</h3>
-          </div>
-          <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
-            <span class="text-base font-extrabold text-deep-green">₱80 <span class="text-[10px] font-normal text-muted-gray">/ kg</span></span>
-            <span class="text-xs font-bold text-deep-green group-hover:underline">View &rarr;</span>
-          </div>
-        </div>
-      </a>
-
-      <a href="products/yellow-corn.html" data-category="grains" class="product-card bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group">
-        <div class="h-36 bg-gray-100 relative overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&w=600&q=80" alt="Sweet Yellow Corn" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
-          <span class="absolute top-2 left-2 bg-white/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-deep-green"><i class="fa-solid fa-circle-check"></i> Verified</span>
-        </div>
-        <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-          <div>
-            <p class="text-[11px] font-medium text-muted-gray">Pangasinan • Aling Rosa</p>
-            <h3 class="font-bold text-dark-charcoal text-sm group-hover:text-deep-green transition-colors">Sweet Yellow Corn</h3>
-          </div>
-          <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
-            <span class="text-base font-extrabold text-deep-green">₱60 <span class="text-[10px] font-normal text-muted-gray">/ kg</span></span>
-            <span class="text-xs font-bold text-deep-green group-hover:underline">View &rarr;</span>
-          </div>
-        </div>
-      </a>
-
-      <a href="products/red-onions.html" data-category="vegetables" class="product-card bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group">
-        <div class="h-36 bg-gray-100 relative overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1508747703725-719777637510?auto=format&fit=crop&w=600&q=80" alt="Fresh Red Onions" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
-          <span class="absolute top-2 left-2 bg-white/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-deep-green"><i class="fa-solid fa-circle-check"></i> Verified</span>
-        </div>
-        <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-          <div>
-            <p class="text-[11px] font-medium text-muted-gray">Nueva Ecija • Ben's Farm</p>
-            <h3 class="font-bold text-dark-charcoal text-sm group-hover:text-deep-green transition-colors">Fresh Red Onions</h3>
-          </div>
-          <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
-            <span class="text-base font-extrabold text-deep-green">₱120 <span class="text-[10px] font-normal text-muted-gray">/ kg</span></span>
-            <span class="text-xs font-bold text-deep-green group-hover:underline">View &rarr;</span>
-          </div>
-        </div>
-      </a>
-
-      <a href="products/native-potatoes.html" data-category="root-crops" class="product-card bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group">
-        <div class="h-36 bg-gray-100 relative overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1518977676601-b53f82aba655?auto=format&fit=crop&w=600&q=80" alt="Native Potatoes" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
-          <span class="absolute top-2 left-2 bg-white/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-deep-green"><i class="fa-solid fa-circle-check"></i> Verified</span>
-        </div>
-        <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-          <div>
-            <p class="text-[11px] font-medium text-muted-gray">Benguet • Highland Co-op</p>
-            <h3 class="font-bold text-dark-charcoal text-sm group-hover:text-deep-green transition-colors">Native Potatoes</h3>
-          </div>
-          <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
-            <span class="text-base font-extrabold text-deep-green">₱95 <span class="text-[10px] font-normal text-muted-gray">/ kg</span></span>
-            <span class="text-xs font-bold text-deep-green group-hover:underline">View &rarr;</span>
-          </div>
-        </div>
-      </a>
-
-      <a href="products/cabbage.html" data-category="vegetables" class="product-card bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-lg transition-all flex flex-col group">
-        <div class="h-36 bg-gray-100 relative overflow-hidden">
-          <img src="https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?auto=format&fit=crop&w=600&q=80" alt="Green Cabbage" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
-          <span class="absolute top-2 left-2 bg-white/90 px-2 py-0.5 rounded-full text-[10px] font-semibold text-deep-green"><i class="fa-solid fa-circle-check"></i> Verified</span>
-        </div>
-        <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-          <div>
-            <p class="text-[11px] font-medium text-muted-gray">La Union • Cruz Farm</p>
-            <h3 class="font-bold text-dark-charcoal text-sm group-hover:text-deep-green transition-colors">Green Cabbage</h3>
-          </div>
-          <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
-            <span class="text-base font-extrabold text-deep-green">₱55 <span class="text-[10px] font-normal text-muted-gray">/ kg</span></span>
-            <span class="text-xs font-bold text-deep-green group-hover:underline">View &rarr;</span>
-          </div>
-        </div>
-      </a>
+    <!-- PRODUCTS GENERATED BY JAVASCRIPT -->
+    <div id="productGrid"
+         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
     </div>
+
+    <!-- EMPTY STATE -->
+    <div id="emptyState"
+         class="hidden bg-white rounded-2xl text-center px-6 py-16 mt-6 border border-green/10">
+      <h3 class="text-xl font-bold text-green">No products found</h3>
+      <p class="text-gray-600 mt-2">
+        Try a different search or change your filters.
+      </p>
+    </div>
+
   </main>
 
-  <footer class="bg-dark-charcoal text-white mt-12 py-6 border-t border-gray-800 text-xs text-muted-gray text-center">
-    © 2026 AniMAL Marketplace — Direct Access Platform
+  <footer class="bg-green text-white/80 text-center py-8 text-sm mt-12">
+    © 2026 AniMAL Marketplace
   </footer>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const categoryFilter = document.getElementById("categoryFilter");
-      const cards = document.querySelectorAll(".product-card");
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlCategory = urlParams.get("category");
+<script>
+const products = [
+  {
+    id: "tomatoes",
+    name: "Fresh Red Tomatoes",
+    category: "vegetables",
+    categoryName: "VEGETABLES",
+    farmer: "Mang Juan Farm",
+    location: "La Union",
+    price: 80,
+    image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=700&q=80"
+  },
 
-      if (urlCategory && categoryFilter) {
-        categoryFilter.value = urlCategory;
-        filterProducts(urlCategory);
-      }
+  {
+    id: "corn",
+    name: "Sweet Yellow Corn",
+    category: "grains",
+    categoryName: "GRAINS",
+    farmer: "Aling Rosa",
+    location: "Pangasinan",
+    price: 60,
+    image: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?auto=format&fit=crop&w=700&q=80"
+  },
 
-      if (categoryFilter) {
-        categoryFilter.addEventListener("change", function () {
-          filterProducts(this.value);
-        });
-      }
+  {
+    id: "onions",
+    name: "Fresh Red Onions",
+    category: "vegetables",
+    categoryName: "VEGETABLES",
+    farmer: "Ben's Farm",
+    location: "Nueva Ecija",
+    price: 120,
+    image: "https://images.unsplash.com/photo-1508747703725-719777637510?auto=format&fit=crop&w=700&q=80"
+  },
 
-      function filterProducts(category) {
-        cards.forEach((card) => {
-          const cardCategory = card.getAttribute("data-category");
-          if (category === "all" || cardCategory === category) {
-            card.style.display = "flex";
-          } else {
-            card.style.display = "none";
-          }
-        });
-      }
-    });
-  </script>
+  {
+    id: "potatoes",
+    name: "Native Potatoes",
+    category: "root-crops",
+    categoryName: "ROOT CROPS",
+    farmer: "Highland Co-op",
+    location: "Benguet",
+    price: 95,
+    image: "images/root-crops.jpg"
+  },
+
+  {
+    id: "cabbage",
+    name: "Green Cabbage",
+    category: "vegetables",
+    categoryName: "VEGETABLES",
+    farmer: "Cruz Farm",
+    location: "La Union",
+    price: 55,
+    image: "https://images.unsplash.com/photo-1594282486552-05b4d80fbb9f?auto=format&fit=crop&w=1000&q=85"
+  }
+];
+
+const $=id=>document.getElementById(id);
+
+const search=$("searchInput");
+const category=$("categoryFilter");
+const locationFilter=$("locationFilter");
+const price=$("priceFilter");
+const sort=$("sortFilter");
+const grid=$("productGrid");
+
+search.value=new URLSearchParams(location.search).get("search")||"";
+
+function card(p){
+  return `
+    <a href="produce/product-detail.html?product=${p.id}"
+       class="product-card bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 group flex flex-col">
+
+      <div class="h-52 overflow-hidden">
+        <img src="${p.image}"
+             alt="${p.name}"
+             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+      </div>
+
+      <div class="p-5 flex flex-col flex-1">
+        <span class="text-xs font-semibold text-sage">
+          ${p.categoryName}
+        </span>
+
+        <h3 class="font-bold text-lg mt-2 group-hover:text-green transition-colors">
+          ${p.name}
+        </h3>
+
+        <p class="text-sm text-gray-600 mt-2">
+          ${p.farmer} · ${p.location}
+        </p>
+
+        <div class="flex justify-between items-center gap-3 mt-auto pt-6">
+          <span class="font-bold text-green text-xl">
+            ₱${p.price}
+            <span class="text-sm font-normal text-gray-500">/ kg</span>
+          </span>
+
+          <span class="text-green font-semibold text-sm">
+            View →
+          </span>
+        </div>
+      </div>
+    </a>
+  `;
+}
+
+function update(){
+  const q=search.value.toLowerCase().trim();
+
+  let list=products.filter(p=>{
+    const matchesSearch=
+      p.name.toLowerCase().includes(q)||
+      p.farmer.toLowerCase().includes(q)||
+      p.location.toLowerCase().includes(q);
+
+    const matchesCategory=
+      category.value==="all"||
+      p.category===category.value;
+
+    const matchesLocation=
+      locationFilter.value==="all"||
+      p.location===locationFilter.value;
+
+    const matchesPrice=
+      price.value==="all"||
+      (price.value==="under50"&&p.price<50)||
+      (price.value==="50to100"&&p.price>=50&&p.price<=100)||
+      (price.value==="above100"&&p.price>100);
+
+    return matchesSearch&&matchesCategory&&matchesLocation&&matchesPrice;
+  });
+
+  if(sort.value==="low")
+    list.sort((a,b)=>a.price-b.price);
+
+  if(sort.value==="high")
+    list.sort((a,b)=>b.price-a.price);
+
+  if(sort.value==="name")
+    list.sort((a,b)=>a.name.localeCompare(b.name));
+
+  grid.innerHTML=list.map(card).join("");
+
+  $("productCount").textContent=
+    `${list.length} product${list.length===1?"":"s"} found`;
+
+  $("emptyState").classList.toggle("hidden",list.length!==0);
+}
+
+[category,locationFilter,price,sort].forEach(
+  el=>el.addEventListener("change",update)
+);
+
+search.addEventListener("input",update);
+
+$("resetFilters").onclick=()=>{
+  search.value="";
+  category.value="all";
+  locationFilter.value="all";
+  price.value="all";
+  sort.value="default";
+
+  history.replaceState(null,"",location.pathname);
+  update();
+};
+
+update();
+</script>
+
 </body>
 </html>
