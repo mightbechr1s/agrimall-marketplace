@@ -1,7 +1,7 @@
-# AniMAL — Team Laptop Setup Guide (Offline-Ready)
+# AniMAL &mdash; Team Laptop Setup Guide (via GitHub)
 
-> **Source:** `D:\Projects\VSCPROJ\AniMAL` → USB `F:\AniMAL_Demo`  
-> **Last verified:** 2026-09-17 — 129 files synced, DB dump 51.7 KB, 0 console errors, fully offline.
+> **Source:** `https://github.com/mightbechr1s/animal-marketplace` (branch `main`)
+> **Last verified:** 2026-09-25 &mdash; 21 tables full schema + migrations, seeded, offline-ready.
 
 ---
 
@@ -9,8 +9,8 @@
 
 | Tool | Version | Install notes |
 |------|---------|---------------|
-| **XAMPP** | PHP 8.1+, MySQL 8.0 | Default install → `C:\xampp` |
-| **Git** (optional) | any | Only if you'll pull updates later |
+| **Git** | any | Required &mdash; used to pull the project |
+| **XAMPP** | PHP 8.1+, MySQL 8.0 | Default install &mdash; `C:\xampp` |
 
 Add to **PATH** (or use full paths below):
 ```
@@ -20,20 +20,42 @@ C:\xampp\mysql\bin
 
 ---
 
-## 2. Copy the project
+## 2. Get the project (clone, then pull for updates)
 
 ```powershell
-# From USB (already vetted)
-Copy-Item -Recurse F:\AniMAL_Demo\app C:\xampp\htdocs\animal
-
-# Or directly from the repo
-# Copy-Item -Recurse D:\Projects\VSCPROJ\AniMAL C:\xampp\htdocs\animal
+cd C:\xampp\htdocs
+git clone https://github.com/mightbechr1s/animal-marketplace.git animal
 ```
-Result → web root is `C:\xampp\htdocs\animal\public`.
+
+Result &mdash; web root is `C:\xampp\htdocs\animal\public`.
+
+**Later updates** (the repo is the single source of truth):
+```powershell
+cd C:\xampp\htdocs\animal
+git pull
+```
+After a pull that changes the database, re-run step 5 (reset) to apply new
+migrations and re-seed.
 
 ---
 
-## 3. Start MySQL
+## 3. Create the local config
+
+`config/config.php` is never committed (holds credentials). On a fresh
+clone only `config/config.example.php` exists &mdash; copy it once:
+
+```powershell
+cd C:\xampp\htdocs\animal
+Copy-Item config\config.example.php config\config.php
+```
+
+XAMPP defaults are already inside the example (`127.0.0.1`, port `3306`,
+user `root`, empty password), so no editing is needed for a local setup.
+Only edit it for a different DB or a production `base_url`.
+
+---
+
+## 4. Start MySQL
 
 ```powershell
 # Run as Administrator the first time
@@ -42,42 +64,37 @@ Start-Sleep 3
 
 # Verify
 & "C:\xampp\mysql\bin\mysqladmin.exe" -u root ping
-# → "mysqld is alive"
+# -> "mysqld is alive"
 ```
 
 ---
 
-## 4. Import the database
+## 5. Create the database (use the reset tool &mdash; it applies ALL migrations)
 
-### Option A — Command line (fast, scriptable)
+The reset tool drops and rebuilds the DB from `database/schema.sql` + every
+`database/migrations/*.sql` and seeds demo data. It needs `config/config.php`
+(created in step 3) to read DB credentials:
+
 ```powershell
 cd C:\xampp\htdocs\animal
-& "C:\xampp\mysql\bin\mysql.exe" -u root < database\animal_marketplace.sql
+C:\xampp\php\php.exe tools\db-reset.php --yes
 ```
 
-### Option B — **phpMyAdmin** (GUI, easier)
+Expected output: `Reset complete ... (9 users, 8 listings)`.
+
+Result &mdash; **21 tables** (base schema + `password_resets`, `remember_tokens`,
+`user_preferences`, `cart_items`, `saved_listings`, `order_status_history`).
+
+### Alternative &mdash; phpMyAdmin (GUI)
 
 1. Start **Apache** in XAMPP Control Panel.
 2. Open **http://127.0.0.1/phpmyadmin**
-3. **Databases** tab → create `animal_marketplace` (collation `utf8mb4_unicode_ci`).
-4. Select the database → **Import** tab → choose `C:\xampp\htdocs\animal\database\animal_marketplace.sql` → **Go**.
-5. Verify: 21 tables listed (including `user_preferences`, `rate_limits`).
+3. **Databases** tab &mdash; create `animal_marketplace` (collation `utf8mb4_unicode_ci`).
+4. Select the database &mdash; **Import** tab &mdash; choose `database\animal_marketplace.sql` &mdash; **Go**.
 
----
-
-## 5. Verify configuration (normally no edits)
-
-File: `C:\xampp\htdocs\animal\config\config.php`
-```php
-return [
-    'host'     => '127.0.0.1',
-    'port'     => 3306,
-    'name'     => 'animal_marketplace',
-    'user'     => 'root',
-    'pass'     => '',                 // XAMPP default
-    'base_url' => 'http://127.0.0.1:8000',   // cosmetic only
-];
-```
+> Note: `database/animal_marketplace.sql` is a static snapshot (19 tables). Use
+> `tools/db-reset.php` (step 5) instead whenever possible &mdash; it includes the
+> latest cart/saved migration tables.
 
 ---
 
@@ -87,7 +104,7 @@ return [
 cd C:\xampp\htdocs\animal
 C:\xampp\php\php.exe -S 127.0.0.1:8000 -t public public/router.php
 ```
-*Keep this console open — it IS the web server.*
+*Keep this console open &mdash; it IS the web server.*
 
 ---
 
@@ -98,8 +115,10 @@ C:\xampp\php\php.exe -S 127.0.0.1:8000 -t public public/router.php
 | `http://127.0.0.1:8000/index.php` | Hero, two centered CTAs |
 | `http://127.0.0.1:8000/register.php` | Inline consent, centered button |
 | `http://127.0.0.1:8000/login.php` | Centered "Log in" |
-| `http://127.0.0.1:8000/browse.php` | Cards, aligned "Load more" |
-| `http://127.0.0.1:8000/dashboard.php` (after login) | Role sidebar, centered actions |
+| `http://127.0.0.1:8000/browse.php` | Cards, Add to Cart + Save buttons |
+| `http://127.0.0.1:8000/cart.php` | Cart items, quantities, checkout |
+| `http://127.0.0.1:8000/dashboard.php` (after login) | Role sidebar, orders, saved listings |
+| `http://127.0.0.1:8000/account.php` | Profile + password forms |
 
 **Demo accounts** (from `DEMO_ACCOUNTS.md`):
 ```
@@ -112,9 +131,9 @@ buyer    mercado@animal.local  password123
 
 ## 8. Verify OFFLINE (unplug network / disable Wi-Fi)
 
-- Reload all URLs above → must render.
-- DevTools → **Console** → 0 errors.
-- **Network** tab → every request to `127.0.0.1` (no CDN, no Google Fonts).
+- Reload all URLs above &mdash; must render.
+- DevTools &mdash; **Console** &mdash; 0 errors.
+- **Network** tab &mdash; every request to `127.0.0.1` (no CDN, no Google Fonts).
 - CSP header (`default-src 'self'`) guarantees nothing external loads.
 
 ---
@@ -123,15 +142,16 @@ buyer    mercado@animal.local  password123
 
 | Symptom | Fix |
 |---------|-----|
+| `db-reset.php` says config missing | Run step 3 first (`Copy-Item config\config.example.php config\config.php`) |
 | Port 8000 busy | `-S 127.0.0.1:8001` |
-| MySQL not running | Re-run step 3 |
+| MySQL not running | Re-run step 4 |
 | Wrong doc root | Must be `public/` |
 | Firewall | Allow `php.exe`, `mysqld.exe` |
 | Cache | `Ctrl+Shift+R` or incognito |
 
 ---
 
-## 10. One-liner for daily starts (after first DB import)
+## 10. One-liner for daily starts (after first DB setup)
 
 ```powershell
 Start-Process "C:\xampp\mysql\bin\mysqld.exe" -WindowStyle Hidden
@@ -142,19 +162,19 @@ C:\xampp\php\php.exe -S 127.0.0.1:8000 -t public public/router.php
 
 ---
 
-## 11. Updating the USB later
+## 11. Updating the project later
 
 ```powershell
-# 1. Code (point $R at your repo, $U at the USB root)
-$R='D:\Projects\VSCPROJ\AniMAL'; $U='F:\AniMAL_Demo'
-robocopy $R $U\app /E /XD node_modules .git .hallmark .impeccable logs /XF *.tmp.js server.log
-
-# 2. Database dump — ALWAYS use the safe script (it strips DEFINER clauses).
-#    Run from the USB root; set -Port to match YOUR MySQL.
-#    NEVER export with a raw mysqldump or phpMyAdmin: that re-adds
-#    DEFINER=`root`@`localhost` and the dump imports only 19 tables again.
-powershell -ExecutionPolicy Bypass -File "$U\sync_db_dump.ps1" -Port 3306 -VerifyImport
+# Pull latest code (and re-apply migrations if the DB changed)
+cd C:\xampp\htdocs\animal
+git pull
+C:\xampp\php\php.exe tools\db-reset.php --yes   # only if the pull touched the schema
 ```
+
+There is no USB sync anymore &mdash; the GitHub repo is the single source of
+truth. Local-only files (`config/config.php`, `node_modules`, `logs/`,
+`public/uploads/`) are gitignored and survive a pull. Never edit `config.php`
+out of sync with `config.example.php`.
 
 ---
 
@@ -163,23 +183,27 @@ powershell -ExecutionPolicy Bypass -File "$U\sync_db_dump.ps1" -Port 3306 -Verif
 | Area | Reason |
 |------|--------|
 | `src/functions.php` helpers (`e()`, `csrf_*`, `asset()`, `money()`, `audit_log()`) | Core security / i18n |
-| `public/assets/vendor/*` | Offline assets — no CDN fallback |
+| `public/assets/vendor/*` | Offline assets &mdash; no CDN fallback |
 | CSP header in `src/bootstrap.php` | Keeps site fully offline |
-| `database/migrations/003_user_preferences.sql` | Already applied; further schema → new migration + approval |
+| `database/migrations/*.sql` (already applied) | Schema adds &mdash; new migration + approval |
+| `config/config.php` content | Local credentials; stay in sync with `config.example.php` |
 
 ---
 
 ## 13. Quick checklist for teammates
 
-- [ ] XAMPP installed, paths in PATH
-- [ ] Project copied to `C:\xampp\htdocs\animal`
-- [ ] MySQL started, DB imported (CLI or phpMyAdmin)
-- [ ] `config/config.php` matches defaults
+- [ ] Git + XAMPP installed, paths in PATH
+- [ ] `git clone https://github.com/mightbechr1s/animal-marketplace.git animal`
+- [ ] `Copy-Item config\config.example.php config\config.php`
+- [ ] MySQL started, `php tools\db-reset.php --yes` done (21 tables)
 - [ ] Dev server running on `127.0.0.1:8000`
-- [ ] All 5 smoke-test URLs load, buttons centered, consent inline
+- [ ] All smoke-test URLs load, cart/saved/account work
 - [ ] Offline test passes (0 errors, 0 external requests)
 - [ ] Demo accounts work for each role
 
 ---
 
-**That's it.** The USB contains the exact, vetted codebase and a fresh DB dump. Following these steps reproduces the same working, fully-offline environment on any Windows laptop with XAMPP.
+**That's it.** The GitHub repo contains the exact, vetted codebase and the
+reset tool produces a fresh, fully-migrated DB. Following these steps
+reproduces the same working, fully-offline environment on any Windows laptop
+with Git + XAMPP.
