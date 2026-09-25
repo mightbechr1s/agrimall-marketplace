@@ -21,12 +21,9 @@ starts a hardened session, connects via `DB` and registers helpers (`e`, CSRF, f
 
 ## Setup (XAMPP)
 1. Start **Apache** and **MySQL** in the XAMPP Control Panel.
-2. Import the schema: phpMyAdmin → Import → `database/schema.sql`
-   (creates `animal_marketplace`, tables, views, seed categories/units, admin user).
-3. Ensure `config/config.php` matches your DB (XAMPP defaults already set;
-   commit only `config/config.example.php`).
-4. Seed demo data from a second terminal:
-   `C:\xampp\php\php.exe database\seed.php`
+2. Copy `config/config.example.php` → `config/config.php` (adjust DB creds if needed).
+3. Run the reset tool — applies schema, all migrations, and seeds in one command:
+   `C:\xampp\php\php.exe tools\db-reset.php --yes`
 5. Run the app:
 
    **New (with custom router for 404/500/sitemap/robots):**
