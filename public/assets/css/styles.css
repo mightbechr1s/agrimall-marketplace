@@ -1,0 +1,592 @@
+/* ═══ AniMAL Styles — Clean overrides (no AI card patterns) ═══ */
+
+:root {
+  /* All tokens come from design-system.css — do not redefine here */
+}
+
+/* ── Flat containers — enforced by design-system.css ───────
+     Kept here only for any legacy markup that missed the selectors.
+*/
+.card,
+.panel,
+.dash-panel,
+.stat-card,
+.hero-card,
+.step-card,
+.feature-card,
+.listing-card,
+.farm-card,
+.auth-card,
+.metric-card,
+.dashboard-hero {
+  background: var(--paper) !important;
+  border: 1px solid var(--borders) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* ── Buttons — flat, 2px radius, no glow, centered text ─────────────────── */
+.btn,
+.btn-primary,
+.btn-primary-nav,
+.btn-sell,
+.btn-logout,
+.btn-outline,
+.btn-outline-primary,
+.hero-search__submit {
+  border-radius: 2px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  line-height: 1.25 !important;
+  vertical-align: middle !important;
+  gap: 0.375rem !important;
+}
+.btn i, .btn svg {
+  flex-shrink: 0;
+  line-height: 1 !important;
+}
+.btn-primary,
+.btn-primary-nav {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: var(--paper) !important;
+  box-shadow: none !important;
+  transition: background-color var(--hover-speed) ease;
+}
+.btn-primary:hover,
+.btn-primary-nav:hover {
+  background-color: var(--primary-dark) !important;
+  border-color: var(--primary-dark) !important;
+}
+.btn-outline,
+.btn-outline-primary {
+  border: 1px solid var(--primary) !important;
+  color: var(--primary) !important;
+  background: var(--paper) !important;
+}
+.btn-outline:hover,
+.btn-outline-primary:hover {
+  background: var(--primary) !important;
+  color: var(--paper) !important;
+}
+
+/* ── Focus ring — consistent everywhere ─────────────────── */
+.btn:focus-visible,
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus,
+a:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+  box-shadow: none !important;
+  border-color: var(--borders) !important;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ── Nav — flat, no glassmorphism ────────────────────────── */
+.nav,
+.nav.is-scrolled {
+  background: var(--canvas) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+.nav.is-scrolled {
+  border-bottom: 1px solid var(--borders);
+}
+
+/* ── Toast / Cookie banner / Modal — flat, no elevation ──── */
+.toast-item,
+.cookie-banner,
+.modal-panel {
+  background: var(--paper) !important;
+  border: 1px solid var(--borders) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.cookie-banner__text a {
+  color: var(--primary);
+  font-weight: 600;
+}
+.cookie-banner__text a:hover {
+  color: var(--accent);
+}
+body:has(.auth-wrap) .nav,
+body:has(.auth-wrap) .mobile-menu,
+body:has(.auth-wrap) .footer,
+body:has(.auth-wrap) .cookie-banner {
+  display: none !important;
+}
+
+/* ── Drawer — already flat in design-system.css, keep minimal ─ */
+.drawer {
+  border-left: 1px solid var(--borders);
+}
+
+/* ── Tables — clean ──────────────────────────────────────── */
+.table th,
+.table td {
+  border-color: var(--borders) !important;
+}
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: var(--canvas);
+}
+
+/* ── Form controls — flat ────────────────────────────────── */
+.form-control,
+.form-select {
+  background: var(--paper);
+  border: 1px solid var(--borders);
+  border-radius: 0;
+  color: var(--text);
+}
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary);
+  background: var(--paper);
+  box-shadow: none;
+}
+
+/* ── Pagination — flat ───────────────────────────────────── */
+.pagination .page-link {
+  color: var(--primary);
+  background: var(--paper);
+  border: 1px solid var(--borders);
+}
+.pagination .page-item.active .page-link {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--paper);
+}
+
+/* ── Badges — flat pill ──────────────────────────────────── */
+.badge {
+  background: var(--primary);
+  color: var(--paper);
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  font-weight: 600;
+}
+.badge.bg-success { background: var(--primary) !important; }
+.badge.bg-warning { background: #C9A227 !important; }
+.badge.bg-danger { background: var(--accent) !important; }
+.badge.bg-secondary { background: var(--text-soft) !important; }
+
+/* ── Shape cleanup — consistent square geometry ──────────── */
+.badge,
+[class*="pill"],
+.avatar,
+.role-option,
+.alert,
+.toast,
+.toast-item,
+.modal-content,
+.modal-panel {
+  border-radius: 0 !important;
+}
+
+/* ── Empty state — centered, no illustrations ────────────── */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+.empty-state .empty-state-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.empty-state .empty-state-description {
+  color: var(--text-soft);
+  max-width: 30rem;
+  margin: 1rem auto 2rem;
+}
+
+/* ── Utility overrides — kill any lingering shadows/glows ─── */
+.shadow,
+.shadow-sm,
+.shadow-lg,
+.shadow-xl,
+[style*="box-shadow"] {
+  box-shadow: none !important;
+}
+
+/* ── Reduced motion ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.settings-wrap {
+  min-height: calc(100vh - 5rem);
+  padding: 3rem 1rem 5rem;
+}
+
+.settings-container {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.settings-header {
+  margin-bottom: 2rem;
+}
+
+.settings-header h1 {
+  margin-bottom: 0.5rem;
+}
+
+.settings-header p {
+  color: var(--text-soft);
+  margin: 0;
+}
+
+.settings-form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.settings-form fieldset {
+  margin: 0;
+  padding: 1.25rem;
+  border: 1px solid var(--borders);
+  background: var(--paper);
+}
+
+.settings-form legend {
+  float: none;
+  width: auto;
+  padding: 0 0.5rem;
+  margin: 0 0 0.75rem -0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.settings-form .form-group {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+.settings-form .form-group:first-of-type {
+  margin-top: 0;
+}
+
+.settings-form .form-label,
+.settings-form .form-check-label {
+  margin-bottom: 0;
+}
+
+.settings-form .form-select {
+  max-width: 20rem;
+}
+
+@media (min-width: 640px) {
+  .settings-wrap {
+    padding-inline: 2rem;
+  }
+}
+
+html[data-larger-text] {
+  font-size: 112.5%;
+}
+
+html[data-reduce-motion] *,
+html[data-reduce-motion] *::before,
+html[data-reduce-motion] *::after {
+  animation-duration: 0ms !important;
+  transition-duration: 0ms !important;
+  scroll-behavior: auto !important;
+}
+/* ═══ Visual Enhancements — Subtle improvements to appeal ═══ */
+
+/* ── Hero section enhancements ───────────────────────────────────── */
+.hero-overlay {
+  /* Slight elevation for floating elements */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  background: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.price-pill {
+  /* Enhanced price pill */
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  padding: 0.4rem 0.8rem;
+  border-width: 2px;
+}
+
+.origin-badge {
+  /* Enhanced origin badge */
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.3rem 0.7rem;
+}
+
+/* ── Trust bar enhancements ─────────────────────────────────────── */
+.trust-bar-item {
+  /* Slight separation and enhancement */
+  padding: 0.25rem 0;
+}
+
+.trust-bar-dot {
+  /* More prominent dot */
+  width: 0.6rem;
+  height: 0.6rem;
+  box-shadow: 0 0 0 2px rgba(200, 90, 50, 0.2);
+}
+
+.trust-bar-item span {
+  /* Slightly better typography */
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* ── Process steps enhancements ─────────────────────────────────── */
+.process-step-number {
+  /* More distinctive step numbers */
+  font-size: 3.5rem;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.process-step-title {
+  /* Better heading hierarchy */
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.process-step-description {
+  /* Improved readability */
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+/* ── Listing card enhancements ──────────────────────────────────── */
+.card {
+  /* Subtle hover effect */
+  transition: all 0.2s ease;
+  border-width: 1px;
+}
+
+.card:hover {
+  /* Gentle lift on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: var(--primary);
+}
+
+.card .body {
+  /* Better spacing */
+  padding: 1.25rem;
+}
+
+.card .badges-top {
+  /* Enhanced badge spacing */
+  margin-bottom: 0.75rem;
+}
+
+.card .price {
+  /* Price emphasis */
+  font-size: 1.25rem;
+}
+
+/* ── Button enhancements ────────────────────────────────────────── */
+.btn {
+  /* Enhanced button feel */
+  transition: all 0.15s ease;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.btn-primary {
+  /* Stronger primary button */
+  border-width: 2px;
+}
+
+.btn-primary:hover {
+  /* Enhanced hover */
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(27, 59, 43, 0.2);
+}
+
+.btn-outline-primary {
+  /* Better outline button */
+  border-width: 2px;
+  font-weight: 600;
+}
+
+.btn-outline-primary:hover {
+  /* Enhanced hover */
+  background-color: var(--primary);
+  color: var(--paper);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(27, 59, 43, 0.15);
+}
+
+/* ── Empty state enhancements ───────────────────────────────────── */
+.empty-state {
+  /* Better empty state */
+  padding: 4rem 1.5rem;
+  text-align: center;
+}
+
+.empty-state .empty-state-title {
+  /* Stronger title */
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.75rem;
+}
+
+.empty-state .empty-state-description {
+  /* Better description */
+  font-size: 1.1rem;
+  color: var(--text-soft);
+  max-width: 32rem;
+  line-height: 1.6;
+}
+
+/* ── Form control enhancements ──────────────────────────────────── */
+.form-control,
+.form-select {
+  /* Better form fields */
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+  /* Enhanced focus */
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(27, 59, 43, 0.1);
+}
+
+/* ── Navigation enhancements ────────────────────────────────────── */
+.nav-link {
+  /* Better nav links */
+  transition: color 0.15s ease, padding 0.15s ease;
+  font-weight: 500;
+  padding: 0.5rem 0;
+}
+
+.nav-link:hover,
+.nav-link:focus {
+  /* Enhanced hover */
+  color: var(--primary);
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+.nav.is-scrolled {
+  /* Slight elevation when scrolled */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Footer enhancements ────────────────────────────────────────── */
+.footer {
+  /* Better footer */
+  border-top: 1px solid var(--borders);
+  padding-top: 2rem;
+}
+
+.footer-links a {
+  /* Better footer links */
+  transition: color 0.15s ease;
+  font-weight: 500;
+}
+
+.footer-links a:hover {
+  /* Enhanced hover */
+  color: var(--primary);
+}
+
+/* ── Dark mode specific enhancements ────────────────────────────── */
+[data-theme="dark"] .hero-overlay {
+  background: rgba(22, 27, 25, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-color: var(--primary-dark);
+}
+
+[data-theme="dark"] .btn-outline-primary:hover {
+  box-shadow: 0 2px 6px rgba(212, 168, 106, 0.15);
+}
+
+/* ═══ Position tweaks — refined spacing and layout ═══ */
+
+/* ── Trust bar: more space between items ───────────────────── */
+.trust-bar-item {
+  margin: 0 0.75rem;
+}
+
+/* ── Process steps: better vertical spacing ────────────────── */
+.process-step {
+  padding-top: 1.5rem;
+}
+.process-step-number {
+  margin-bottom: 1rem;
+}
+
+/* ── Listing cards: improved internal padding ──────────────── */
+.card .body {
+  padding: 1.5rem;
+}
+
+/* ── Badges: tighter gap adjustment ────────────────────────── */
+.badges-top {
+  gap: 0.2rem;
+}
+
+/* ── Empty states: increased padding ───────────────────────── */
+.empty-state {
+  padding: 5rem 2rem;
+}
+.empty-state .empty-state-title {
+  margin-bottom: 1rem;
+}
+
+/* ── Form controls: larger touch targets ───────────────────── */
+.form-control,
+.form-select {
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
+}
+
+/* ── Nav links: hover padding tweak ────────────────────────── */
+.nav-link:hover,
+.nav-link:focus {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+/* ── Footer: link spacing refined ──────────────────────────── */
+.footer-links a {
+  margin: 0 0.75rem;
+}
+.footer-links a:first-child {
+  margin-left: 0;
+}
+.footer-links a:last-child {
+  margin-right: 0;
+}

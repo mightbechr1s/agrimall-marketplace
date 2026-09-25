@@ -1,0 +1,54 @@
+# -------------------------------
+# AniMAL — Philippine Agricultural Marketplace
+# -------------------------------
+
+# --- Local configuration (contains credentials) ---
+# Never commit real credentials. Copy config.example.php over config.php locally.
+config/config.php
+
+# --- Uploaded user content ---
+public/uploads/*
+!public/uploads/.gitkeep
+
+# --- Runtime logs ---
+logs/*
+!logs/.gitkeep
+
+# --- Editors & OS junk ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Tooling artifacts ---
+.hallmark/
+.impeccable/
+node_modules/
+
+# --- Environment secrets ---
+.env
+.env.*
+!.env.example
+
+# --- PHP specifics ---
+*.log
+
+# --- AI prompts & local working junk ---
+AGENTS.md
+*.tmp.js
+test_db.php
+check_listings.php
+desktop-login.png
+desktop-terms.png
+mobile-login.png
+mobile-terms.png
+REVIEWER_50.md
+reviewer_50.py
+server.log
+*.bak
+*PROMPT*.txt
+*Prompt*.txt
+*Overhaul*.txt
+*.prompt.txt

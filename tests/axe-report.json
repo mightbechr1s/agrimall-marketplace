@@ -1,0 +1,36 @@
+{
+  "generatedAt": "2026-09-18T05:42:38.979Z",
+  "results": [
+    {
+      "page": "home",
+      "url": "http://127.0.0.1:8009/index.php",
+      "status": "200",
+      "violations": []
+    },
+    {
+      "page": "home-tl",
+      "url": "http://127.0.0.1:8009/index.php?lang=tl",
+      "status": "200",
+      "violations": []
+    },
+    {
+      "page": "browse",
+      "url": "http://127.0.0.1:8009/browse.php",
+      "status": "200",
+      "violations": []
+    },
+    {
+      "page": "login",
+      "url": "http://127.0.0.1:8009/login.php",
+      "status": "200",
+      "violations": []
+    },
+    {
+      "page": "register",
+      "url": "http://127.0.0.1:8009/register.php",
+      "status": "200",
+      "violations": []
+    }
+  ],
+  "totalViolations": 0
+}

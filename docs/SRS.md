@@ -1,0 +1,573 @@
+# AniMAL: A Web-Based Market Access Platform for Farmers
+
+**Document type:** Software Requirements Specification  
+**Document version:** 0.3 (Requirements Baseline Draft)  
+**Status:** For team and adviser review  
+**Project type:** BSIT Capstone Project  
+**Target timeline:** 4-5 months  
+**Team size:** 4 members
+
+## 1. Document Purpose
+
+This Software Requirements Specification (SRS) defines the initial functional, non-functional, security, and business requirements for AniMAL. It establishes the agreed project boundary before database design, interface design, or implementation begins.
+
+The authoritative project source is `AniMAL_Capstone_Super_Prompt_Updated.md`. The earlier FarmRoute technical blueprint is a legacy artifact and may be used only for ideas that do not conflict with this SRS.
+
+## 2. Product Overview
+
+AniMAL is a web-based market access and information management platform that helps local farmers and buyers coordinate produce availability and orders. It centralizes produce listings, buyer requests, order status updates, profiles, and administrative reports.
+
+AniMAL is not an online payment platform, delivery tracking platform, or open marketplace clone. It focuses on improving farmer market access, communication, and record management using a scope that a four-member undergraduate team can complete and defend.
+
+## 3. Objectives
+
+### 3.1 Main Objective
+
+Develop a practical web-based information management system that streamlines interactions between farmers and buyers while improving produce management, order processing, and administrative oversight.
+
+### 3.2 Specific Objectives
+
+1. Allow farmers and buyers to maintain role-appropriate accounts and profiles.
+2. Allow verified farmers to publish and manage produce listings.
+3. Allow buyers to search listings and submit structured order requests.
+4. Allow farmers to accept, reject, prepare, and complete orders.
+5. Give both parties a clear order history and status trail.
+6. Give administrators tools for farmer verification, user management, category management, oversight, and reports.
+7. Protect account and transaction data through secure coding practices and role-based access control.
+
+## 4. Scope
+
+### 4.1 In Scope
+
+- Registration and login
+- Farmer and buyer profiles
+- Administrator-managed farmer verification
+- Produce categories
+- Produce listings
+- Search and filtering
+- Buyer order requests
+- Farmer order confirmation or rejection
+- Pickup and farmer-arranged local delivery coordination
+- Order status tracking
+- Administrator dashboard
+- User management
+- Operational reports
+- Profile management
+
+### 4.2 Out of Scope
+
+- Native mobile application
+- Online payments or payment gateway integration
+- GPS tracking, maps, or route optimization
+- AI or machine-learning features
+- Government API integration
+- Chat, voice calls, or video calls
+- Push notifications
+- Inventory or demand forecasting
+- Blockchain
+- Internet of Things devices
+- Third-party courier integration
+- Public ratings and reviews for the first release
+
+## 5. Technology and Deployment Constraints
+
+- Backend: plain PHP using modular server-side code
+- Database access: PDO with prepared statements
+- Database: MySQL
+- Local environment: XAMPP
+- Frontend: HTML, CSS, JavaScript, and Bootstrap 5
+- Application architecture: server-rendered multi-page application with a simple layered structure
+- Authentication: PHP session-based authentication
+- Supported browsers: current desktop and mobile versions of Chrome, Edge, and Firefox
+- The application must remain realistic for four BSIT students to develop within 4-5 months.
+
+Frameworks and services from the earlier blueprint, including Laravel, Tailwind CSS, Redis, SMS providers, and cloud object storage, are not part of this baseline.
+
+## 6. User Classes
+
+### 6.1 Farmer
+
+A registered agricultural producer who maintains a profile, applies for verification, publishes produce listings after approval, and manages incoming orders.
+
+### 6.2 Buyer
+
+A registered individual or business representative who browses produce, submits order requests, and monitors order status.
+
+### 6.3 Administrator
+
+An authorized system operator who verifies farmers, manages users and categories, oversees listings and orders, and generates reports. Administrator accounts are created by an authorized administrator and cannot be selected during public registration. Administrators are also considered primary users, responsible for monitoring platform activity and approving farmer verifications and listings.
+
+## 7. Assumptions and Dependencies
+
+- Users have intermittent but sufficient internet access to use a responsive website.
+- Farmers can present valid identity or farm-related evidence to an administrator outside the system.
+- Buyers and farmers coordinate payment outside AniMAL.
+- Local delivery is arranged by the farmer and is not assigned to a courier inside the system.
+- Exact home or farm addresses are not shown publicly.
+- Production deployment details will be selected later and must support PHP and MySQL.
+- Bootstrap and locally maintained application assets must remain usable on mobile screens.
+
+## 8. Functional Requirements
+
+Requirements use the format `FR-[MODULE]-[NUMBER]` for traceability.
+
+### 8.1 Authentication and Authorization
+
+- **FR-AUTH-001:** The system shall allow a visitor to register as a farmer or buyer.
+- **FR-AUTH-002:** Registration shall require a unique email address, password, full name, contact number, role, and basic location.
+- **FR-AUTH-003:** The system shall validate all registration fields on the server.
+- **FR-AUTH-004:** The system shall store passwords using PHP's supported password hashing functions.
+- **FR-AUTH-005:** The system shall allow registered users to log in using email and password.
+- **FR-AUTH-006:** The system shall regenerate the session identifier after successful login.
+- **FR-AUTH-007:** The system shall allow an authenticated user to log out and invalidate the active session.
+- **FR-AUTH-008:** The system shall enforce role-based access for farmer, buyer, and administrator pages and actions.
+- **FR-AUTH-009:** The system shall prevent public registration as an administrator.
+- **FR-AUTH-010:** The system shall deny suspended accounts access to protected functions.
+- **FR-AUTH-011:** An authenticated user shall be able to change the account password after providing the current password.
+- **FR-AUTH-012:** An administrator shall be able to issue a temporary password for a user account without viewing the previous password.
+- **FR-AUTH-013:** A user who receives a temporary password shall be required to change it at the next login.
+- **FR-AUTH-014:** The initial administrator account shall be created by a documented installation or database-seeding procedure and shall require a password change at first login.
+- **FR-AUTH-015:** An authenticated session shall expire after a configured period of inactivity.
+- **FR-AUTH-016:** Passwords shall contain at least 12 characters.
+- **FR-AUTH-017:** Temporary passwords shall expire 24 hours after issuance if unused.
+- **FR-AUTH-018:** Authenticated sessions shall expire after 30 minutes of inactivity.
+- **FR-AUTH-019:** After five failed login attempts for the same normalized email and source IP address within 15 minutes, the system shall block further attempts for that pair for 15 minutes and record the event.
+- **FR-AUTH-020:** A temporary password shall be generated by the system, displayed to the administrator once for secure out-of-band delivery after identity verification, and stored only as a password hash.
+- **FR-AUTH-021:** Issuing a temporary password shall invalidate any previous temporary password and all existing sessions for that account.
+
+### 8.2 Profiles and Farmer Verification
+
+- **FR-PROF-001:** Farmers and buyers shall be able to view and update their own profile.
+- **FR-PROF-002:** A profile shall include name, contact number, barangay, municipality or city, and province.
+- **FR-PROF-003:** A buyer may optionally provide a business name and buyer type.
+- **FR-PROF-004:** A farmer shall provide farm name, farm description, and a request for administrator verification.
+- **FR-PROF-005:** A newly registered farmer shall have a pending verification status.
+- **FR-PROF-006:** A pending or rejected farmer shall not publish produce listings.
+- **FR-PROF-007:** An administrator shall be able to approve or reject a farmer verification request and record a reason.
+- **FR-PROF-008:** A farmer shall be able to view the current verification status and rejection reason, when applicable.
+- **FR-PROF-009:** The system shall not display exact private addresses on public listing pages.
+- **FR-PROF-010:** Farmer evidence shall be checked offline or through an external process; the first release shall not upload or store identity-document images.
+- **FR-PROF-011:** The system shall store verification workflow metadata and history but shall not store copies of identity or farm-evidence documents.
+- **FR-PROF-012:** Verification status shall be pending, approved, rejected, or revoked.
+- **FR-PROF-013:** Each verification submission shall create an immutable request record with its submission timestamp; a farmer shall have at most one pending request.
+- **FR-PROF-014:** Each approval, rejection, or revocation shall create an immutable review event containing the decision, reason, reviewer, and review timestamp.
+- **FR-PROF-015:** A rejected or revoked farmer may update the profile and create a new verification request; previous requests and review events shall remain unchanged.
+- **FR-PROF-016:** The farmer's current verification status shall be derived from the latest request and review event.
+- **FR-PROF-017:** An administrator may revoke approval with a required reason; revocation shall follow the same listing and order effects as farmer suspension.
+
+### 8.3 Categories
+
+- **FR-CAT-001:** An administrator shall be able to create, update, activate, and deactivate produce categories.
+- **FR-CAT-002:** A category shall have a unique name and optional description.
+- **FR-CAT-003:** Deactivated categories shall remain associated with historical records but shall not be selectable for new listings.
+
+### 8.4 Produce Listings
+
+- **FR-LIST-001:** A verified farmer shall be able to create a produce listing.
+- **FR-LIST-002:** A listing shall include category, produce name, description, available quantity, unit, price per unit, harvest or availability date, barangay, municipality or city, province, and status.
+- **FR-LIST-003:** A listing may include one validated JPEG, PNG, or WebP produce image no larger than 5 MB.
+- **FR-LIST-004:** Allowed units shall come from a controlled list such as kilogram, sack, crate, bundle, or piece.
+- **FR-LIST-005:** A new listing shall have a positive available quantity and price; subsequent quantity adjustments may set available quantity to zero but never below zero.
+- **FR-LIST-006:** A farmer shall be able to view, edit, close, or reactivate an owned listing subject to the explicit lifecycle rules below.
+- **FR-LIST-007:** A farmer shall not edit another farmer's listing.
+- **FR-LIST-008:** The system shall mark a listing unavailable when its available quantity reaches zero.
+- **FR-LIST-009:** Closed, unavailable, and deactivated listings shall remain available in authorized history views.
+- **FR-LIST-010:** An administrator shall be able to deactivate a listing that violates system rules and record a reason.
+- **FR-LIST-011:** Editing a listing shall not change immutable values already stored in an existing order.
+- **FR-LIST-012:** A farmer may adjust only the current available quantity; quantities already deducted for confirmed or in-progress orders shall not be counted as available stock.
+- **FR-LIST-013:** Closing a listing shall prevent new order requests but shall not automatically cancel existing pending, delivery-fee-review, confirmed, or in-progress orders.
+- **FR-LIST-014:** Farmer reactivation shall be allowed only for a farmer-closed listing owned by an active, verified farmer with active category and unit and available quantity greater than zero.
+- **FR-LIST-015:** An administrator-deactivated listing shall not be reactivated by the farmer; pending and delivery-fee-review requests shall be cancelled, while confirmed or in-progress orders shall be placed under administrative hold.
+- **FR-LIST-016:** An administrator shall manage the active quantity units available to farmers.
+- **FR-LIST-017:** Kilograms shall allow quantities with up to two decimal places; sacks, crates, bundles, and pieces shall require whole-number quantities.
+- **FR-LIST-018:** Deactivating a unit shall prevent its use on new listings without changing historical listings or order snapshots.
+- **FR-LIST-019:** The system shall decode and re-encode an accepted image into a non-executable generated file and create a display-sized version; the original upload shall not be retained.
+- **FR-LIST-020:** Listing status shall be exactly one of `active`, `farmer_closed`, `unavailable`, or `admin_deactivated`.
+- **FR-LIST-021:** A verified, active farmer may create a listing as active when its category and unit are active and available quantity is greater than zero.
+- **FR-LIST-022:** A farmer may move an owned active or unavailable listing to farmer-closed; no new requests are accepted while it is closed.
+- **FR-LIST-023:** Every listing status change shall enforce the defined transition and authorization rules on the server and record the actor, timestamp, and required reason.
+- **FR-LIST-024:** The system shall move an active listing to unavailable when available quantity becomes zero and shall return it to active when quantity becomes positive, unless it was farmer-closed or administrator-deactivated or no longer meets activation conditions.
+- **FR-LIST-025:** An administrator may move any non-deactivated listing to administrator-deactivated with a reason; only an administrator may restore it, and restoration shall place it in farmer-closed status for farmer review.
+- **FR-LIST-026:** Deactivating a category or unit shall prevent its use for new listings and prevent affected closed listings from reactivating, but shall not hide an existing active listing or alter historical records.
+- **FR-LIST-027:** Listing quantity and status changes shall be transactional and shall reject a stale concurrent update rather than overwrite a newer quantity.
+- **FR-LIST-028:** Each managed unit shall define a quantity precision of zero or two decimal places; kilogram shall be seeded with precision two and sacks, crates, bundles, and pieces with precision zero.
+- **FR-LIST-029:** Every change to available quantity shall create an immutable stock-adjustment record containing the listing, before quantity, signed change, after quantity, reason category, source type and identifier when applicable, responsible actor, and timestamp.
+- **FR-LIST-030:** Stock-adjustment reason categories shall include initial listing quantity, farmer correction, order confirmation, pre-preparation cancellation, and administrator restoration; the recorded before quantity plus signed change shall equal after quantity.
+- **FR-LIST-031:** Restoration exposure shall equal the requested quantities of the listing's confirmed and in-progress orders because those quantities may still be restored by cancellation.
+- **FR-LIST-032:** A farmer stock increase shall be rejected when available quantity plus restoration exposure would exceed `999,999.99`; order confirmation transfers quantity from available quantity into restoration exposure, while completion or administrator non-restoration removes that exposure.
+
+### 8.5 Browse, Search, and Filtering
+
+- **FR-SRCH-001:** Visitors and authenticated users shall be able to browse active listings.
+- **FR-SRCH-002:** Users shall be able to search by produce name or farmer or farm name.
+- **FR-SRCH-003:** Users shall be able to filter by category, location, unit, availability date, and price range.
+- **FR-SRCH-004:** Users shall be able to sort by newest listing, lowest price, highest price, and nearest availability date.
+- **FR-SRCH-005:** Search and filter results shall use pagination.
+- **FR-SRCH-006:** Public results shall not reveal private contact details or exact addresses.
+
+### 8.6 Order Requests
+
+- **FR-ORD-001:** Only an authenticated buyer with an active account shall be able to submit an order request.
+- **FR-ORD-002:** An order request shall reference one active produce listing and one buyer.
+- **FR-ORD-003:** A buyer shall provide requested quantity, fulfillment method, preferred fulfillment date, and optional notes.
+- **FR-ORD-004:** Fulfillment method shall be pickup or farmer-arranged local delivery.
+- **FR-ORD-005:** A local-delivery request shall require a delivery address appropriate for coordination.
+- **FR-ORD-006:** The system shall calculate the order subtotal from requested quantity and the listing price at the time of order.
+- **FR-ORD-007:** The system shall preserve the agreed unit price in the order even if the listing price changes later.
+- **FR-ORD-008:** Submitting an order shall create a pending request and shall not immediately deduct listing quantity.
+- **FR-ORD-009:** A farmer shall be able to accept a pickup request, quote a delivery fee for a local-delivery request, or reject a pending request for an owned listing.
+- **FR-ORD-010:** Confirming an order shall deduct its requested quantity from available quantity using a database transaction.
+- **FR-ORD-011:** The system shall prevent confirmation when the requested quantity exceeds the listing's available quantity.
+- **FR-ORD-012:** Rejecting an order shall require a reason and shall not change listing quantity.
+- **FR-ORD-013:** The farmer shall be able to move a confirmed order through valid preparation and fulfillment statuses.
+- **FR-ORD-014:** The buyer shall be able to view the current status and status history of an owned order.
+- **FR-ORD-015:** The farmer shall be able to view incoming and historical orders for owned listings.
+- **FR-ORD-016:** For a pending local-delivery request, the listing owner and administrators may view the delivery address needed to assess service and quote a fee; direct contact details remain hidden until confirmation.
+- **FR-ORD-017:** The system shall not record or process online payment information.
+- **FR-ORD-018:** Each order shall preserve immutable snapshots of produce name, unit, requested quantity, unit price, subtotal, fulfillment method, and the fulfillment location details agreed at confirmation.
+- **FR-ORD-019:** For farmer-arranged local delivery, the farmer shall enter a non-negative delivery-fee quote, including zero when delivery is free, before the buyer confirms the order.
+- **FR-ORD-020:** The system shall calculate and store the produce subtotal, delivery fee, and final total; pickup orders shall have a delivery fee of zero.
+- **FR-ORD-021:** Delivery fees and final totals are records for coordination only and shall not constitute online payment processing.
+- **FR-ORD-022:** A farmer accepting a pickup request shall provide the private pickup location and confirm the order atomically with stock deduction.
+- **FR-ORD-023:** Quoting a local-delivery fee shall move the request to delivery-fee review without deducting stock.
+- **FR-ORD-024:** A buyer shall be able to accept or decline the quoted delivery fee; acceptance shall confirm the order and deduct stock atomically, while decline shall cancel it without changing stock.
+- **FR-ORD-025:** If stock is insufficient when the buyer accepts a delivery quote, the system shall cancel the request as unavailable without changing stock.
+- **FR-ORD-026:** After confirmation, the buyer and farmer shall be able to view each other's coordination contact details and the applicable private delivery or pickup location.
+- **FR-ORD-027:** Once a request enters delivery-fee review, its quantity, unit price, fulfillment method, delivery address, and quoted fee shall be immutable; either party must cancel or reject it before a changed request can be submitted.
+- **FR-ORD-028:** The system shall reject a new request whose quantity exceeds the listing's available quantity at submission time, while making clear that pending requests do not reserve stock.
+- **FR-ORD-029:** Order snapshots shall also preserve the category name, farmer or farm display name, and listing location as they existed when the request was submitted.
+
+### 8.7 Order Status Workflow
+
+The allowed primary order states are:
+
+1. `pending`
+2. `delivery_fee_review`
+3. `confirmed`
+4. `rejected`
+5. `preparing`
+6. `ready_for_pickup`
+7. `out_for_delivery`
+8. `completed`
+9. `cancelled`
+
+- **FR-STAT-001:** A pickup order may follow `pending -> confirmed -> preparing -> ready_for_pickup -> completed`.
+- **FR-STAT-002:** A local-delivery order may follow `pending -> delivery_fee_review -> confirmed -> preparing -> out_for_delivery -> completed`.
+- **FR-STAT-003:** A farmer may move a pending request to rejected and may withdraw a delivery quote by moving a request in delivery-fee review to rejected; a reason is required.
+- **FR-STAT-004:** A buyer may cancel a pending request or decline and cancel a request in delivery-fee review.
+- **FR-STAT-005:** A buyer or farmer may cancel a confirmed order before it enters preparing status; a reason is required.
+- **FR-STAT-006:** Every status change shall record the previous status, new status, responsible actor (user or system), timestamp, and optional note.
+- **FR-STAT-007:** The system shall reject invalid status transitions.
+- **FR-STAT-008:** Cancelling a confirmed order before preparing shall restore its requested quantity to available quantity in the same database transaction as the cancellation.
+- **FR-STAT-009:** After an order enters preparing, only an administrator may cancel it as part of dispute or suspension resolution; the administrator shall record a reason and a stock disposition of restored or not restored.
+- **FR-STAT-010:** Rejected, completed, and cancelled orders are terminal and shall not move to another status.
+- **FR-STAT-011:** An administrative hold is separate from the primary order status; while held, no buyer or farmer status transition is allowed.
+- **FR-STAT-012:** An administrator may release a held order without changing its primary status only after involved accounts are active and any administrator-deactivated listing has been restored.
+- **FR-STAT-013:** An administrator may cancel a held confirmed or in-progress order and must record whether stock was restored or not restored, with a reason for that stock disposition.
+- **FR-STAT-014:** Rejection and cancellation shall record a controlled reason category: buyer changed mind, farmer unavailable, stock unavailable, fulfillment unavailable, administrator action, dispute, or other; an explanatory note is required for other, administrator action, and dispute.
+- **FR-STAT-015:** An administrator may cancel an abandoned pending request with no transition for seven days or delivery-fee-review request with no transition for 48 hours, using the administrator-action reason category and an explanatory note; this transition shall not change available quantity.
+
+### 8.8 Administrator Dashboard and Management
+
+- **FR-ADM-001:** The administrator dashboard shall display counts of users, pending farmer verifications, active listings, pending orders, and completed orders.
+- **FR-ADM-002:** An administrator shall be able to search and filter users by name, role, status, and registration date.
+- **FR-ADM-003:** An administrator shall be able to activate or suspend a user account and record a reason.
+- **FR-ADM-004:** Suspending an account shall invalidate its active sessions and preserve historical records.
+- **FR-ADM-005:** An administrator shall be able to view listings and orders for oversight.
+- **FR-ADM-006:** An administrator shall not change ownership of a listing or order.
+- **FR-ADM-007:** Sensitive administrator actions shall be written to an audit log.
+- **FR-ADM-008:** Suspending or revoking a farmer shall move all active or unavailable listings to administrator-deactivated and cancel pending or delivery-fee-review requests without changing stock.
+- **FR-ADM-009:** Confirmed and in-progress orders involving a suspended user or administrator-deactivated listing shall remain visible to the parties and administrator under an administrative hold.
+- **FR-ADM-010:** Suspending a buyer shall cancel that buyer's pending and delivery-fee-review requests without changing stock and place confirmed and in-progress orders under administrative hold.
+- **FR-ADM-011:** An administrator shall be able to create, rename, activate, and deactivate quantity units, subject to historical-record preservation rules.
+- **FR-ADM-012:** An active administrator shall be able to create another administrator account with a temporary password and forced password change; public administrator registration remains prohibited.
+- **FR-ADM-013:** The system shall prevent an administrator from suspending the same account and shall prevent suspension of the last active administrator.
+- **FR-ADM-014:** An administrator shall resolve each held order by either releasing the hold under FR-STAT-012 or cancelling it under FR-STAT-013.
+- **FR-ADM-015:** An audit event shall record event type, acting user, target type and identifier, timestamp, outcome, source IP address, request identifier, reason when required, and relevant before-and-after values.
+- **FR-ADM-016:** Audited events shall include authentication administration, administrator-account creation, user activation or suspension, verification decisions, category and unit changes, listing deactivation or restoration, order holds and resolutions, retention holds, and report generation.
+- **FR-ADM-017:** Audit events shall be append-only through application functions and shall not be editable or deletable by ordinary administrator actions.
+- **FR-ADM-018:** An administrator shall be able to place and release a retention hold on specified records with a reason and timestamp; both actions shall be audited.
+- **FR-ADM-019:** Retention processing shall skip records under an active hold and shall anonymize an eligible account only when it has no nonterminal orders and all related retention periods have expired.
+- **FR-ADM-020:** When creating a unit, the administrator shall select whether it accepts whole numbers or up to two decimal places; precision cannot be changed after the unit has been used by a listing.
+
+### 8.9 Reports
+
+- **FR-REP-001:** An administrator shall be able to generate a user registration report filtered by date and role.
+- **FR-REP-002:** An administrator shall be able to generate a listing report filtered by date, category, farmer, and status.
+- **FR-REP-003:** An administrator shall be able to generate an order report filtered by date, status, farmer, and buyer.
+- **FR-REP-004:** A farmer shall be able to view a summary of listing quantities and orders by status.
+- **FR-REP-005:** Reports shall display the applied filters and generation timestamp.
+- **FR-REP-006:** The first release shall support printable HTML reports. PDF export is optional only if time remains.
+- **FR-REP-007:** An administrator shall be able to generate a farmer-verification report filtered by submission date, review date, status, and reviewer.
+- **FR-REP-008:** An administrator shall be able to generate a fulfillment-value report showing order counts, produce subtotals, delivery fees, and final totals filtered by date, fulfillment method, farmer, and order status.
+- **FR-REP-009:** An administrator shall be able to generate a cancellation summary grouped and filtered by date, cancelling role, order stage, farmer, buyer, and recorded reason.
+
+### 8.10 Data Validation
+
+All limits apply after trimming surrounding whitespace and shall be enforced on the server. Character counts refer to Unicode characters.
+
+| Data | Requirement |
+|---|---|
+| Email | Required; maximum 254 characters; trim and lowercase before uniqueness checks; valid email syntax |
+| Password | 12-128 characters; never trim or silently alter |
+| Full name | 2-100 characters |
+| Contact number | 7-15 digits after removing spaces and hyphens; one optional leading `+`; store in normalized form |
+| Farm or business name | 2-150 characters |
+| Category, unit, or produce name | 2-100 characters |
+| Short location component | 1-100 characters for each barangay, municipality or city, and province field |
+| Private delivery or pickup address | 5-500 characters |
+| Profile, farm, category, or listing description | Maximum 2,000 characters |
+| Order note, administrator note, reason, or resolution note | Maximum 1,000 characters; required reasons must contain at least 3 characters |
+| Price, subtotal, fee, or total | `0.00` to `9,999,999.99`; listing price must be greater than zero and fee may be zero |
+| Quantity | Greater than zero for requests and new listings, maximum `999,999.99`, with precision determined by the selected unit; available quantity plus restoration exposure shall also remain within this maximum |
+| Listing availability date | A new or changed date shall not be earlier than the current Philippine local date |
+| Preferred fulfillment date | Shall not precede the listing availability date or the request date |
+| Listing image | At most one JPEG, PNG, or WebP file with decoded image validity and a maximum size of 5 MB |
+
+- **FR-VAL-001:** Validation failures shall reject the operation without partial database changes and shall return field-specific messages without exposing sensitive internals.
+- **FR-VAL-002:** Historical snapshots shall retain previously valid values even when current validation rules, categories, or units later change.
+- **FR-VAL-003:** Monetary calculations shall use fixed-point decimal arithmetic and round to two decimal places only at the line-total calculation boundary.
+- **FR-VAL-004:** Email, category name, and unit name uniqueness checks shall be case-insensitive after normalization.
+- **FR-VAL-005:** Decoded listing images shall not exceed 20 megapixels or 6,000 pixels on either side, and generated display images shall have a maximum longest side of 1,600 pixels.
+- **FR-VAL-006:** Before accepting a request or delivery quote, the system shall reject any operation whose calculated subtotal or final total would exceed `9,999,999.99`; no accepted multiplication or addition may exceed the monetary storage bound.
+
+## 9. Business Rules
+
+- **BR-001:** One account has exactly one operational role: farmer, buyer, or administrator.
+- **BR-002:** Administrator accounts are not publicly registered.
+- **BR-003:** Only administrator-verified farmers may publish listings.
+- **BR-004:** A listing belongs to exactly one farmer and one active category when created.
+- **BR-005:** A new listing's available quantity and price must be greater than zero; available quantity may later reach zero but never become negative.
+- **BR-006:** A buyer cannot order from an inactive or unavailable listing.
+- **BR-007:** A buyer cannot place an order against the buyer's own account because buyer and farmer roles are separate.
+- **BR-008:** A pending or delivery-fee-review order does not reserve stock.
+- **BR-009:** Stock is deducted only when a pickup request is accepted or a buyer accepts a local-delivery quote and the order becomes confirmed.
+- **BR-010:** Order confirmation must be atomic to prevent overselling.
+- **BR-011:** Only the buyer, listing owner, and administrator may view a complete order record.
+- **BR-012:** Only valid status transitions defined in Section 8.7 are allowed.
+- **BR-013:** Historical records shall not be physically deleted through normal user actions.
+- **BR-014:** Deactivated categories and suspended users remain referenced by historical records.
+- **BR-015:** AniMAL coordinates orders but does not guarantee payment, delivery, product quality, or contract fulfillment.
+- **BR-016:** Prices are expressed in Philippine pesos and stored with two decimal places.
+- **BR-017:** Dates and times displayed to users use the configured Philippine local time zone.
+- **BR-018:** Verification evidence is reviewed outside the application; sensitive identity-document images are not stored in the first release.
+- **BR-019:** A confirmed order may be cancelled by the buyer or farmer only before preparing begins, and its quantity is restored atomically.
+- **BR-020:** Orders at preparing or later may be cancelled only by an administrator with a recorded resolution.
+- **BR-021:** Suspending an account immediately invalidates sessions and prevents new business activity.
+- **BR-022:** Administrative listing deactivation or farmer suspension cancels pending requests but preserves confirmed and in-progress orders for administrator resolution.
+- **BR-023:** Order snapshots, status history, and audit entries are historical records and cannot be edited through normal user actions.
+- **BR-024:** Local-delivery totals equal produce subtotal plus the delivery fee quoted by the farmer and accepted by the buyer; pickup totals exclude delivery fees.
+- **BR-025:** Money values use Philippine pesos and two decimal places.
+- **BR-026:** Kilogram quantities may use up to two decimal places; sacks, crates, bundles, and pieces are whole-number units.
+- **BR-027:** Unit deactivation affects future listing selection only and does not alter historical records.
+- **BR-028:** Password changes and administrator-issued temporary passwords invalidate the user's other active sessions.
+- **BR-029:** The initial administrator is provisioned during installation and must replace the temporary password at first login.
+- **BR-030:** Passwords have a minimum length of 12 characters, unused temporary passwords expire after 24 hours, and authenticated sessions expire after 30 minutes of inactivity.
+- **BR-031:** Each listing may have at most one JPEG, PNG, or WebP image no larger than 5 MB; only the safely re-encoded application copy is retained.
+- **BR-032:** Fulfillment-value reports summarize recorded order values and do not represent verified payments or accounting revenue.
+- **BR-033:** Orders and status history are retained for five years after terminal status; verification records for five years after their decision or revocation; and suspension and audit events for five years after their event timestamp.
+- **BR-034:** At the end of the retention period, personal data shall be deleted or irreversibly anonymized unless an active dispute or documented legal hold requires continued retention.
+- **BR-035:** `available_quantity` is the quantity currently offered for new confirmations; confirmed quantities have already been deducted and are represented by their orders, not by a second committed-quantity field on the listing.
+- **BR-036:** Restoring stock increases available quantity atomically and reactivates only an automatically unavailable listing that still meets all activation rules; it never reopens a farmer-closed or administrator-deactivated listing.
+- **BR-037:** Local-delivery fees require buyer acceptance before confirmation; no stock is deducted while the quote is under review.
+- **BR-038:** An administrative hold freezes buyer and farmer transitions without replacing the order's primary status.
+- **BR-039:** Cancelling a held confirmed or in-progress order requires an administrator to record a stock disposition of restored or not restored and a supporting reason.
+- **BR-040:** Only an active administrator may create another administrator, and the last active administrator cannot be suspended.
+- **BR-041:** Confirmed and in-progress orders are those in `confirmed`, `preparing`, `ready_for_pickup`, or `out_for_delivery`; terminal orders are `rejected`, `completed`, or `cancelled`.
+- **BR-042:** Active account profile data is retained while the account remains active. A continuously suspended account becomes eligible for anonymization five years after suspension only when it has no nonterminal orders, all related retention periods have expired, and no hold applies.
+- **BR-043:** Pending requests and delivery-fee reviews do not expire automatically in the first release; the authorized buyer, farmer, or administrator must reject or cancel them explicitly under the defined transition rules.
+- **BR-044:** Available quantity plus restoration exposure shall never exceed `999,999.99`, ensuring that every mandatory restoration fits the quantity storage bound.
+
+## 10. Non-Functional Requirements
+
+### 10.1 Security
+
+- **NFR-SEC-001:** All SQL queries containing variable data shall use PDO prepared statements.
+- **NFR-SEC-002:** All state-changing forms shall include CSRF protection.
+- **NFR-SEC-003:** All untrusted output shall be HTML-escaped by default.
+- **NFR-SEC-004:** Passwords shall use `password_hash()` and `password_verify()`.
+- **NFR-SEC-005:** Production session cookies shall set HttpOnly, Secure, and SameSite=Lax.
+- **NFR-SEC-006:** The session identifier shall be regenerated after login and privilege changes.
+- **NFR-SEC-007:** Authorization shall be enforced on the server for every protected action.
+- **NFR-SEC-008:** Login attempts shall enforce the five-attempt, 15-minute window and 15-minute block defined in FR-AUTH-019 without revealing whether an email is registered.
+- **NFR-SEC-009:** Uploaded images shall be checked by content type, extension, decoded image validity, and the 5 MB file-size limit; generated filenames shall be used.
+- **NFR-SEC-010:** Uploaded images shall be stored in a dedicated location where script execution is disabled; only generated filenames and image extensions shall be served.
+- **NFR-SEC-011:** Production error pages shall not expose stack traces, SQL statements, credentials, or server paths.
+- **NFR-SEC-012:** Sensitive administrator actions and order status changes shall be auditable.
+- **NFR-SEC-013:** Any non-local production deployment shall use HTTPS for every application request and redirect HTTP requests to HTTPS.
+- **NFR-SEC-014:** Production responses shall set HSTS, Content-Security-Policy, X-Content-Type-Options, frame-embedding protection, and a strict Referrer-Policy.
+- **NFR-SEC-015:** Temporary passwords, reset events, retention holds, and administrative hold resolutions shall follow the same hashing, authorization, CSRF, and audit controls as other sensitive actions.
+- **NFR-SEC-016:** PHP strict session mode shall be enabled, and uninitialized client-supplied session identifiers shall be rejected.
+- **NFR-SEC-017:** Production HSTS shall use a max-age of at least 31,536,000 seconds; CSP shall restrict default, script, and style sources to self and set `object-src 'none'`, `base-uri 'self'`, and `frame-ancestors 'none'`; Referrer-Policy shall be `no-referrer`; and X-Content-Type-Options shall be `nosniff`.
+- **NFR-SEC-018:** Temporary passwords and authentication secrets shall never be written to application logs or audit before-and-after values.
+- **NFR-SEC-019:** Audit before-and-after payloads shall use an allowlist of non-sensitive fields and shall not copy passwords, tokens, contact details, exact addresses, free-text notes, or uploaded content.
+
+### 10.2 Privacy
+
+- **NFR-PRIV-001:** The system shall collect only information required for account, verification, listing, and order coordination.
+- **NFR-PRIV-002:** Public pages shall not display private phone numbers, email addresses, or exact addresses.
+- **NFR-PRIV-003:** Users shall be informed why profile and fulfillment information is collected.
+- **NFR-PRIV-004:** Access to personal data shall follow role and ownership rules consistent with the Data Privacy Act of 2012 (RA 10173).
+- **NFR-PRIV-005:** Historical orders, status changes, verification reviews, suspension records, and audit logs shall follow the five-year retention and anonymization rules in BR-033 and BR-034.
+- **NFR-PRIV-006:** Account anonymization shall replace the user's name, email, contact number, exact addresses, farm or business name, and free-text profile fields with non-identifying values while preserving a stable internal subject reference, non-identifying order values, statuses, dates, and required audit relationships.
+- **NFR-PRIV-007:** Only active administrators may create or release retention holds, and each hold shall identify its scope, reason, creator, creation time, status, release actor, and release time.
+- **NFR-PRIV-008:** Before a buyer submits a local-delivery request, the interface shall disclose that the exact delivery address will be visible to the listing owner for service assessment before confirmation.
+- **NFR-PRIV-009:** Anonymization shall also remove exact fulfillment locations and user-authored free-text that contains personal data while preserving non-identifying reason categories and aggregate values.
+- **NFR-PRIV-010:** Audit events shall identify actors and targets by stable internal references; personal values shall remain only in their authoritative records where retention and anonymization controls can be applied.
+
+### 10.3 Performance
+
+- **NFR-PERF-001:** At least 95% of common page requests shall complete within 3 seconds during the defined 20-concurrent-user acceptance test on the documented target environment.
+- **NFR-PERF-002:** Listing and administrative tables shall use pagination.
+- **NFR-PERF-003:** Searchable and relational columns shall be indexed according to measured query needs.
+- **NFR-PERF-004:** Uploaded listing images shall be re-encoded and served from a display-sized generated version rather than the original upload.
+- **NFR-PERF-005:** The acceptance-test report shall identify server hardware, PHP and MySQL versions, database size, network conditions, tested routes, request mix, and measured percentile results; common requests are login, listing browse/search/detail, order submission/detail, and administrator dashboard/report views.
+
+### 10.4 Usability and Accessibility
+
+- **NFR-UX-001:** The interface shall be responsive from 320-pixel mobile screens through common desktop widths.
+- **NFR-UX-002:** Primary interactive controls shall be keyboard accessible.
+- **NFR-UX-003:** Form fields shall have visible labels, validation messages, and clear recovery instructions.
+- **NFR-UX-004:** Text and interactive controls shall meet WCAG 2.1 AA contrast requirements.
+- **NFR-UX-005:** Status shall not be communicated by color alone.
+- **NFR-UX-006:** Navigation and terminology shall remain consistent across roles.
+- **NFR-UX-007:** The system shall provide useful empty, success, warning, and error states.
+
+### 10.5 Reliability and Data Integrity
+
+- **NFR-REL-001:** Foreign keys and database constraints shall protect required relationships.
+- **NFR-REL-002:** Order confirmation and stock deduction shall run in one database transaction.
+- **NFR-REL-003:** The deployment shall support daily database backups with a maximum recovery point of 24 hours, a target restore time of 4 hours, and a documented successful restore test before release.
+- **NFR-REL-004:** User-facing records shall use status changes or soft deletion instead of destructive deletion where history is required.
+- **NFR-REL-005:** The application shall show a safe error message and preserve submitted values when a recoverable form error occurs.
+
+### 10.6 Maintainability
+
+- **NFR-MNT-001:** Application code shall separate configuration, database access, business logic, controllers or actions, and views.
+- **NFR-MNT-002:** Reusable validation, authorization, CSRF, session, and escaping functions shall be centralized.
+- **NFR-MNT-003:** Names shall describe business meaning and follow one documented convention.
+- **NFR-MNT-004:** Environment-specific database credentials shall not be committed to version control.
+- **NFR-MNT-005:** The project shall include installation, database setup, and test instructions.
+
+### 10.7 Compatibility and Verification
+
+- **NFR-TEST-001:** Acceptance testing shall cover the current stable releases of Chrome, Edge, and Firefox available at the time of release.
+- **NFR-TEST-002:** Responsive acceptance testing shall include 360-pixel mobile, 768-pixel tablet, and 1366-pixel desktop viewport widths.
+- **NFR-TEST-003:** The load test shall simulate 20 concurrent users performing a documented representative mix of browsing, searching, authentication, order submission, and administration actions.
+- **NFR-TEST-004:** Security tests shall cover horizontal and vertical authorization, CSRF, stored and reflected XSS, SQL injection, malicious uploads, login throttling, session fixation, session expiry, suspension invalidation, and order-confirmation concurrency.
+- **NFR-TEST-005:** Production-header tests shall verify HTTPS redirection, HSTS, Content-Security-Policy, X-Content-Type-Options, frame-embedding protection, Referrer-Policy, and secure cookie attributes.
+
+## 11. High-Level Information Entities
+
+This section identifies information needs only. It does not define the relational schema.
+
+- User account
+- Farmer profile
+- Verification request and immutable review event
+- Buyer profile
+- Produce category
+- Managed quantity unit
+- Produce listing
+- Listing image
+- Immutable stock adjustment
+- Order
+- Order status history
+- Administrative order hold and resolution
+- User suspension event
+- Retention hold
+- Append-only administrator audit event
+
+The relational schema, keys, cardinalities, normalization, indexes, and data dictionary will be produced only after this SRS is approved.
+
+## 12. Core User Stories
+
+### Farmer
+
+- As a farmer, I want to submit verification information so that I can publish trusted produce listings.
+- As a verified farmer, I want to publish available produce so buyers can find it.
+- As a farmer, I want to confirm pickup requests, quote local-delivery fees, or reject requests so I retain control over availability.
+- As a farmer, I want to update preparation and fulfillment status so buyers know what to expect.
+
+### Buyer
+
+- As a buyer, I want to filter produce by type, location, date, and price so I can find suitable listings.
+- As a buyer, I want to request a specific quantity without paying online so I can coordinate directly with the farmer.
+- As a buyer, I want to choose pickup or local delivery so fulfillment expectations are clear.
+- As a buyer, I want to accept or decline a quoted local-delivery fee before stock is committed.
+- As a buyer, I want to review order status and history so I can track coordination progress.
+
+### Administrator
+
+- As an administrator, I want to verify farmers so unverified accounts cannot publish listings.
+- As an administrator, I want to suspend abusive accounts and listings so the system remains trustworthy.
+- As an administrator, I want filtered operational reports so the capstone can demonstrate system activity and oversight.
+
+## 13. Initial Abuse Cases
+
+- A user attempts to register as an administrator.
+- An unverified farmer attempts to create a listing by calling the server action directly.
+- A farmer attempts to edit another farmer's listing.
+- A buyer changes an order identifier to view another buyer's order.
+- Concurrent requests attempt to confirm quantities that would oversell a listing.
+- A stale listing edit attempts to overwrite a newer available quantity.
+- A buyer tampers with a delivery quote, subtotal, address, or another buyer's quote-acceptance action.
+- A farmer attempts to view a buyer's contact details before order confirmation.
+- A buyer or farmer attempts to transition an order under administrative hold.
+- An administrator attempts to suspend the same account or the last active administrator.
+- An administrator attempts to alter an existing verification review or audit event.
+- Retention processing attempts to anonymize a record under an active hold or with a nonterminal order.
+- A user submits script content in profile, listing, or order fields.
+- A user submits SQL syntax through a search or form field.
+- A user submits a fake image or executable file as a listing photo.
+- An attacker repeatedly guesses passwords or session identifiers.
+- A suspended account reuses an existing session.
+
+These cases must become authorization, validation, concurrency, and security test scenarios during implementation.
+
+## 14. Acceptance Boundary for the First Release
+
+The first release is acceptable when:
+
+1. Farmer, buyer, and administrator access controls work as specified.
+2. An administrator can verify a farmer.
+3. A verified farmer can publish a produce listing.
+4. A buyer can search listings and submit an order request.
+5. A farmer can confirm a pickup order, and a buyer can accept a local-delivery quote, without overselling stock.
+6. Both parties can view a correct status history.
+7. Pickup and local-delivery details are visible only to authorized parties.
+8. Administrators can manage users, categories, listings, and reports.
+9. Suspension and listing deactivation create correct cancellations and administrative holds, and an administrator can release or cancel each held order with a recorded resolution.
+10. Repeated verification submissions, decisions, order transitions, stock adjustments, and sensitive administrator actions preserve the required immutable history.
+11. The documented security test matrix passes.
+12. The system passes the Chrome, Edge, and Firefox checks at 360, 768, and 1366 pixel widths.
+13. At least 95% of common requests complete within 3 seconds during the 20-concurrent-user test on the documented target environment.
+14. Production deployment checks confirm HTTPS, secure cookies, and the required response headers; localhost XAMPP development is exempt from HTTPS-only controls.
+
+## 15. Proposed Decisions Pending Stakeholder Approval
+
+The following decisions were selected during internal requirements analysis. They remain proposed until supported by the instructor-approved source, signed SRS approval, or recorded adviser meeting minutes.
+
+- Plain PHP with PDO, Bootstrap, MySQL, and XAMPP
+- Updated Markdown specification is authoritative over the older blueprint
+- Four user-facing roles are not required; the system uses farmer, buyer, and administrator only
+- Farmers require administrator verification before publishing
+- Farmer evidence is checked offline; only review notes and status history are stored
+- Buyers submit requests; farmers confirm pickup requests or quote local delivery and may reject either request type
+- Fulfillment supports pickup or farmer-arranged local delivery
+- Farmer-arranged delivery may include an optional recorded fee; all payment remains offline
+- A buyer accepts the farmer's local-delivery quote before the order is confirmed and stock is deducted
+- Administrators manage units, with two-decimal kilograms and whole-number count units
+- Users can change passwords; administrators can issue forced-change temporary passwords
+- Passwords require 12 characters; temporary passwords expire after 24 hours and sessions after 30 minutes of inactivity
+- Listings allow one validated, re-encoded JPEG, PNG, or WebP image up to 5 MB
+- Required reports cover registrations, verifications, listings, orders, fulfillment values, and cancellations
+- Historical and audit records are retained for five years, then personal data is deleted or anonymized unless held for a dispute or legal reason
+- Production requires HTTPS, secure cookies, and core security response headers
+- Acceptance covers 20 concurrent users, Chrome/Edge/Firefox, three responsive widths, and a documented security matrix
+- Either party may cancel before preparation and confirmed quantity is restored atomically
+- Suspension hides listings, cancels pending requests, and freezes confirmed orders for administrator resolution
+- No online payment, GPS tracking, route optimization, forecasting, AI, SMS integration, or chat
+
+## 16. Requirements Status
+
+All material business-rule and acceptance-test topics are specified for stakeholder review. These detailed rules remain proposed until the team and adviser formally approve this SRS; approval is the gate before schema design or implementation begins.

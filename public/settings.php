@@ -1,0 +1,221 @@
+<?php
+require __DIR__ . '/../src/bootstrap.php';
+require_once __DIR__ . '/../src/i18n.php';
+$copy = include __DIR__ . '/../src/i18n_copy.php';
+$locale = locale_current();
+$l = function($dict, $key) use ($copy, $locale) {
+    return $dict[$locale][$key] ?? $dict['en'][$key] ?? $key;
+};
+
+// Require login
+if (!current_user_id()) {
+    redirect_to('login.php');
+}
+
+$userId = current_user_id();
+
+$prefs = [
+    'locale' => 'en',
+    'theme' => 'system',
+    'notify_email' => 1,
+    'notify_inapp' => 1,
+    'notify_orders' => 1,
+    'notify_messages' => 1,
+    'notify_promotions' => 0,
+    'reduce_motion' => 0,
+    'larger_text' => 0,
+];
+
+try {
+    $stmt = DB::pdo()->prepare('SELECT locale, theme, notify_email, notify_inapp, notify_orders, notify_messages, notify_promotions, reduce_motion, larger_text FROM user_preferences WHERE user_id = :id');
+    $stmt->execute(['id' => $userId]);
+    $savedPrefs = $stmt->fetch();
+    if ($savedPrefs) {
+        $prefs = array_merge($prefs, $savedPrefs);
+    }
+} catch (Throwable $e) {
+    error_log('Settings load error: ' . $e->getMessage());
+}
+
+$error = null;
+$success = null;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
+
+    // Get and sanitize inputs
+    $localeInput = isset($_POST['locale']) && in_array($_POST['locale'], ['en', 'tl']) ? $_POST['locale'] : 'en';
+    $themeInput = isset($_POST['theme']) && in_array($_POST['theme'], ['system', 'light', 'dark']) ? $_POST['theme'] : 'system';
+    $notifyEmail = isset($_POST['notify_email']) ? 1 : 0;
+    $notifyInapp = isset($_POST['notify_inapp']) ? 1 : 0;
+    $notifyOrders = isset($_POST['notify_orders']) ? 1 : 0;
+    $notifyMessages = isset($_POST['notify_messages']) ? 1 : 0;
+    $notifyPromotions = isset($_POST['notify_promotions']) ? 1 : 0;
+    $reduceMotion = isset($_POST['reduce_motion']) ? 1 : 0;
+    $largerText = isset($_POST['larger_text']) ? 1 : 0;
+
+    // Upsert preferences
+    $upsert = DB::pdo()->prepare('
+        INSERT INTO user_preferences
+            (user_id, locale, theme, notify_email, notify_inapp, notify_orders, notify_messages, notify_promotions, reduce_motion, larger_text, updated_at)
+        VALUES
+            (:user_id, :locale, :theme, :notify_email, :notify_inapp, :notify_orders, :notify_messages, :notify_promotions, :reduce_motion, :larger_text, NOW())
+        ON DUPLICATE KEY UPDATE
+            locale = VALUES(locale),
+            theme = VALUES(theme),
+            notify_email = VALUES(notify_email),
+            notify_inapp = VALUES(notify_inapp),
+            notify_orders = VALUES(notify_orders),
+            notify_messages = VALUES(notify_messages),
+            notify_promotions = VALUES(notify_promotions),
+            reduce_motion = VALUES(reduce_motion),
+            larger_text = VALUES(larger_text),
+            updated_at = NOW()
+    ');
+    try {
+        $upsert->execute([
+            'user_id' => $userId,
+            'locale' => $localeInput,
+            'theme' => $themeInput,
+            'notify_email' => $notifyEmail,
+            'notify_inapp' => $notifyInapp,
+            'notify_orders' => $notifyOrders,
+            'notify_messages' => $notifyMessages,
+            'notify_promotions' => $notifyPromotions,
+            'reduce_motion' => $reduceMotion,
+            'larger_text' => $largerText,
+        ]);
+        // Update session locale if changed (so that immediate effect)
+        if ($localeInput !== $locale) {
+            // Update the session lang to reflect the new locale immediately
+            $_SESSION['lang'] = $localeInput;
+            // Also update the cookie
+            setcookie('animal_lang', $localeInput, [
+                'expires'  => time() + 60 * 60 * 24 * 365,
+                'path'     => '/',
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+        }
+        $success = $copy['settings'][$localeInput]['saved_success'] ?? $copy['settings']['en']['saved_success'];
+        // Refresh prefs
+        $prefs = [
+            'locale' => $localeInput,
+            'theme' => $themeInput,
+            'notify_email' => $notifyEmail,
+            'notify_inapp' => $notifyInapp,
+            'notify_orders' => $notifyOrders,
+            'notify_messages' => $notifyMessages,
+            'notify_promotions' => $notifyPromotions,
+            'reduce_motion' => $reduceMotion,
+            'larger_text' => $largerText,
+        ];
+    } catch (Exception $e) {
+        error_log('Settings save error: ' . $e->getMessage());
+        $error = $l($copy['settings'], 'save_error');
+    }
+}
+
+$pageTitle = $l($copy['settings'], 'page_title');
+require __DIR__ . '/partials/header.php';
+?>
+<main id="main-content" class="settings-wrap">
+    <div class="settings-container">
+        <div class="settings-header">
+            <h1><?= $l($copy['settings'], 'page_title') ?></h1>
+            <p><?= $l($copy['settings'], 'page_description') ?></p>
+        </div>
+        <?php if ($error): ?>
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-circle me-1"></i> <?= e($error) ?>
+            </div>
+        <?php endif; ?>
+        <?php if ($success): ?>
+            <div class="alert alert-success" role="alert">
+                <i class="bi bi-check-circle me-1"></i> <?= e($success) ?>
+            </div>
+        <?php endif; ?>
+        <form method="post" action="settings.php" class="settings-form">
+            <?= csrf_field() ?>
+            <fieldset>
+                <legend><?= $l($copy['settings'], 'legend_locale') ?></legend>
+                <div class="form-group">
+                    <label class="form-label" for="locale"><?= $l($copy['settings'], 'label_locale') ?></label>
+                    <select class="form-select" id="locale" name="locale">
+                        <option value="en" <?= $prefs['locale'] === 'en' ? 'selected' : '' ?>><?= $l($copy['settings'], 'option_en') ?></option>
+                        <option value="tl" <?= $prefs['locale'] === 'tl' ? 'selected' : '' ?>><?= $l($copy['settings'], 'option_tl') ?></option>
+                    </select>
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend><?= $l($copy['settings'], 'legend_theme') ?></legend>
+                <div class="form-group">
+                    <label class="form-label" for="theme"><?= $l($copy['settings'], 'label_theme') ?></label>
+                    <select class="form-select" id="theme" name="theme">
+                        <option value="system" <?= $prefs['theme'] === 'system' ? 'selected' : '' ?>><?= $l($copy['settings'], 'option_system') ?></option>
+                        <option value="light" <?= $prefs['theme'] === 'light' ? 'selected' : '' ?>><?= $l($copy['settings'], 'option_light') ?></option>
+                        <option value="dark" <?= $prefs['theme'] === 'dark' ? 'selected' : '' ?>><?= $l($copy['settings'], 'option_dark') ?></option>
+                    </select>
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend><?= $l($copy['settings'], 'legend_notifications') ?></legend>
+                <div class="form-group">
+                    <input class="form-check-input" type="checkbox" id="notify_email" name="notify_email" <?= $prefs['notify_email'] ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="notify_email"><?= $l($copy['settings'], 'notify_email') ?></label>
+                </div>
+                <div class="form-group">
+                    <input class="form-check-input" type="checkbox" id="notify_inapp" name="notify_inapp" <?= $prefs['notify_inapp'] ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="notify_inapp"><?= $l($copy['settings'], 'notify_inapp') ?></label>
+                </div>
+                <div class="form-group">
+                    <input class="form-check-input" type="checkbox" id="notify_orders" name="notify_orders" <?= $prefs['notify_orders'] ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="notify_orders"><?= $l($copy['settings'], 'notify_orders') ?></label>
+                </div>
+                <div class="form-group">
+                    <input class="form-check-input" type="checkbox" id="notify_messages" name="notify_messages" <?= $prefs['notify_messages'] ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="notify_messages"><?= $l($copy['settings'], 'notify_messages') ?></label>
+                </div>
+                <div class="form-group">
+                    <input class="form-check-input" type="checkbox" id="notify_promotions" name="notify_promotions" <?= $prefs['notify_promotions'] ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="notify_promotions"><?= $l($copy['settings'], 'notify_promotions') ?></label>
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend><?= $l($copy['settings'], 'legend_accessibility') ?></legend>
+                <div class="form-group">
+                    <input class="form-check-input" type="checkbox" id="reduce_motion" name="reduce_motion" <?= $prefs['reduce_motion'] ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="reduce_motion"><?= $l($copy['settings'], 'reduce_motion') ?></label>
+                </div>
+                <div class="form-group">
+                    <input class="form-check-input" type="checkbox" id="larger_text" name="larger_text" <?= $prefs['larger_text'] ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="larger_text"><?= $l($copy['settings'], 'larger_text') ?></label>
+                </div>
+                <div class="form-group d-flex justify-content-between align-items-center">
+                    <label class="form-label mb-0" for="animations_vis">Animations</label>
+                    <button class="motion-toggle" type="button" role="switch" aria-checked="true" aria-label="Turn animations off" id="animations_vis">
+                        <i class="bi bi-lightning-charge motion-icon-on" aria-hidden="true"></i>
+                        <i class="bi bi-lightning motion-icon-off" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </fieldset>
+            <button class="btn btn-primary" type="submit"><?= $l($copy['settings'], 'button_save') ?></button>
+            <a href="dashboard.php" class="btn btn-outline"><?= $l($copy['settings'], 'button_cancel') ?></a>
+        </form>
+    </div>
+</main>
+<?php if ($success): ?>
+<script>
+  // Settings were saved server-side; keep the client preference in sync so the
+  // FOUC guard (which already ran) never reverts this choice on the next page.
+  (function () {
+    var pref = <?= json_encode($prefs['theme']) ?>;
+    localStorage.setItem('animal_theme', pref);
+    document.documentElement.setAttribute('data-theme',
+      pref === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : pref);
+  })();
+</script>
+<?php endif; ?>
+<?php require __DIR__ . '/partials/footer.php'; ?>
