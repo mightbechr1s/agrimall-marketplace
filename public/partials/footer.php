@@ -110,6 +110,40 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
     </script>
 <script src="assets/vendor/bootstrap/bootstrap.bundle.min.js" defer></script>
 <script>
+(function () {
+  document.querySelectorAll('input[type="password"]').forEach(function (input) {
+    if (input.dataset.passwordToggle) return;
+    input.dataset.passwordToggle = '1';
+    var wrap = document.createElement('div');
+    wrap.style.position = 'relative';
+    wrap.style.width = '100%';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+    input.style.paddingRight = '44px';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.setAttribute('aria-label', 'Show password');
+    btn.style.position = 'absolute';
+    btn.style.right = '10px';
+    btn.style.top = '50%';
+    btn.style.transform = 'translateY(-50%)';
+    btn.style.background = 'transparent';
+    btn.style.border = 'none';
+    btn.style.padding = '2px 4px';
+    btn.style.color = 'currentColor';
+    btn.style.cursor = 'pointer';
+    btn.innerHTML = '<i class="bi bi-eye"></i>';
+    wrap.appendChild(btn);
+    btn.addEventListener('click', function () {
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      btn.querySelector('i').className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+    });
+  });
+})();
+</script>
+<script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js').then((reg) => {
