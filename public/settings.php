@@ -37,7 +37,8 @@ try {
 }
 
 $error = null;
-$success = null;
+$justSaved = flash_get('settings_saved') !== null;
+$success = $justSaved ? ($copy['settings'][$locale]['saved_success'] ?? $copy['settings']['en']['saved_success']) : null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
@@ -81,30 +82,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'reduce_motion' => $reduceMotion,
             'larger_text' => $largerText,
         ]);
-        // Update session locale if changed (so that immediate effect)
-        if ($localeInput !== $locale) {
-            // Update the session lang to reflect the new locale immediately
-            $_SESSION['lang'] = $localeInput;
-            // Also update the cookie
-            setcookie('animal_lang', $localeInput, [
-                'expires'  => time() + 60 * 60 * 24 * 365,
-                'path'     => '/',
-                'httponly' => true,
-                'samesite' => 'Lax',
-            ]);
-        }
-        $success = $copy['settings'][$localeInput]['saved_success'] ?? $copy['settings']['en']['saved_success'];
-        // Refresh prefs
-        $prefs = [
-            'locale' => $localeInput,
-            'theme' => $themeInput,
-            'notify_inapp' => $notifyInapp,
-            'notify_orders' => $notifyOrders,
-            'notify_messages' => $notifyMessages,
-            'notify_promotions' => $notifyPromotions,
-            'reduce_motion' => $reduceMotion,
-            'larger_text' => $largerText,
-        ];
+        // Persist the locale to session + cookie.
+        locale_switch($localeInput);
+        // Redirect rather than re-render. locale_current() resolves the locale into a
+        // per-request static at line 5, before this POST runs, so painting this
+        // response would still show the old language and the user would have to save
+        // a second time for it to stick.
+        flash_set('settings_saved', $localeInput);
+        redirect_to('settings.php');
     } catch (Exception $e) {
         error_log('Settings save error: ' . $e->getMessage());
         $error = $l($copy['settings'], 'save_error');
@@ -175,19 +160,8 @@ require __DIR__ . '/partials/header.php';
             <fieldset>
                 <legend><?= $l($copy['settings'], 'legend_accessibility') ?></legend>
                 <div class="form-group">
-                    <input class="form-check-input" type="checkbox" id="reduce_motion" name="reduce_motion" <?= $prefs['reduce_motion'] ? 'checked' : '' ?>>
-                    <label class="form-check-label" for="reduce_motion"><?= $l($copy['settings'], 'reduce_motion') ?></label>
-                </div>
-                <div class="form-group">
                     <input class="form-check-input" type="checkbox" id="larger_text" name="larger_text" <?= $prefs['larger_text'] ? 'checked' : '' ?>>
                     <label class="form-check-label" for="larger_text"><?= $l($copy['settings'], 'larger_text') ?></label>
-                </div>
-                <div class="form-group d-flex justify-content-between align-items-center">
-                    <label class="form-label mb-0" for="animations_vis">Animations</label>
-                    <button class="motion-toggle" type="button" role="switch" aria-checked="true" aria-label="Turn animations off" id="animations_vis">
-                        <i class="bi bi-lightning-charge motion-icon-on" aria-hidden="true"></i>
-                        <i class="bi bi-lightning motion-icon-off" aria-hidden="true"></i>
-                    </button>
                 </div>
             </fieldset>
             <button class="btn btn-primary" type="submit"><?= $l($copy['settings'], 'button_save') ?></button>
