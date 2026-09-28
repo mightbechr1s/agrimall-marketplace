@@ -38,10 +38,10 @@ require __DIR__ . '/partials/header.php';
     margin-left: -0.75rem;
 }
 .toc-link:hover {
-    color: var(--ink);
+    color: var(--text);
 }
 .toc-link.is-active {
-    color: var(--ink);
+    color: var(--text);
     font-weight: 600;
     border-left-color: var(--accent);
 }
@@ -142,7 +142,8 @@ require __DIR__ . '/partials/header.php';
                         <h2 id="cookies-localstorage">8. Cookies & localStorage</h2>
                         <p>See our <a href="cookies.php">Cookie Policy</a> for details. In summary:</p>
                         <ul>
-                            <li><strong>Essential session cookie</strong> (PHPSESSID) — keeps you logged in; expires on browser close.</li>
+                            <li><strong>Essential session cookie</strong> (ANIMAL_SESSID) — keeps you logged in; expires 30 minutes after your last activity.</li>
+                            <li><strong>Remember-me cookie</strong> (<code>animal_remember</code>) — only set when you select &ldquo;Remember me&rdquo; on login; signs you back in for 30 days. Clearing it signs you out permanently.</li>
                             <li><strong>Language cookie</strong> (<code>animal_lang</code>) — remembers EN/TL choice for 1 year.</li>
                             <li><strong>localStorage</strong> — UI preferences (dismissed banners, theme); no expiry.</li>
                             <li><strong>Optional analytics</strong> — only if you accept via the banner.</li>

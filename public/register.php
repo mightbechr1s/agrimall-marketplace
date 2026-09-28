@@ -62,6 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = $l($copy['auth'], 'err_pass_match');
     }
 
+    foreach (over_limit_fields($_POST) as $field => $max) {
+        $errors[] = sprintf($l($copy['auth'], 'err_too_long'), $max);
+    }
+
     $consent = isset($_POST['consent']) && $_POST['consent'] === '1';
     if (!$consent) {
         $errors[] = $l($copy['auth'], 'err_consent');
@@ -140,38 +144,12 @@ require __DIR__ . '/partials/header.php';
 <main id="main-content" class="auth-wrap">
     <div class="auth-left">
         <div class="auth-left-content">
-            <img src="assets/images/products/seedlings.jpg"
-                 alt="Filipino farmer in a rice field"
-                 onerror="this.onerror=null; this.src='assets/branding/mark.svg'">
             <h2><?= $l($copy['auth'], 'reg_title') ?></h2>
             <p><?= $l($copy['auth'], 'reg_sub') ?></p>
-            <div class="auth-metrics">
-                <div class="auth-metric">
-                    <div class="auth-metric-icon"><i class="bi bi-person-fill"></i></div>
-                    <div>
-                        <div class="auth-metric-number">10,000+</div>
-                        <div>Verified Farmers</div>
-                    </div>
-                </div>
-                <div class="auth-metric">
-                    <div class="auth-metric-icon"><i class="bi bi-cart-fill"></i></div>
-                    <div>
-                        <div class="auth-metric-number">50,000+</div>
-                        <div>Happy Buyers</div>
-                    </div>
-                </div>
-                <div class="auth-metric">
-                    <div class="auth-metric-icon"><i class="bi bi-cash-coin"></i></div>
-                    <div>
-                        <div class="auth-metric-number">PHP 2B+</div>
-                        <div>In Transactions</div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
     <div class="auth-right">
-        <div class="auth-card" data-reveal>
+        <div class="auth-card">
             <div class="auth-logo">
                 <a href="index.php"><img src="assets/branding/logo-horizontal.svg" alt="AniMAL"></a>
             </div>
@@ -213,42 +191,46 @@ require __DIR__ . '/partials/header.php';
                 <div style="margin-bottom: 18px;">
                     <label class="form-label required" for="full_name"><?= $l($copy['auth'], 'full_name') ?></label>
                     <input class="form-control" type="text" id="full_name" name="full_name"
-                           value="<?= e($old['full_name'] ?? '') ?>" required placeholder="Juan Dela Cruz" />
+                           value="<?= e($old['full_name'] ?? '') ?>" required placeholder="Juan Dela Cruz" maxlength="<?= FIELD_LIMITS['full_name'] ?>" />
                 </div>
 
-                <fieldset id="farmer-fields" class="farmer-fields" <?= ($old['role'] ?? 'buyer') === 'farmer' ? '' : 'style="display:none;"' ?>>
+                <fieldset id="farmer-fields" class="farmer-fields<?= ($old['role'] ?? 'buyer') === 'farmer' ? ' is-open' : '' ?>">
                     <legend><?= $l($copy['auth'], 'farm_details') ?></legend>
+                    <div class="collapse">
+                    <div class="collapse-inner">
                     <div class="farm-grid">
                         <div class="span-2">
                             <label class="form-label required" for="farm_name"><?= $l($copy['auth'], 'farm_name') ?></label>
                             <input class="form-control" type="text" id="farm_name" name="farm_name"
-                                   value="<?= e($old['farm_name'] ?? '') ?>" placeholder="Green Valley Farm" />
+                                   value="<?= e($old['farm_name'] ?? '') ?>" placeholder="Green Valley Farm" maxlength="<?= FIELD_LIMITS['farm_name'] ?>" />
                         </div>
                         <div class="span-2">
                             <label class="form-label required" for="contact_person"><?= $l($copy['auth'], 'contact_person') ?></label>
                             <input class="form-control" type="text" id="contact_person" name="contact_person"
-                                   placeholder="<?= $l($copy['auth'], 'contact_placeholder') ?>" value="<?= e($old['contact_person'] ?? '') ?>" />
+                                   value="<?= e($old['contact_person'] ?? '') ?>" maxlength="<?= FIELD_LIMITS['contact_person'] ?>"
+                                   aria-describedby="contact_person-help" />
+                            <div class="form-text" id="contact_person-help"><?= $l($copy['auth'], 'contact_helper') ?></div>
                         </div>
                         <div>
                             <label class="form-label required" for="barangay"><?= $l($copy['auth'], 'barangay') ?></label>
                             <input class="form-control" type="text" id="barangay" name="barangay"
-                                   value="<?= e($old['barangay'] ?? '') ?>" />
+                                   value="<?= e($old['barangay'] ?? '') ?>" maxlength="<?= FIELD_LIMITS['barangay'] ?>" />
                         </div>
                         <div>
                             <label class="form-label required" for="municipality_city"><?= $l($copy['auth'], 'municipality') ?></label>
                             <input class="form-control" type="text" id="municipality_city" name="municipality_city"
-                                   value="<?= e($old['municipality_city'] ?? '') ?>" />
+                                   value="<?= e($old['municipality_city'] ?? '') ?>" maxlength="<?= FIELD_LIMITS['municipality_city'] ?>" />
                         </div>
                         <div>
                             <label class="form-label" for="province"><?= $l($copy['auth'], 'province') ?></label>
                             <input class="form-control" type="text" id="province" name="province"
-                                   value="<?= e($old['province'] ?? '') ?>" />
+                                   value="<?= e($old['province'] ?? '') ?>" maxlength="<?= FIELD_LIMITS['province'] ?>" />
                         </div>
                         <div>
                             <label class="form-label" for="region"><?= $l($copy['auth'], 'region') ?></label>
                             <input class="form-control" type="text" id="region" name="region"
                                    placeholder="<?= $l($copy['auth'], 'region_placeholder') ?>"
-                                   value="<?= e($old['region'] ?? '') ?>" />
+                                   value="<?= e($old['region'] ?? '') ?>" maxlength="<?= FIELD_LIMITS['region'] ?>" />
                         </div>
                         <div>
                             <label class="form-label" for="valid_id_type"><?= $l($copy['auth'], 'valid_id_type') ?></label>
@@ -262,29 +244,62 @@ require __DIR__ . '/partials/header.php';
                         <div>
                             <label class="form-label" for="valid_id_number"><?= $l($copy['auth'], 'valid_id_number') ?></label>
                             <input class="form-control" type="text" id="valid_id_number" name="valid_id_number"
-                                   value="<?= e($old['valid_id_number'] ?? '') ?>" />
+                                   value="<?= e($old['valid_id_number'] ?? '') ?>" maxlength="<?= FIELD_LIMITS['valid_id_number'] ?>"
+                                   aria-describedby="valid_id_number-help" />
+                            <div class="form-text" id="valid_id_number-help"><?= $l($copy['auth'], 'valid_id_number_hint') ?></div>
                         </div>
                     </div>
                     <p class="farm-note">
                         <i class="bi bi-info-circle me-1"></i><?= $l($copy['auth'], 'farmer_verify_note') ?>
                     </p>
+                    </div>
+                    </div>
                 </fieldset>
 
                 <div style="margin-bottom: 18px;">
-                    <label class="form-label required" for="email"><?= $l($copy['auth'], 'email') ?></label>
-                    <input class="form-control" type="email" id="email" name="email"
-                           value="<?= e($old['email'] ?? '') ?>" required placeholder="you@example.com" />
+                    <?php
+                    $label = $l($copy['auth'], 'email');
+                    $name = 'email';
+                    $type = 'email';
+                    $value = $old['email'] ?? '';
+                    $placeholder = 'you@example.com';
+                    $required = true;
+                    $attrs = ['maxlength' => FIELD_LIMITS['email']];
+                    $error = in_array($l($copy['auth'], 'err_email_valid'), $errors) ? $l($copy['auth'], 'err_email_valid') : '';
+                    include __DIR__ . '/partials/form-field.php';
+                    ?>
                 </div>
                 <div class="auth-row-2">
                     <div>
-                        <label class="form-label required" for="password"><?= $l($copy['auth'], 'password') ?></label>
-                        <input class="form-control" type="password" id="password" name="password"
-                               minlength="8" required placeholder="Min. 8 characters" />
+                        <?php
+                        $label = $l($copy['auth'], 'password');
+                        $name = 'password';
+                        $type = 'password';
+                        $value = '';
+                        $placeholder = 'Min. 8 characters';
+                        $required = true;
+                        $attrs = ['minlength' => 8, 'maxlength' => FIELD_LIMITS['password'], 'autocomplete' => 'new-password'];
+                        $error = in_array($l($copy['auth'], 'err_pass_min'), $errors) ? $l($copy['auth'], 'err_pass_min') : (in_array($l($copy['auth'], 'err_pass_match'), $errors) ? $l($copy['auth'], 'err_pass_match') : '');
+                        include __DIR__ . '/partials/form-field.php';
+                        ?>
+                        <ul class="pw-rules" id="pw-rules" hidden aria-label="<?= $l($copy['auth'], 'pw_strength') ?>">
+                            <li data-rule="length"><i class="bi bi-check-circle-fill" aria-hidden="true"></i><?= $l($copy['auth'], 'pw_rule_length') ?></li>
+                            <li data-rule="case"><i class="bi bi-check-circle-fill" aria-hidden="true"></i><?= $l($copy['auth'], 'pw_rule_case') ?></li>
+                            <li data-rule="number"><i class="bi bi-check-circle-fill" aria-hidden="true"></i><?= $l($copy['auth'], 'pw_rule_number') ?></li>
+                        </ul>
                     </div>
                     <div>
-                        <label class="form-label required" for="password_confirm"><?= $l($copy['auth'], 'confirm_password') ?></label>
-                        <input class="form-control" type="password" id="password_confirm" name="password_confirm"
-                               minlength="8" required placeholder="Confirm" />
+                        <?php
+                        $label = $l($copy['auth'], 'confirm_password');
+                        $name = 'password_confirm';
+                        $type = 'password';
+                        $value = '';
+                        $placeholder = 'Confirm';
+                        $required = true;
+                        $attrs = ['minlength' => 8, 'maxlength' => FIELD_LIMITS['password']];
+                        $error = in_array($l($copy['auth'], 'err_pass_match'), $errors) ? $l($copy['auth'], 'err_pass_match') : '';
+                        include __DIR__ . '/partials/form-field.php';
+                        ?>
                     </div>
                     </div>
                     <div style="margin-bottom: 1.5rem;">
@@ -306,18 +321,20 @@ require __DIR__ . '/partials/header.php';
                         <?php endif; ?>
                     </div>
 
-                <button class="btn btn-primary btn-lg w-100" type="submit">
-                    <?= $l($copy['auth'], 'create_acc_btn') ?>
+                <button class="btn btn-primary btn-lg w-100" type="submit" id="create-acc-btn" data-label="<?= e($l($copy['auth'], 'create_acc_btn')) ?>" data-busy-label="<?= e($l($copy['auth'], 'creating_acc')) ?>">
+                    <span class="btn-label"><?= $l($copy['auth'], 'create_acc_btn') ?></span>
+                    <span class="spinner-border spinner-border-sm btn-spinner" aria-hidden="true" hidden></span>
                 </button>
             </form>
 
             <script>
             (() => {
+                const form = document.querySelector('form[action="register.php"]');
                 const fields = document.getElementById('farmer-fields');
                 const farmerInputs = fields.querySelectorAll('input, select');
                 const updateRoleFields = () => {
                     const isFarmer = document.querySelector('input[name="role"]:checked')?.value === 'farmer';
-                    fields.style.display = isFarmer ? '' : 'none';
+                    fields.classList.toggle('is-open', isFarmer);
                     farmerInputs.forEach((input) => {
                         input.required = isFarmer;
                         input.disabled = !isFarmer;
@@ -327,6 +344,37 @@ require __DIR__ . '/partials/header.php';
                     input.addEventListener('change', updateRoleFields);
                 });
                 updateRoleFields();
+
+                // Password strength checklist
+                const pw = document.getElementById('field-password');
+                const rules = document.getElementById('pw-rules');
+                if (pw && rules) {
+                    const checks = {
+                        length: (v) => v.length >= 8,
+                        case: (v) => /[A-Z]/.test(v),
+                        number: (v) => /[0-9]/.test(v),
+                    };
+                    const render = () => {
+                        const v = pw.value;
+                        rules.hidden = v.length === 0;
+                        rules.querySelectorAll('li[data-rule]').forEach((li) => {
+                            li.classList.toggle('is-met', checks[li.dataset.rule](v));
+                        });
+                    };
+                    pw.addEventListener('input', render);
+                    render();
+                }
+
+                // Prevent double submit
+                const btn = document.getElementById('create-acc-btn');
+                if (btn) {
+                    form.addEventListener('submit', () => {
+                        btn.disabled = true;
+                        btn.setAttribute('aria-busy', 'true');
+                        btn.querySelector('.btn-label').textContent = btn.dataset.busyLabel;
+                        btn.querySelector('.btn-spinner').hidden = false;
+                    });
+                }
             })();
             </script>
 

@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS `user_preferences` (
   `user_id`           BIGINT UNSIGNED NOT NULL,
   `locale`            ENUM('en','tl')      NOT NULL DEFAULT 'en',
   `theme`             ENUM('system','light','dark') NOT NULL DEFAULT 'system',
-  `notify_email`      TINYINT(1) NOT NULL DEFAULT 1,
   `notify_inapp`      TINYINT(1) NOT NULL DEFAULT 1,
   `notify_orders`     TINYINT(1) NOT NULL DEFAULT 1,
   `notify_messages`   TINYINT(1) NOT NULL DEFAULT 1,

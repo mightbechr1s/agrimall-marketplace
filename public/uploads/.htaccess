@@ -1,0 +1,9 @@
+# Block direct access and PHP execution in the uploads directory
+# NOTE: Only enforced under Apache. Under `php -S` dev server (router.php),
+# the router denies script execution via realpath + static-asset whitelist,
+# so this is defense-in-depth, not the sole guard. If deploying to Nginx,
+# add an equivalent `location ~ \.php$ { deny all; }` block.
+Options -Indexes
+<FilesMatch "\.(php|php3|php4|php5|php7|phtml|pl|py|cgi|sh)$">
+    Require all denied
+</FilesMatch>

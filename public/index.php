@@ -3,13 +3,12 @@ require __DIR__ . '/../src/bootstrap.php';
 require_once __DIR__ . '/../src/i18n.php';
 $copy = include __DIR__ . '/../src/i18n_copy.php';
 
-$pageTitle = t($copy['hero'], 'headline');
-$activeNav = 'browse';
 $heroCopy = $copy['hero'][locale_current()] ?? $copy['hero']['en'];
+
+$pageTitle = t($copy['hero'], 'headline');
 require __DIR__ . '/partials/header.php';
 ?>
 
-<main id="main-content">
 <!-- Hero -->
 <section class="hero-section">
     <div class="container">
@@ -30,9 +29,7 @@ require __DIR__ . '/partials/header.php';
                          class="hero-image"
                          onerror="this.onerror=null;this.parentNode.classList.add('image-failed');">
                 </div>
-                <!-- Verified origin status tag -->
                 <div class="origin-badge">Verified Origin</div>
-                <!-- Floating live price -->
                 <div class="hero-overlay">
                     <div class="price-pill">₱180.00 / kg</div>
                 </div>
@@ -73,7 +70,7 @@ require __DIR__ . '/partials/header.php';
             <div class="col-lg-6">
                 <div class="story-content">
                     <p class="eyebrow-pill"><?= t($copy['story'], 'kicker') ?></p>
-                    <h2 class="section-title mb-3"><?= t($copy['story'], 'heading') ?></h2>
+                    <h2 class="section-title mb-3"><?= t($copy['story'], 'heading') ?></p>
                     <p class="story-body"><?= t($copy['story'], 'body') ?></p>
                     <blockquote class="story-quote">
                         <p><?= t($copy['story'], 'quote') ?></p>
@@ -169,12 +166,4 @@ require __DIR__ . '/partials/header.php';
     </div>
 </section>
 
-</main>
-
-<div class="mobile-cta-bar" role="navigation" aria-label="Quick actions">
-   <a href="browse.php" class="btn btn-outline">Browse</a>
-   <a href="create_listing.php" class="btn btn-primary">Sell</a>
-</div>
-
 <?php require __DIR__ . '/partials/footer.php'; ?>
-

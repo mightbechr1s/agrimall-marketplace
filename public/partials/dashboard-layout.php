@@ -25,14 +25,13 @@ $sidebarMenus = [
         ['page' => 'saved',      'label' => 'Saved',       'icon' => 'bi-heart',          'href' => 'dashboard.php#saved'],
     ],
     'admin' => [
+        // No admin_users/admin_listings/admin_categories pages exist yet, so the
+        // menu only links to panels and pages that actually resolve.
         ['page' => 'dashboard',  'label' => 'Dashboard',   'icon' => 'bi-grid-1x2-fill',  'href' => 'dashboard.php'],
-        ['page' => 'users',      'label' => 'Users',       'icon' => 'bi-people-fill',    'href' => 'dashboard.php#users'],
-        ['page' => 'listings',   'label' => 'Listings',    'icon' => 'bi-basket3-fill',   'href' => 'dashboard.php#listings'],
         ['page' => 'orders',     'label' => 'Orders',      'icon' => 'bi-receipt-cutoff', 'href' => 'dashboard.php#orders'],
         ['page' => 'verifications','label' => 'Verifications','icon' => 'bi-patch-check-fill','href' => 'admin_verify.php'],
         ['page' => 'audit',      'label' => 'Audit Log',   'icon' => 'bi-journal-text',   'href' => 'admin_audit.php'],
         ['page' => 'reports',    'label' => 'Reports',     'icon' => 'bi-bar-chart-line', 'href' => 'admin_reports.php'],
-        ['page' => 'categories', 'label' => 'Categories',  'icon' => 'bi-tags-fill',      'href' => 'dashboard.php#categories'],
     ],
 ];
 $menu = $sidebarMenus[$role] ?? $sidebarMenus['buyer'];
@@ -42,18 +41,39 @@ $roleLabels = ['farmer' => 'Farmer', 'buyer' => 'Buyer', 'admin' => 'Administrat
 $roleIcons  = ['farmer' => 'bi-tree-fill', 'buyer' => 'bi-cart3', 'admin' => 'bi-shield-check'];
 $roleColors = ['farmer' => 'role-farmer', 'buyer' => 'role-buyer', 'admin' => 'role-admin'];
 
-// Fetch user profile data
+// Fetch user profile data.
+// Display name comes from the role's own profile, not the email local-part:
+// deriving it from the email showed "Qa.Buyer" instead of the real name.
+// Admins have no profile table, so they fall back to the email local-part.
 $userProfile = ['email' => 'User', 'role' => $role, 'status' => 'active', 'created_at' => '', 'last_login_at' => ''];
+$displayName = '';
 try {
-    $uStmt = DB::pdo()->prepare('SELECT email, role, status, created_at, last_login_at FROM users WHERE id = :id');
+    $uStmt = DB::pdo()->prepare(
+        'SELECT u.email, u.role, u.status, u.created_at, u.last_login_at,
+                COALESCE(bp.full_name, fp.contact_person, fp.farm_name) AS profile_name
+           FROM users u
+           LEFT JOIN buyer_profiles  bp ON bp.user_id = u.id
+           LEFT JOIN farmer_profiles fp ON fp.user_id = u.id
+          WHERE u.id = :id'
+    );
     $uStmt->execute(['id' => current_user_id()]);
     $uRow = $uStmt->fetch();
-    if ($uRow) $userProfile = array_merge($userProfile, $uRow);
+    if ($uRow) {
+        $userProfile = array_merge($userProfile, $uRow);
+        $displayName = trim((string) ($uRow['profile_name'] ?? ''));
+    }
 } catch (Exception $e) {}
 
-// Generate initials from email
-$emailUser = explode('@', $userProfile['email'])[0];
-$initials = strtoupper(substr($emailUser, 0, 2));
+if ($displayName === '') {
+    $displayName = explode('@', (string) $userProfile['email'])[0];
+}
+
+// Initials from the first two words of the display name
+$initials = '';
+foreach (array_slice(preg_split('/\s+/u', $displayName, -1, PREG_SPLIT_NO_EMPTY) ?: [], 0, 2) as $word) {
+    $initials .= mb_substr($word, 0, 1);
+}
+$initials = mb_strtoupper($initials) ?: mb_strtoupper(mb_substr($displayName, 0, 1));
 $memberSince = $userProfile['created_at'] ? date('M Y', strtotime($userProfile['created_at'])) : '';
 $lastLogin = $userProfile['last_login_at'] ? date('M j, g:i A', strtotime($userProfile['last_login_at'])) : 'Never';
 
@@ -67,6 +87,8 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?= e($pageTitle) ?> | <?= e($config['app']['name'] ?? 'AniMAL') ?></title>
     <meta name="theme-color" content="#1B3B2B" />
+    <link rel="icon" type="image/svg+xml" href="assets/branding/mark.svg" />
+    <link rel="apple-touch-icon" href="assets/branding/mark.svg" />
 
     <?php
     $dbTheme = null;
@@ -90,6 +112,13 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
     <script>
     (function () {
       try {
+        // ----- JS-available flag -----
+        // Set here, before any stylesheet is parsed, so CSS can gate its
+        // pre-animation hidden states on .js. If this never runs (JS disabled)
+        // or a deferred script fails, .js is absent and those elements stay
+        // visible instead of being stranded at opacity: 0.
+        document.documentElement.classList.add('js');
+
         // Persistent theme: localStorage is the source of truth; the DB
         // preference seeds it only when nothing is stored yet. Must mirror
         // header.php exactly so pages never disagree after an action.
@@ -145,17 +174,17 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
 
     
     <nav class="sidebar-nav" aria-label="Dashboard menu">
-        <?php foreach ($menu as $item): ?>
+        <?php foreach ($menu as $menuItem): ?>
             <?php
-            $isActive = ($activePage === $item['page']);
-            // For hash links, also check if current script matches
-            if ($item['page'] === 'dashboard' && basename($_SERVER['SCRIPT_NAME'] ?? '') === 'dashboard.php' && $activePage === 'dashboard') {
+            $isActive = ($activePage === $menuItem['page']);
+            if ($menuItem['page'] === 'dashboard' && basename($_SERVER['SCRIPT_NAME'] ?? '') === 'dashboard.php' && $activePage === 'dashboard') {
                 $isActive = true;
             }
+            $label = t($navCopy['dashboard_nav'], $menuItem['page']);
             ?>
-            <a href="<?= e($item['href']) ?>" class="sidebar-link <?= $isActive ? 'is-active' : '' ?>">
-                <i class="bi <?= e($item['icon']) ?>" aria-hidden="true"></i>
-                <span><?= e(t($navCopy['dashboard_nav'], $item['page'])) ?></span>
+            <a href="<?= e($menuItem['href']) ?>" class="sidebar-link <?= $isActive ? 'is-active' : '' ?>">
+                <i class="bi <?= e($menuItem['icon']) ?>" aria-hidden="true"></i>
+                <span><?= e($label) ?></span>
             </a>
         <?php endforeach; ?>
     </nav>
@@ -182,18 +211,30 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
             <a class="sidebar-icon-btn" href="settings.php" aria-label="Settings">
                 <i class="bi bi-gear" aria-hidden="true"></i>
             </a>
+            <?php
+            $unreadCount = unread_notification_count((int) current_user_id());
+            $notifLabel = $unreadCount > 0
+                ? sprintf(t($navCopy['notifications'], 'unread_label'), $unreadCount)
+                : t($navCopy['notifications'], 'read_label');
+            ?>
+            <a href="notifications.php" class="sidebar-icon-btn notif-btn" aria-label="<?= e($notifLabel) ?>">
+                <i class="bi bi-bell" aria-hidden="true"></i>
+                <?php if ($unreadCount > 0): ?>
+                    <span class="notif-count"><?= $unreadCount ?></span>
+                <?php endif; ?>
+            </a>
             <div class="dropdown profile-dd">
                 <button class="profile-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <span class="profile-avatar" style="background: <?= e($avatarBg[$role] ?? 'var(--accent)') ?>"><?= e($initials) ?></span>
                     <span class="profile-meta">
-                        <span class="profile-name"><?= e(ucfirst($emailUser)) ?></span>
+                        <span class="profile-name"><?= e($displayName) ?></span>
                         <span class="role-pill"><?= e($roleLabels[$role] ?? ucfirst($role)) ?></span>
                     </span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end profile-dd-menu">
                     <li>
                         <div class="profile-dd-head">
-                            <span class="profile-dd-name"><?= e(ucfirst($emailUser)) ?></span>
+                            <span class="profile-dd-name"><?= e($displayName) ?></span>
                             <span class="profile-dd-email"><?= e($userProfile['email']) ?></span>
                         </div>
                     </li>

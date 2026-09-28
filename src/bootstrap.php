@@ -132,6 +132,11 @@ if (!headers_sent()) {
     if ($isProduction && isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
         header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
     }
+    // Don't cache HTML pages: rendered output varies by login state, so a
+    // heuristically cached copy would show stale navigation after login/logout.
+    header('Cache-Control: no-store, private, must-revalidate');
+    header('Pragma: no-cache');
+
     // CORS same-origin deny
     header('Access-Control-Allow-Origin: ');
 }
@@ -147,6 +152,13 @@ try {
     error_log('DB init failed: ' . $e->getMessage());
     // DB unavailable — pages using DB::pdo() will get RuntimeException
     // Pages that don't need DB will still work
+}
+
+// Resume a remembered session before any page reads the current user.
+try {
+    remember_resume();
+} catch (Throwable $e) {
+    error_log('Remember-me resume failed: ' . $e->getMessage());
 }
 
 return $config;

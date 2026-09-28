@@ -53,6 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($action === 'reject' && $reason === '') {
                 throw new RuntimeException('A reason is required when rejecting an application.');
             }
+            if (mb_strlen($reason) > FIELD_LIMITS['reason']) {
+                throw new RuntimeException('Reason is too long (max ' . FIELD_LIMITS['reason'] . ' characters).');
+            }
 
             if ($action === 'approve') {
                 $pdo->prepare('UPDATE farmer_profiles
@@ -204,6 +207,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                         <?= csrf_field() ?>
                         <input type="hidden" name="user_id" value="<?= (int) $app['user_id'] ?>">
                         <input type="text" name="reason" class="form-control form-control-sm" style="max-width: 190px;"
+                               maxlength="<?= FIELD_LIMITS['reason'] ?>"
                                placeholder="Reject reason" aria-label="Reject reason">
                         <button type="submit" name="action" value="approve" class="btn btn-sm btn-primary">Approve</button>
                         <button type="submit" name="action" value="reject" class="btn btn-sm btn-outline-danger">Reject</button>

@@ -9,7 +9,13 @@ $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https'
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 $baseUrl = rtrim($config['app']['base_url'] ?? '', '/');
-$canonicalUrl = $baseUrl ? $baseUrl . $requestUri : "{$protocol}://{$host}{$requestUri}";
+// Fall back to the origin actually serving this request. Without this, an empty
+// or stale base_url emits a canonical on the wrong host, and og/twitter images
+// become relative URLs, which crawlers reject.
+if ($baseUrl === '') {
+    $baseUrl = "{$protocol}://{$host}";
+}
+$canonicalUrl = $baseUrl . $requestUri;
 $canonicalUrl = strtok($canonicalUrl, '?'); // strip query for canonical
 ?>
 <?php
@@ -35,7 +41,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
     <meta property="og:type" content="website" />
     <meta property="og:title" content="<?= e($appName) ?> — Farm to table, no middlemen" />
     <meta property="og:description" content="<?= e($i18nCopy['og_description'][$currentLocale] ?? $i18nCopy['og_description']['en'] ?? '') ?>" />
-    <meta property="og:image" content="<?= e($config['app']['base_url'] ?? '') ?>/assets/branding/mark.svg" />
+    <meta property="og:image" content="<?= e($baseUrl) ?>/assets/branding/mark.svg" />
     <meta property="og:url" content="<?= e($canonicalUrl) ?>" />
     <meta property="og:site_name" content="AniMAL" />
     <meta property="og:locale" content="<?= $currentLocale === 'tl' ? 'tl_PH' : 'en_PH' ?>" />
@@ -44,7 +50,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="<?= e($appName) ?> — Farm to table, no middlemen" />
     <meta name="twitter:description" content="<?= e($i18nCopy['og_description'][$currentLocale] ?? $i18nCopy['og_description']['en'] ?? '') ?>" />
-    <meta name="twitter:image" content="<?= e($config['app']['base_url'] ?? '') ?>/assets/branding/mark.svg" />
+    <meta name="twitter:image" content="<?= e($baseUrl) ?>/assets/branding/mark.svg" />
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="assets/branding/mark.svg" />
@@ -82,6 +88,13 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
     ?>
     <script>
     (function () {
+      // ----- JS-available flag -----
+      // Set here, before any stylesheet is parsed, so CSS can gate its
+      // pre-animation hidden states on .js. If this never runs (JS disabled)
+      // or a deferred script fails, .js is absent and those elements stay
+      // visible instead of being stranded at opacity: 0.
+      document.documentElement.classList.add('js');
+
       // ----- Theme (persistent: localStorage is the source of truth; the DB
       // preference seeds it only when nothing is stored yet, so page actions
       // never flip the user's choice back) -----
@@ -103,23 +116,46 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
       if (animPref === 'on') document.documentElement.setAttribute('data-animations', 'on');
       else if (animPref === 'off') document.documentElement.setAttribute('data-animations', 'off');
 
-      // ----- Reduce motion -----
-      var reduceMotion = <?= $dbReduceMotion ? 'true' : 'false' ?>;
-      var storedRM = localStorage.getItem('reduceMotion');
-      if (storedRM !== null) reduceMotion = storedRM === 'true';
-      document.documentElement.toggleAttribute('data-reduce-motion', reduceMotion);
-      localStorage.setItem('reduceMotion', reduceMotion);
+      // ----- Reduce motion / larger text -----
+      // The stored preference is the source of truth. A cached localStorage copy
+      // used to win here, so a change saved on settings.php was ignored until
+      // the browser storage was cleared.
+      document.documentElement.toggleAttribute('data-reduce-motion', <?= $dbReduceMotion ? 'true' : 'false' ?>);
+      document.documentElement.toggleAttribute('data-larger-text', <?= $dbLargerText ? 'true' : 'false' ?>);
+    })();
+    </script>
+    <script>
+    (function () {
+      var themeBtn = document.querySelector('.theme-toggle');
+      if (themeBtn) {
+        themeBtn.addEventListener('click', function () {
+          var pref = localStorage.getItem('animal_theme');
+          if (pref !== 'system' && pref !== 'light' && pref !== 'dark') pref = 'system';
+          var next = pref === 'dark' ? 'light' : pref === 'light' ? 'system' : 'dark';
+          localStorage.setItem('animal_theme', next);
+          document.cookie = 'animal_theme=' + next + ';path=/;max-age=31536000;SameSite=Lax';
+          location.reload();
+        });
+        var updateThemeLabel = function () {
+          var pref = localStorage.getItem('animal_theme');
+          if (!pref) pref = 'system';
+          var resolved = pref === 'system'
+            ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+            : pref;
+          themeBtn.setAttribute('aria-label', resolved === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+        };
+        updateThemeLabel();
+        var observer = new MutationObserver(updateThemeLabel);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+      }
 
-      // ----- Larger text -----
-      var largerText = <?= $dbLargerText ? 'true' : 'false' ?>;
-      var storedLT = localStorage.getItem('largerText');
-      if (storedLT !== null) largerText = storedLT === 'true';
-      document.documentElement.toggleAttribute('data-larger-text', largerText);
-      localStorage.setItem('largerText', largerText);
     })();
     </script>
 
-    <!-- Local styles -->
+    <!-- Local styles. design-system.css owns the :root token definitions and
+         loads last, so it is the single source of truth. Do not add a second
+         token sheet here: the page pays a render-blocking request and the
+         duplicate definitions have no effect. -->
     <link href="<?= e(asset('assets/css/styles.min.css')) ?>" rel="stylesheet" />
     <link href="<?= e(asset('assets/css/motion.min.css')) ?>" rel="stylesheet" />
     <!-- Self-hosted harvest typography (offline) -->
@@ -141,8 +177,8 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
                 ? 'Merkadong agrikultura ng Pilipinas. Mga na-verify na magsasaka, patas na presyo, sariwa mula sa sakahan.'
                 : 'Philippine agricultural marketplace connecting verified farms directly with buyers. Farm to table, no middlemen.', JSON_UNESCAPED_UNICODE) ?>,
           "url": "<?= e($canonicalUrl) ?>",
-          "logo": "<?= e($config['app']['base_url'] ?? '') ?>/assets/branding/mark.svg",
-          "image": "<?= e($config['app']['base_url'] ?? '') ?>/assets/branding/mark.svg",
+          "logo": "<?= e($baseUrl) ?>/assets/branding/mark.svg",
+          "image": "<?= e($baseUrl) ?>/assets/branding/mark.svg",
           "address": {
             "@type": "PostalAddress",
             "addressCountry": "PH"
@@ -234,15 +270,28 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
           <i class="bi bi-lightning motion-icon-off" aria-hidden="true"></i>
         </button>
         <div class="dropdown locale-dd">
-          <button class="locale-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Language">
-            <span class="locale-code"><?= e(strtoupper($currentLocale)) ?></span>
-            <i class="bi bi-chevron-down locale-caret" aria-hidden="true"></i>
+          <button class="locale-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Language: <?= e(strtoupper($currentLocale)) ?>" title="<?= e(strtoupper($currentLocale)) ?>">
+            <i class="bi bi-globe" aria-hidden="true"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-end">
             <li><a class="dropdown-item" href="<?= e(locale_url('en')) ?>" data-lang="en">English <?= $currentLocale === 'en' ? '<span class="locale-tick small">✓</span>' : '' ?></a></li>
             <li><a class="dropdown-item" href="<?= e(locale_url('tl')) ?>" data-lang="tl">Filipino <?= $currentLocale === 'tl' ? '<span class="locale-tick small">✓</span>' : '' ?></a></li>
           </ul>
         </div>
+        <?php if (current_user_id()): ?>
+          <?php
+            $unreadCount = unread_notification_count((int) current_user_id());
+            $notifLabel = $unreadCount > 0
+                ? sprintf(t($i18nCopy['notifications'], 'unread_label'), $unreadCount)
+                : t($i18nCopy['notifications'], 'read_label');
+          ?>
+          <a href="notifications.php" class="notif-pill" aria-label="<?= e($notifLabel) ?>">
+            <?php if ($unreadCount > 0): ?>
+              <span class="notif-count"><?= $unreadCount ?></span>
+            <?php endif; ?>
+            <i class="bi bi-bell" aria-hidden="true"></i>
+          </a>
+        <?php endif; ?>
         <?php if (current_user_role() === 'buyer' || !current_user_id()): ?>
           <?php
             $cartCount = 0;
@@ -253,51 +302,58 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
                     $cartCount = (int) $cc->fetchColumn();
                 } catch (Exception $e) {}
             }
-            $cartUrl = current_user_id() ? 'cart.php' : 'login.php';
+            $cartUrl = current_user_id() ? 'cart.php' : login_url('cart.php');
           ?>
           <a href="<?= e($cartUrl) ?>" class="cart-pill" aria-label="Basket, <?= $cartCount ?> items">
             <span class="cart-count"><?= $cartCount ?></span>
             <i class="bi bi-basket" aria-hidden="true"></i>
           </a>
         <?php endif; ?>
+        <?php if (current_user_id()): ?>
+          <?php
+            // Fetch user profile data for avatar
+            $userProfile = ['email' => 'User', 'role' => current_user_role(), 'status' => 'active', 'name' => ''];
+            try {
+                $uStmt = DB::pdo()->prepare('SELECT email, role, status FROM users WHERE id = :id');
+                $uStmt->execute(['id' => current_user_id()]);
+                $uRow = $uStmt->fetch();
+                if ($uRow) $userProfile = array_merge($userProfile, $uRow);
+            } catch (Exception $e) {}
+            $emailUser = explode('@', $userProfile['email'])[0];
+            $initials = strtoupper(substr($emailUser, 0, 2));
+            $nameUser = !empty($userProfile['name']) ? $userProfile['name'] : $emailUser;
+            $role = $userProfile['role'];
+            $roleLabels = ['farmer' => 'Farmer', 'buyer' => 'Buyer', 'admin' => 'Administrator'];
+            $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' => '#C9A227'];
+          ?>
+          <div class="dropdown profile-dd">
+            <button class="profile-btn dropdown-toggle" type="button" id="avatarDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu">
+              <span class="profile-avatar" style="background: <?= e($avatarBg[$role] ?? 'var(--accent)') ?>"><?= e($initials) ?></span>
+              <span class="profile-meta">
+                <span class="profile-name"><?= e(ucfirst($nameUser)) ?></span>
+                <span class="role-pill"><?= e($roleLabels[$role] ?? ucfirst($role)) ?></span>
+              </span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end profile-dd-menu" aria-labelledby="avatarDropdown">
+              <li>
+                <div class="profile-dd-head">
+                  <span class="profile-dd-name"><?= e(ucfirst($nameUser)) ?></span>
+                  <span class="profile-dd-email"><?= e($userProfile['email']) ?></span>
+                </div>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="dashboard.php"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+              <li><a class="dropdown-item" href="settings.php"><i class="bi bi-gear me-2"></i>Settings</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="logout.php"><i class="bi bi-box-arrow-left me-2"></i>Log out</a></li>
+            </ul>
+          </div>
+        <?php else: ?>
+          <a href="login.php" class="nav-text-link"><?= t($i18nCopy['nav'], 'login') ?></a>
+          <a href="register.php" class="nav-text-link nav-link-sell"><?= t($i18nCopy['nav'], 'sell') ?></a>
+          <a href="browse.php" class="btn-primary-nav nav-sell-btn nav-cta-primary"><?= t($i18nCopy['nav'], 'browse') ?></a>
+        <?php endif; ?>
       </div>
-      <?php if (current_user_id()): ?>
-        <?php
-          // Fetch user profile data for avatar
-          $userProfile = ['email' => 'User', 'role' => current_user_role(), 'status' => 'active', 'name' => ''];
-          try {
-              $uStmt = DB::pdo()->prepare('SELECT email, role, status, name FROM users WHERE id = :id');
-              $uStmt->execute(['id' => current_user_id()]);
-              $uRow = $uStmt->fetch();
-              if ($uRow) $userProfile = array_merge($userProfile, $uRow);
-          } catch (Exception $e) {}
-          $emailUser = explode('@', $userProfile['email'])[0];
-          $initials = strtoupper(substr($emailUser, 0, 2));
-          $nameUser = $userProfile['name'] ?? $emailUser; // Use name if available, else email username
-          $roleLabels = ['farmer' => 'Farmer', 'buyer' => 'Buyer', 'admin' => 'Administrator'];
-          $roleIcons  = ['farmer' => 'bi-tree-fill', 'buyer' => 'bi-cart3', 'admin' => 'bi-shield-check'];
-          $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' => '#C9A227'];
-        ?>
-        <div class="dropdown">
-          <button class="dropdown-toggle" type="button" id="avatarDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu">
-            <div class="avatar" style="width: 2rem; height: 2rem; background: <?= e($avatarBg[$userProfile['role']] ?? 'var(--primary)') ?>; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-transform: uppercase; font-weight: 600; font-size: 0.75rem; color: var(--paper);">
-              <span><?= e($initials) ?></span>
-            </div>
-            <span class="ms-2 d-none d-lg-block"><?= e($nameUser) ?></span>
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="avatarDropdown">
-            <li><a class="dropdown-item" href="dashboard.php"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
-            <li><a class="dropdown-item" href="settings.php"><i class="bi bi-gear me-2"></i>Settings</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="logout.php"><i class="bi bi-box-arrow-left me-2"></i>Log out</a></li>
-          </ul>
-        </div>
-      <?php else: ?>
-        <?php $role = current_user_role(); ?>
-        <a href="login.php" class="nav-text-link"><?= t($i18nCopy['nav'], 'login') ?></a>
-        <a href="register.php" class="nav-text-link nav-link-sell"><?= t($i18nCopy['nav'], 'sell') ?></a>
-        <a href="browse.php" class="btn-primary-nav nav-sell-btn nav-cta-primary"><?= t($i18nCopy['nav'], 'browse') ?></a>
-      <?php endif; ?>
     </div>
   </div>
 </header>
@@ -326,6 +382,27 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
         <a href="index.php#faq" class="mobile-nav-link"><?= t($i18nCopy['nav'], 'faq') ?></a>
       <?php endif; ?>
     </nav>
+    <div class="mobile-menu-utils" style="display:flex;gap:0.5rem;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:0.5rem;">
+      <?php if (current_user_id()): ?>
+        <a href="notifications.php" class="notif-pill" aria-label="Notifications" style="width:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--paper);border:1px solid var(--borders);color:var(--text);">
+          <?php $unreadCount = unread_notification_count((int) current_user_id()); ?>
+          <?php if ($unreadCount > 0): ?><span class="notif-count" style="position:absolute;top:0;right:0;background:var(--danger);color:#fff;font-size:0.6rem;padding:0.1rem 0.35rem;border-radius:999px;"><?= $unreadCount ?></span><?php endif; ?>
+          <i class="bi bi-bell" aria-hidden="true"></i>
+        </a>
+        <a href="cart.php" class="cart-pill" aria-label="Basket" style="width:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--paper);border:1px solid var(--borders);color:var(--text);">
+          <?php
+            $cartCount = 0;
+            if (current_user_role() === 'buyer') {
+              try { $cc = DB::pdo()->prepare('SELECT COUNT(*) FROM cart_items WHERE buyer_id = :id'); $cc->execute(['id'=>current_user_id()]); $cartCount = (int)$cc->fetchColumn(); } catch(Exception $e){}
+            }
+          ?>
+          <?php if ($cartCount > 0): ?><span class="cart-count" style="position:absolute;top:0;right:0;background:var(--danger);color:#fff;font-size:0.6rem;padding:0.1rem 0.35rem;border-radius:999px;"><?= $cartCount ?></span><?php endif; ?>
+          <i class="bi bi-basket" aria-hidden="true"></i>
+        </a>
+      <?php else: ?>
+        <a href="<?= e(login_url('cart.php')) ?>" class="cart-pill" aria-label="Basket (login to view)" style="width:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--paper);border:1px solid var(--borders);color:var(--text);"><i class="bi bi-basket" aria-hidden="true"></i></a>
+      <?php endif; ?>
+    </div>
     <div class="mobile-menu-actions">
       <?php if (current_user_id()): ?>
         <a href="settings.php" class="btn btn-outline"><i class="bi bi-gear" aria-hidden="true"></i> <?= t($i18nCopy['settings'], 'nav_settings') ?></a>

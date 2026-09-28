@@ -114,8 +114,14 @@
    1. REVEAL — opt-in fade + slide-up on scroll into view
    JS: IntersectionObserver adds .reveal-visible
    No auto-play, no stagger-by-default
+
+   Both states are gated on .js, which header.php sets on <html> before
+   any stylesheet is parsed. Ungated, these rules apply even when JS never
+   runs, stranding content at opacity: 0 -- a blank login form for anyone
+   with JS disabled or a blocked deferred script. Gating both sides also
+   keeps them at equal specificity so source order breaks the tie.
 ──────────────────────────────────────────────────────────── */
-[data-reveal]:not([data-reveal="stagger"]) {
+.js [data-reveal]:not([data-reveal="stagger"]) {
   opacity: 0;
   transform: translateY(28px);
   filter: blur(6px);
@@ -123,14 +129,14 @@
               transform var(--dur-reveal) var(--ease-enter),
               filter var(--dur-reveal) var(--ease-enter);
 }
-[data-reveal].reveal-visible {
+.js [data-reveal].reveal-visible {
   opacity: 1;
   transform: translateY(0);
   filter: blur(0);
 }
 
 /* Opt-in stagger for grouped children only (e.g., stat row, card grid) */
-[data-reveal="stagger"] > * {
+.js [data-reveal="stagger"] > * {
   opacity: 0;
   transform: translateY(22px);
   filter: blur(4px);
@@ -138,7 +144,7 @@
               transform var(--dur-reveal) var(--ease-enter),
               filter var(--dur-reveal) var(--ease-enter);
 }
-[data-reveal="stagger"].reveal-visible > * {
+.js [data-reveal="stagger"].reveal-visible > * {
   opacity: 1;
   transform: translateY(0);
   filter: blur(0);
@@ -458,7 +464,24 @@
 }
 
 /* ────────────────────────────────────────────────────────────
-   UTILITY — focus ring, smooth scroll (respects reduced + user knob)
+    SKELETON LOADERS — content placeholders
+──────────────────────────────────────────────────────────── */
+.skeleton-loader {
+  background: linear-gradient(90deg, var(--borders) 25%, var(--canvas-deep) 50%, var(--borders) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-loader { animation: none; background: var(--borders); }
+}
+
+/* ────────────────────────────────────────────────────────────
+    UTILITY — focus ring, smooth scroll (respects reduced + user knob)
 ──────────────────────────────────────────────────────────── */
 :focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -467,4 +490,22 @@
 html[data-animations="on"] { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: no-preference) {
   html:not([data-animations="off"]) { scroll-behavior: smooth; }
+}
+
+/* Skip link */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.75rem 1rem;
+  background: var(--primary);
+  color: var(--paper);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition: top 0.2s ease;
+}
+.skip-link:focus {
+  top: 1rem;
 }

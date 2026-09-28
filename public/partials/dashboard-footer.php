@@ -2,6 +2,8 @@
 </div><!-- /.sidebar-main -->
 
     <script src="<?= e(asset('assets/js/motion.min.js')) ?>" defer></script>
+<script src="<?= e(asset('assets/js/cart-ajax.js')) ?>" defer></script>
+<script src="<?= e(asset('assets/js/save-ajax.js')) ?>" defer></script>
 <script src="assets/vendor/bootstrap/bootstrap.bundle.min.js" defer></script>
 
 </body>

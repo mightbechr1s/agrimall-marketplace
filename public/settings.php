@@ -17,7 +17,6 @@ $userId = current_user_id();
 $prefs = [
     'locale' => 'en',
     'theme' => 'system',
-    'notify_email' => 1,
     'notify_inapp' => 1,
     'notify_orders' => 1,
     'notify_messages' => 1,
@@ -27,7 +26,7 @@ $prefs = [
 ];
 
 try {
-    $stmt = DB::pdo()->prepare('SELECT locale, theme, notify_email, notify_inapp, notify_orders, notify_messages, notify_promotions, reduce_motion, larger_text FROM user_preferences WHERE user_id = :id');
+    $stmt = DB::pdo()->prepare('SELECT locale, theme, notify_inapp, notify_orders, notify_messages, notify_promotions, reduce_motion, larger_text FROM user_preferences WHERE user_id = :id');
     $stmt->execute(['id' => $userId]);
     $savedPrefs = $stmt->fetch();
     if ($savedPrefs) {
@@ -46,7 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get and sanitize inputs
     $localeInput = isset($_POST['locale']) && in_array($_POST['locale'], ['en', 'tl']) ? $_POST['locale'] : 'en';
     $themeInput = isset($_POST['theme']) && in_array($_POST['theme'], ['system', 'light', 'dark']) ? $_POST['theme'] : 'system';
-    $notifyEmail = isset($_POST['notify_email']) ? 1 : 0;
     $notifyInapp = isset($_POST['notify_inapp']) ? 1 : 0;
     $notifyOrders = isset($_POST['notify_orders']) ? 1 : 0;
     $notifyMessages = isset($_POST['notify_messages']) ? 1 : 0;
@@ -57,13 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Upsert preferences
     $upsert = DB::pdo()->prepare('
         INSERT INTO user_preferences
-            (user_id, locale, theme, notify_email, notify_inapp, notify_orders, notify_messages, notify_promotions, reduce_motion, larger_text, updated_at)
+            (user_id, locale, theme, notify_inapp, notify_orders, notify_messages, notify_promotions, reduce_motion, larger_text, updated_at)
         VALUES
-            (:user_id, :locale, :theme, :notify_email, :notify_inapp, :notify_orders, :notify_messages, :notify_promotions, :reduce_motion, :larger_text, NOW())
+            (:user_id, :locale, :theme, :notify_inapp, :notify_orders, :notify_messages, :notify_promotions, :reduce_motion, :larger_text, NOW())
         ON DUPLICATE KEY UPDATE
             locale = VALUES(locale),
             theme = VALUES(theme),
-            notify_email = VALUES(notify_email),
             notify_inapp = VALUES(notify_inapp),
             notify_orders = VALUES(notify_orders),
             notify_messages = VALUES(notify_messages),
@@ -77,7 +74,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'user_id' => $userId,
             'locale' => $localeInput,
             'theme' => $themeInput,
-            'notify_email' => $notifyEmail,
             'notify_inapp' => $notifyInapp,
             'notify_orders' => $notifyOrders,
             'notify_messages' => $notifyMessages,
@@ -102,7 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $prefs = [
             'locale' => $localeInput,
             'theme' => $themeInput,
-            'notify_email' => $notifyEmail,
             'notify_inapp' => $notifyInapp,
             'notify_orders' => $notifyOrders,
             'notify_messages' => $notifyMessages,
@@ -161,10 +156,6 @@ require __DIR__ . '/partials/header.php';
             <fieldset>
                 <legend><?= $l($copy['settings'], 'legend_notifications') ?></legend>
                 <div class="form-group">
-                    <input class="form-check-input" type="checkbox" id="notify_email" name="notify_email" <?= $prefs['notify_email'] ? 'checked' : '' ?>>
-                    <label class="form-check-label" for="notify_email"><?= $l($copy['settings'], 'notify_email') ?></label>
-                </div>
-                <div class="form-group">
                     <input class="form-check-input" type="checkbox" id="notify_inapp" name="notify_inapp" <?= $prefs['notify_inapp'] ? 'checked' : '' ?>>
                     <label class="form-check-label" for="notify_inapp"><?= $l($copy['settings'], 'notify_inapp') ?></label>
                 </div>
@@ -204,6 +195,25 @@ require __DIR__ . '/partials/header.php';
         </form>
     </div>
 </main>
+<script>
+  // Sync theme select with the effective theme (data-theme attribute).
+  // This is the single source of truth for what the user sees.
+  (function () {
+    var sel = document.getElementById('theme');
+    if (!sel) return;
+    function updateSelect() {
+      var theme = document.documentElement.getAttribute('data-theme') || 'light';
+      // Map resolved theme back to select value
+      var val = theme === 'dark' ? 'dark' : theme === 'light' ? 'light' : 'system';
+      if (sel.value !== val) sel.value = val;
+    }
+    // Initial sync
+    updateSelect();
+    // Observe theme changes (from toggle, FOUC guard, etc.)
+    var observer = new MutationObserver(updateSelect);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  })();
+</script>
 <?php if ($success): ?>
 <script>
   // Settings were saved server-side; keep the client preference in sync so the

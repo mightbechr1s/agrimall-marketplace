@@ -14,36 +14,40 @@ try {
     $dbError = true;
 }
 
-$pageTitle = 'Marketplace';
+$pageTitle = ($item['name'] ?? null) ?: 'Marketplace';
 $activeNav = 'browse';
 $locale = locale_current();
 $l = function($dict, $key) use ($copy, $locale) {
     return $dict[$locale][$key] ?? $dict['en'][$key] ?? $key;
 };
-require __DIR__ . '/partials/header.php';
-
-?>
-<nav aria-label="Breadcrumb" class="legal-breadcrumb">
-    <a href="index.php">Home</a><span class="sep">/</span><span><?= $l($copy['nav'], 'marketplace') ?? 'Marketplace' ?></span>
-</nav>
-<?php
+$role = function_exists('current_user_role') ? current_user_role() : null;
+$sidebarShell = (bool) current_user_id();
+if ($sidebarShell) {
+    $activePage = $role === 'buyer' ? 'browse' : 'market';
+    require __DIR__ . '/partials/dashboard-layout.php';
+} else {
+    require __DIR__ . '/partials/header.php';
+}
 
 if (!$item) {
     if (!headers_sent()) {
         http_response_code($dbError ? 503 : 404);
     }
     ?>
+    <?php if (!$sidebarShell): ?>
     <main id="main-content" class="container py-5" style="max-width: 640px;">
+    <?php endif; ?>
         <div class="dash-empty mt-5">
             <i class="bi bi-basket3"></i>
             <p><?= $l($copy['listing'], $dbError ? 'temp_unavailable' : 'listing_gone') ?></p>
             <a class="btn btn-primary" href="browse.php"><?= $l($copy['listing'], 'back_to_market') ?></a>
         </div>
+    <?php if (!$sidebarShell): ?>
     </main>
-    <?php
-    require __DIR__ . '/partials/footer.php';
+    <?php endif; ?>
+    <?php require $sidebarShell ? __DIR__ . '/partials/dashboard-footer.php' : __DIR__ . '/partials/footer.php';
     exit;
-}
+    }
 
 // Get all images for this listing
 $imageStmt = DB::pdo()->prepare('SELECT image_path FROM listing_images WHERE listing_id = :id ORDER BY is_primary DESC, sort_order');
@@ -56,7 +60,14 @@ $fmtQty = function ($value, $symbol): string {
 };
 ?>
 
+<?php if (!$sidebarShell): ?>
 <main id="main-content" class="container py-5">
+<?php endif; ?>
+    <div class="mb-3">
+        <button type="button" class="btn btn-outline-primary" onclick="if (history.length > 1) history.back(); else location.href = 'browse.php';" aria-label="Back">
+            <i class="bi bi-arrow-left me-1" aria-hidden="true"></i><?= $l($copy['listing'], 'back_to_market') ?? 'Back to marketplace' ?>
+        </button>
+    </div>
     <div class="listing-wrap row g-5">
         <div class="col-lg-6" data-reveal>
             <?php if (!empty($images)): ?>
@@ -146,13 +157,20 @@ $fmtQty = function ($value, $symbol): string {
                         } catch (Throwable $e) {}
                         ?>
                         <div class="d-flex gap-2 mb-3">
-                            <form method="post" action="cart_add.php" class="mb-0">
+                            <form method="post" action="cart_add.php" class="mb-0" data-buy-now="true">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="listing_id" value="<?= (int) $item['id'] ?>">
                                 <input type="hidden" name="quantity" value="<?= (float) $item['minimum_order_qty'] ?>">
-                                <button type="submit" class="btn btn-outline-primary"><i class="bi bi-cart-plus me-1" aria-hidden="true"></i>Add to Cart</button>
+                                <input type="hidden" name="buy_now" value="1">
+                                <button type="submit" class="btn btn-primary" aria-label="Buy now"><i class="bi bi-lightning-charge-fill me-1" aria-hidden="true"></i>Buy Now</button>
                             </form>
-                            <form method="post" action="saved_toggle.php" class="mb-0">
+                            <form method="post" action="cart_add.php" class="mb-0" data-ajax="true">
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="listing_id" value="<?= (int) $item['id'] ?>">
+                                <input type="hidden" name="quantity" value="<?= (float) $item['minimum_order_qty'] ?>">
+                                <button type="submit" class="btn btn-outline-primary btn-icon" title="Add to cart" aria-label="Add to cart"><i class="bi bi-cart-plus" aria-hidden="true"></i></button>
+                            </form>
+                            <form method="post" action="saved_toggle.php" class="mb-0" data-save-ajax="true">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="listing_id" value="<?= (int) $item['id'] ?>">
                                 <input type="hidden" name="return_to" value="listing.php?id=<?= (int) $item['id'] ?>">
@@ -201,12 +219,14 @@ $fmtQty = function ($value, $symbol): string {
                                 <div class="col-12 delivery-field" style="display: none;">
                                     <label class="form-label" for="delivery_address">Delivery Address</label>
                                     <textarea class="form-control" id="delivery_address" name="delivery_address" rows="2"
+                                              maxlength="<?= FIELD_LIMITS['delivery_address'] ?>"
                                               placeholder="Full address including barangay, city/municipality, province"></textarea>
                                 </div>
 
                                 <div class="col-12">
                                     <label class="form-label" for="buyer_note">Note for Farmer (optional)</label>
                                     <textarea class="form-control" id="buyer_note" name="buyer_note" rows="2"
+                                              maxlength="<?= FIELD_LIMITS['buyer_note'] ?>"
                                               placeholder="Special instructions, packaging preferences, etc."></textarea>
                                 </div>
 
@@ -224,7 +244,7 @@ $fmtQty = function ($value, $symbol): string {
                         <p class="text-muted">Ordering is available for buyers only.</p>
                     <?php else: ?>
                         <p><i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Sign in to place your order</p>
-                        <a class="btn btn-primary" href="login.php"><?= $l($copy['listing'], 'login_to_order') ?></a>
+                        <a class="btn btn-primary" href="<?php echo e(login_url('listing.php?id=' . (int) $id)); ?>"><?= $l($copy['listing'], 'login_to_order') ?></a>
                     <?php endif; ?>
                 </div>
 
@@ -243,9 +263,24 @@ $fmtQty = function ($value, $symbol): string {
                     toggle();
                 });
                 </script>
+                <script>
+                // Keep Add to Cart / Buy Now quantities in sync with the order form.
+                document.addEventListener('DOMContentLoaded', function () {
+                    const qty = document.getElementById('quantity');
+                    if (!qty) return;
+                    const sync = function () {
+                        var v = qty.value;
+                        document.querySelectorAll('.listing-cta [name="quantity"]').forEach(function (h) { h.value = v; });
+                    };
+                    qty.addEventListener('input', sync);
+                });
+                </script>
             </div>
         </div>
     </div>
+<?php if (!$sidebarShell): ?>
 </main>
-
 <?php require __DIR__ . '/partials/footer.php'; ?>
+<?php else: ?>
+<?php require __DIR__ . '/partials/dashboard-footer.php'; ?>
+<?php endif; ?>

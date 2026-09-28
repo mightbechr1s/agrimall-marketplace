@@ -11,6 +11,9 @@ if (current_user_id()) {
     redirect_to('dashboard.php');
 }
 
+// Tokens are stored as SHA-256 hashes; only the raw token ever leaves the server.
+$tokenHash = static fn(string $raw): string => hash('sha256', $raw);
+
 $token = trim((string) ($_GET['token'] ?? ''));
 $error = null;
 $success = null;
@@ -28,6 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = $l($copy['auth'], 'err_enter_password');
     } elseif (strlen($password) < 8) {
         $error = $l($copy['auth'], 'err_pass_min');
+    } elseif (strlen($password) > FIELD_LIMITS['password']) {
+        $error = sprintf($l($copy['auth'], 'err_too_long'), FIELD_LIMITS['password']);
     } elseif ($password !== $passwordConfirm) {
         $error = $l($copy['auth'], 'err_pass_match');
     } else {
@@ -35,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = DB::pdo()->prepare(
             'SELECT user_id, expires_at FROM password_resets WHERE token = :token'
         );
-        $stmt->execute(['token' => $token]);
+        $stmt->execute(['token' => $tokenHash($token)]);
         $reset = $stmt->fetch();
 
         if (!$reset) {
@@ -56,11 +61,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'id' => $reset['user_id']
                 ]);
 
-                // Delete used token
+                // Invalidate every outstanding token for this user
                 $deleteToken = DB::pdo()->prepare(
-                    'DELETE FROM password_resets WHERE token = :token'
+                    'DELETE FROM password_resets WHERE user_id = :id'
                 );
-                $deleteToken->execute(['token' => $token]);
+                $deleteToken->execute(['id' => $reset['user_id']]);
 
                 $success = $l($copy['auth'], 'reset_success_msg');
             }
@@ -72,23 +77,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// Validate token for GET request
-$stmt = DB::pdo()->prepare(
-    'SELECT user_id, expires_at FROM password_resets WHERE token = :token'
-);
-$stmt->execute(['token' => $token]);
-$reset = $stmt->fetch();
+// Validate token for GET request. Skipped on POST: a successful reset consumes
+// the token, so re-checking it here would bounce the user away from the result.
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $stmt = DB::pdo()->prepare(
+        'SELECT user_id, expires_at FROM password_resets WHERE token = :token'
+    );
+    $stmt->execute(['token' => $tokenHash($token)]);
+    $reset = $stmt->fetch();
 
-if (!$reset) {
-    header('Location: forgot.php');
-    exit;
-}
+    if (!$reset) {
+        header('Location: forgot.php');
+        exit;
+    }
 
-// Check if token has expired
-$expiresAt = new DateTime($reset['expires_at']);
-$now = new DateTime();
-if ($now >= $expiresAt) {
-    $error = $l($copy['auth'], 'err_token_expired');
+    // Check if token has expired
+    $expiresAt = new DateTime($reset['expires_at']);
+    $now = new DateTime();
+    if ($now >= $expiresAt) {
+        $error = $l($copy['auth'], 'err_token_expired');
+    }
 }
 
 $pageTitle = $l($copy['auth'], 'reset_title');
@@ -115,12 +123,12 @@ require __DIR__ . '/partials/header.php';
                 <div class="mb-3">
                     <label class="form-label" for="password"><?= $l($copy['auth'], 'new_password') ?></label>
                     <input class="form-control" type="password" id="password" name="password"
-                           required minlength="8" />
+                           required minlength="8" maxlength="<?= FIELD_LIMITS['password'] ?>" />
                 </div>
                 <div class="mb-4">
                     <label class="form-label" for="password_confirm"><?= $l($copy['auth'], 'confirm_password') ?></label>
                     <input class="form-control" type="password" id="password_confirm" name="password_confirm"
-                           required minlength="8" />
+                           required minlength="8" maxlength="<?= FIELD_LIMITS['password'] ?>" />
                 </div>
                 <button class="btn btn-primary btn-lg w-100" type="submit"><?= $l($copy['auth'], 'reset_btn') ?></button>
             </form>

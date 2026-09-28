@@ -42,11 +42,32 @@ $events = $stmt->fetchAll();
 
 $entities = $pdo->query('SELECT DISTINCT entity_type FROM admin_audit_log ORDER BY entity_type')->fetchAll(PDO::FETCH_COLUMN);
 
+// Prepare data for admin-table partial
+$columns = [
+    ['key' => 'created_at', 'label' => 'Timestamp', 'sortable' => true, 'class' => 'text-nowrap',
+     'formatter' => function($r) { return date('Y-m-d H:i:s', strtotime($r['created_at'])); }],
+    ['key' => 'admin_email', 'label' => 'Admin', 'sortable' => true],
+    ['key' => 'action', 'label' => 'Action', 'sortable' => true,
+     'formatter' => function($r) { return '<span class="dash-badge dash-badge--secondary">' . e($r['action']) . '</span>'; }],
+    ['key' => 'entity_type', 'label' => 'Entity', 'sortable' => true,
+     'formatter' => function($r) { return e($r['entity_type']) . ($r['entity_id'] !== null ? ' #' . e((string) $r['entity_id']) : ''); }],
+    ['key' => 'change', 'label' => 'Change', 'sortable' => false,
+     'formatter' => function($r) {
+         return '<details class="audit-details"><summary class="small">before / after</summary><pre class="audit-json m-0 mt-1">' . fmt_json($r['old_values']) . '</pre><pre class="audit-json m-0">' . fmt_json($r['new_values']) . '</pre></details>';
+     }],
+    ['key' => 'ip_address', 'label' => 'IP', 'sortable' => true, 'class' => 'cell-muted small',
+     'formatter' => function($r) { return e($r['ip_address'] ?? '—'); }],
+];
+
+$filters = [
+    'entity' => $entityFilter,
+    'action' => $actionFilter,
+];
+
 $pageTitle = 'Audit Log';
 $activePage = 'audit';
 require __DIR__ . '/partials/dashboard-layout.php';
 ?>
-
 <div class="dash-section-header">
     <h1>Audit Log</h1>
     <p>Append-only record of sensitive administrator actions.</p>
@@ -61,57 +82,15 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <?php endforeach; ?>
     </select>
     <label class="visually-hidden" for="action-filter">Action</label>
-    <input type="text" name="action" id="action-filter" value="<?= e($actionFilter) ?>"
-           class="form-control form-control-sm" style="max-width: 220px;" placeholder="Action contains...">
+    <input type="text" name="action" id="action-filter" value="<?= e($actionFilter) ?>" class="form-control form-control-sm" style="max-width: 220px;" maxlength="100" placeholder="Action contains...">
     <button type="submit" class="btn btn-sm btn-primary">Filter</button>
     <a href="admin_audit.php" class="btn btn-sm btn-outline-primary">Reset</a>
-    <span class="cell-muted small ms-auto"><?= count($events) ?> events shown</span>
 </form>
 
-<div class="table-responsive">
-    <table class="dash-table align-middle">
-        <thead>
-            <tr>
-                <th class="text-nowrap">Timestamp</th>
-                <th>Admin</th>
-                <th>Action</th>
-                <th>Entity</th>
-                <th>Change</th>
-                <th>IP</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($events as $event): ?>
-            <tr>
-                <td class="cell-muted text-nowrap"><?= e(date('Y-m-d H:i:s', strtotime($event['created_at']))) ?></td>
-                <td><?= e($event['admin_email'] ?? '—') ?></td>
-                <td><span class="dash-badge dash-badge--secondary"><?= e($event['action']) ?></span></td>
-                <td class="cell-muted">
-                    <?= e($event['entity_type']) ?>
-                    <?= $event['entity_id'] !== null ? '#' . e((string) $event['entity_id']) : '' ?>
-                </td>
-                <td class="cell-muted">
-                    <details class="audit-details">
-                        <summary class="small">before / after</summary>
-                        <pre class="audit-json m-0 mt-1"><?= fmt_json($event['old_values']) ?></pre>
-                        <pre class="audit-json m-0"><?= fmt_json($event['new_values']) ?></pre>
-                    </details>
-                </td>
-                <td class="cell-muted small"><?= e($event['ip_address'] ?? '—') ?></td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-</div>
-
-<?php if (!$events): ?>
-<div class="empty-state">
-    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon">
-        <path d="M2 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H1.5a.5.5 0 0 1 0-1H2v-1h-.5a.5.5 0 0 1 0-1H2v-1h-.5a.5.5 0 0 1 0-1H2v-1h-.5a.5.5 0 0 1 0-1H2V6h-.5a.5.5 0 0 1 0-1H2V4h-.5a.5.5 0 0 1 0-1H2V2h-.5a.5.5 0 0 1 0-1H2zm9.853-1.354a.5.5 0 0 1 .354-.853H14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H8.5a.5.5 0 0 1 0-1H14a1 1 0 0 0 1-1V4H8.5a.5.5 0 0 1 0-1H15V2a1 1 0 0 0-1-1H10.5v2.5a.5.5 0 0 1-1 0V2a.5.5 0 0 1 .146-.354l.207-.207z"/>
-    </svg>
-    <h2 class="empty-state-title">No audit events found</h2>
-    <p class="empty-state-description">Adjust the filters to broaden the search.</p>
-</div>
-<?php endif; ?>
+<?php
+$data = $events;
+$filters = array_merge($filters, ['sort' => '', 'dir' => '']);
+include __DIR__ . '/partials/admin-table.php';
+?>
 
 <?php require __DIR__ . '/partials/dashboard-footer.php'; ?>

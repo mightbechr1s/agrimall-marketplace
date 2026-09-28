@@ -7,8 +7,8 @@
  *
  * Drops and recreates the `animal_marketplace` database, applies
  * database/schema.sql then every database/migrations/*.sql in order,
- * and finally runs database/seed.php (1 admin, 3 farmers, 5 buyers,
- * 8 realistic PH listings).
+ * and finally runs database/seed.php (1 admin from schema.sql, 2 farmers,
+ * 2 buyers, 6 realistic PH listings, 3 orders).
  *
  * Acceptance (#4): "tools/db-reset. DONE: fresh import under 2 min."
  * Local seed completes in a few seconds.

@@ -115,7 +115,7 @@ $fmtQty = function ($value, $symbol): string {
                     Checkout is the next milestone &mdash; your orders will appear in the dashboard.
                 </div>
             <?php else: ?>
-                <a class="btn btn-primary btn-lg" href="login.php">Log in to place an order</a>
+                <a class="btn btn-primary btn-lg" href="<?php echo e(login_url('listing.php?id=' . (int) ($_GET['id'] ?? 0))); ?>">Log in to place an order</a>
             <?php endif; ?>
         </div>
     </div>
