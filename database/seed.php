@@ -231,7 +231,7 @@ try {
     $l1 = makeListing($pdo, $farmer1, [
         'category_id' => $vegetables,
         'unit_id' => $bundle,
-        'name' => 'Sitao (String Beans)',
+        'name' => 'Sitaw (String Beans)',
         'description' => 'Fresh-picked string beans, harvested the same morning. Best for ginisa and adobo.',
         'image' => 'assets/images/products/seedlings.jpg',
         'price_per_unit' => 45.00,

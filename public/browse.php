@@ -31,6 +31,8 @@ function formatCatLabel($catName) {
         'livestock' => 'Livestock',
         'livestock-dairy' => 'Dairy',
         'root-crops' => 'Root Crops',
+        'herbs-spices' => 'Herbs & Spices',
+        'eggs-poultry' => 'Eggs & Poultry',
     ];
     return $labels[$slug] ?? ucwords(str_replace('-', ' ', $slug));
 }

@@ -335,7 +335,8 @@ INSERT INTO `produce_categories` (`name`, `slug`, `description`, `sort_order`) V
 ('Fruits', 'fruits', 'Fresh fruits', 3),
 ('Root Crops', 'root-crops', 'Root vegetables and tubers', 4),
 ('Herbs & Spices', 'herbs-spices', 'Culinary herbs and spices', 5),
-('Grains & Legumes', 'grains-legumes', 'Rice, beans, corn, and other grains', 6);
+('Grains & Legumes', 'grains-legumes', 'Rice, beans, corn, and other grains', 6),
+('Eggs & Poultry', 'eggs-poultry', 'Fresh eggs and poultry products', 7);
 
 INSERT INTO `quantity_units` (`name`, `symbol`, `type`, `base_factor`, `step`) VALUES
 ('Kilogram', 'kg', 'weight', 1.0000, 0.01),
