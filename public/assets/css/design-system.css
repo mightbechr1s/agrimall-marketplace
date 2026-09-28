@@ -22,7 +22,12 @@
   --text-soft: #6E6355;
   --borders: #E7DFCE;
   --danger: #B4572F;
+  --success: #2E7D32;
   --focus-ring: #B45309;
+
+  /* Right-hand auth pane background. Pales the page slightly darker than
+     --paper so the white auth card reads as elevated against it. */
+  --bg-primary: #FDFBF7;
 
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
   --font-body: 'Source Sans Pro', -apple-system, 'Segoe UI', system-ui, sans-serif;
@@ -65,7 +70,24 @@
   --text-soft: #A2B3A5;
   --borders: rgba(255, 255, 255, 0.08);
   --danger: #E08A5D;
+  --success: #6FCF97;
   --focus-ring: #E09F3E;
+
+  /* Matches the dark canvas so the split-screen form edge is seamless. */
+  --bg-primary: #121A15;
+
+  /* Dark-mode ink + surface tokens.
+     These were referenced by the dark overrides below but never defined, so
+     every `var()` using them was invalid at computed-value time and the
+     declaration was silently dropped. Values mirror light-mode intent:
+     --accent === --gold and --danger/--success are light in dark mode, so
+     text on them needs the dark ink (--gold-ink) and the active sidebar
+     needs the amber tint. */
+  --accent-ink: var(--gold-ink);
+  --success-ink: var(--gold-ink);
+  --danger-ink: var(--gold-ink);
+  --accent-hover: var(--gold-deep);
+  --sidebar-active-bg: var(--gold-tint);
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 28px -8px rgba(0, 0, 0, 0.5);
   --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.45), 0 18px 44px -10px rgba(0, 0, 0, 0.6);
   --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px -5px rgba(0, 0, 0, 0.5);
@@ -190,11 +212,96 @@ h1, h2, h3, h4, h5, h6,
 .save-btn {
   min-width: 40px;
 }
-.listing-name {
-  color: var(--ink, inherit);
+.grid .card-actions {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  margin-top: 0.75rem;
 }
-.listing-name:hover {
+.grid .card {
+  display: flex;
+  flex-direction: column;
+}
+.grid .card .body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.grid .card .body .price {
+  margin-bottom: 0.75rem;
+}
+.grid .card .body .card-actions {
+  margin-top: auto;
+}
+.grid .card-actions .d-flex {
+  flex-wrap: nowrap;
+  width: 100%;
+  gap: 10px !important;
+}
+.grid .card-actions form {
+  margin-bottom: 0;
+}
+.grid .card-actions .buy-now {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.grid .card-actions .buy-now,
+.grid .card-actions form.buy-now .btn {
+  width: 100%;
+  white-space: nowrap;
+}
+.grid .card-actions form[data-ajax="true"],
+.grid .card-actions form[data-save-ajax="true"] {
+  flex: 0 0 auto;
+}
+.grid .card-actions .btn {
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.grid .card-actions .btn-icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+.listing-name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.listing-name a {
+  color: var(--ink, inherit);
+  text-decoration: none;
+}
+.listing-name a:hover {
   color: var(--primary);
+  text-decoration: none;
+}
+.farmer-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+  color: var(--text-soft);
+  text-decoration: none;
+}
+.farmer-meta:hover {
+  color: var(--primary);
+}
+.farmer-meta i {
+  font-size: 15px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+.farmer-meta .farmer-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 .dash-empty {
   text-align: center;
@@ -212,6 +319,15 @@ h1, h2, h3, h4, h5, h6,
 .btn, .btn-primary, .btn-primary-nav, .btn-sell, .btn-logout,
 .btn-outline, .btn-outline-primary, .btn-outline-secondary {
   border-radius: var(--radius-pill) !important;
+}
+.btn-icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
 }
 .btn-primary, .btn-primary-nav {
   background: var(--gold) !important;
@@ -1000,7 +1116,7 @@ h1, h2, h3, h4, h5, h6,
 /* ── Marketplace grid + cards — printed catalog ─────── */
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1.5rem;
 }
 .card {
@@ -1018,6 +1134,7 @@ h1, h2, h3, h4, h5, h6,
 }
 .card .thumb {
   aspect-ratio: 4 / 3;
+  position: relative;
   overflow: hidden;
   background: var(--canvas-deep);
   border-bottom: 1px solid var(--borders);
@@ -1036,13 +1153,27 @@ h1, h2, h3, h4, h5, h6,
 @media (prefers-reduced-motion: reduce) {
   .card:hover .thumb img { transform: none; }
 }
+.card .thumb .badges-top {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  margin-bottom: 0;
+}
+.card .thumb .badges-top .badge {
+  background: rgba(27, 59, 43, 0.55) !important;
+  color: #fff !important;
+  border: 0 !important;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
 .cat-icon-fallback {
   font-size: 2.25rem;
   color: var(--text-soft);
   line-height: 1;
 }
 .card .body {
-  padding: 1.05rem 1.15rem 1.25rem;
+  padding: 1rem;
 }
 .badges-top {
   display: flex;
@@ -1079,7 +1210,10 @@ h1, h2, h3, h4, h5, h6,
   font-size: 1.3rem;
   font-weight: 620;
   color: var(--accent);
-  margin-bottom: 0.9rem;
+  margin-bottom: 0.5rem;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
 }
 .card .price small {
   font-family: var(--font-body);
@@ -1113,13 +1247,13 @@ h1, h2, h3, h4, h5, h6,
 }
 
 /* Card stagger entrance */
-.card[data-reveal] {
+.js .card[data-reveal] {
   opacity: 0;
   transform: translateY(16px);
   transition: opacity var(--dur-moderate) var(--ease-enter),
               transform var(--dur-moderate) var(--ease-enter);
 }
-.card[data-reveal].reveal-visible {
+.js .card[data-reveal].reveal-visible {
   opacity: 1;
   transform: translateY(0);
 }
@@ -1159,7 +1293,6 @@ h1, h2, h3, h4, h5, h6,
   grid-template-columns: 1fr 1fr;
   overflow: hidden;
   margin-bottom: 2.5rem;
-  max-width: 90rem;
 }
 .feature-card .thumb {
   aspect-ratio: auto;
@@ -1435,9 +1568,15 @@ h1, h2, h3, h4, h5, h6,
   opacity: 1;
 }
 .form-control:focus,
-.form-select:focus {
+.form-select:focus,
+.form-check-input:focus {
   border-color: var(--gold) !important;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 28%, transparent) !important;
+}
+/* Checkboxes and radios otherwise keep Bootstrap's default blue. */
+.form-check-input:checked {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
 }
 .dropdown-menu {
   border-radius: var(--radius-sm) !important;
@@ -1701,21 +1840,20 @@ h1, h2, h3, h4, h5, h6,
 .locale-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.25rem 0.2rem;
+  justify-content: center;
   background: transparent;
   border: 0;
   color: var(--text);
-  font-family: var(--font-display);
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 1rem;
 }
 .locale-btn:hover { color: var(--accent); }
+.locale-btn.dropdown-toggle::after { display: none; }
 .locale-caret { font-size: 0.7rem; color: var(--text-soft); }
 .locale-tick { color: var(--accent); margin-left: 0.4rem; font-weight: 700; }
-.nav-cta .dropdown-toggle { border: 0; background: transparent; padding: 0.25rem 0.2rem; cursor: pointer; }
-.nav-cta .dropdown-toggle:hover { background: transparent; color: var(--accent); }
+.nav-cta .dropdown-toggle:not(.profile-btn) { border: 0; background: transparent; padding: 0.25rem 0.2rem; cursor: pointer; }
+.nav-cta .dropdown-toggle:not(.profile-btn):hover { background: transparent; color: var(--accent); }
+.nav-cta .profile-btn.dropdown-toggle { background: var(--paper); border: 1px solid var(--borders); padding: 0.3rem 0.75rem 0.3rem 0.35rem; }
+.nav-cta .profile-btn.dropdown-toggle:hover { background: var(--paper); border-color: var(--gold); }
 .nav-cta .dropdown-toggle .avatar { transition: transform var(--hover-speed) ease; }
 .nav-sell-btn {
   display: inline-flex !important;
@@ -1755,7 +1893,8 @@ h1, h2, h3, h4, h5, h6,
   color: var(--paper);
 }
 
-.cart-pill {
+.cart-pill,
+.notif-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -1767,8 +1906,10 @@ h1, h2, h3, h4, h5, h6,
   text-decoration: none;
   white-space: nowrap;
 }
-.cart-pill:hover { color: var(--accent); }
-.cart-count {
+.cart-pill:hover,
+.notif-pill:hover { color: var(--accent); }
+.cart-count,
+.notif-count {
   background: var(--gold);
   color: var(--gold-ink);
   min-width: 1.3rem;
@@ -1821,18 +1962,74 @@ h1, h2, h3, h4, h5, h6,
 }
 .mobile-menu-locale .locale-label { text-decoration: none; }
 
-/* ═══ Auth pages — paper ledger card ══════════════════ */
+/* ═══ Auth pages — 50/50 split screen ═══════════════════════
+   Two equal columns, one row, both pinned to row 1.
+
+   grid-row MUST be pinned alongside grid-column. A definite column with an
+   auto row lets the auto-placement cursor advance, which put the banner in
+   row 1 and the form in row 2 — a 2x2 grid with two empty quadrants. */
 .auth-wrap {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 36rem);
-  min-height: calc(100vh - 4.25rem);
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 100%;
+  height: 100vh;
+  /* 100vw is safe here specifically because the document never scrolls: the
+     tall register form scrolls inside .auth-right, so there is no document
+     scrollbar to inflate 100vw past the visible width. */
+  width: 100vw;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
+/* Visual banner leads on the left, form sits right. Column order follows
+   reading direction, so this flips under [dir="rtl"]. */
 .auth-right {
+  grid-column: 2;
+  grid-row: 1;
   display: flex;
-  align-items: center;
+  /* flex-start + auto margin on the card, not align-items: center. Centering a
+     flex item that overflows clips its top edge and makes it unscrollable. */
+  align-items: flex-start;
   justify-content: center;
-  padding: 2.5rem 1.25rem;
-  background: var(--canvas);
+  height: 100vh;
+  overflow-y: auto;
+  padding: 24px;
+  background-color: var(--bg-primary);
+}
+
+/* Visual banner: hero photo with a bottom-weighted tint so the overlaid
+   headline and metrics stay legible regardless of what the photo shows. */
+.auth-left {
+  grid-column: 1;
+  grid-row: 1;
+  position: relative;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 48px;
+  background-color: #0A190F;
+  background-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(10, 25, 15, 0.85) 100%),
+    url("https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=1200&auto=format&fit=crop");
+  background-size: auto, cover;
+  background-position: center, center;
+  background-repeat: no-repeat;
+  color: #fff;
+}
+.auth-left-content { max-width: 30rem; }
+.auth-left-content h2 {
+  font-family: var(--font-display);
+  font-size: 2.1rem;
+  font-weight: 620;
+  color: #fff;
+  margin-bottom: 0.75rem;
+}
+.auth-left-content p {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 0;
 }
 .auth-card {
   width: 100%;
@@ -1873,6 +2070,9 @@ h1, h2, h3, h4, h5, h6,
 .auth-card .form-select,
 .auth-card .input-group-text {
   min-height: 2.9rem;
+  /* Eases the gold focus border + ring (see :focus rules above) instead of
+     snapping, which reads as a flash on the amber surface. */
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
 }
 .auth-footer {
   margin-top: 1.25rem;
@@ -1892,19 +2092,74 @@ h1, h2, h3, h4, h5, h6,
 }
 .auth-card a:hover { color: var(--accent); }
 
-/* Clean auth layout: one focused form. */
-.auth-wrap {
-  grid-template-columns: 1fr;
-  min-height: 100vh;
+.auth-card .form-group { margin-bottom: 1.25rem; }
+.auth-card .form-label { margin-bottom: 0.4rem; font-weight: 600; }
+.auth-card .form-control, .auth-card .form-select { min-height: 2.9rem; }
+
+/* Role selection cards */
+.role-selection { display: flex; gap: 0.75rem; }
+.role-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.75rem;
+  border: 2px solid var(--borders);
+  border-radius: var(--radius-card);
+  cursor: pointer;
+  transition: border-color var(--hover-speed) ease, box-shadow var(--hover-speed) ease;
+  background: var(--paper);
 }
-.auth-left { display: none !important; }
-.auth-right {
-  min-height: 100vh;
-  padding: 3rem 1rem;
+.role-option:hover { border-color: var(--gold); }
+.role-option input { position: absolute; opacity: 0; pointer-events: none; }
+.role-option:has(input:checked) {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-tint);
 }
+.role-icon { font-size: 1.5rem; color: var(--accent); }
+.role-text { font-weight: 600; font-size: 0.9rem; }
+
+/* Farmer fields grid */
+.farm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.farm-grid .span-2 { grid-column: span 2; }
+.farm-grid > div { margin-bottom: 0; }
+.farm-grid .form-group { margin-bottom: 0; }
+.farm-note { margin-top: 1rem; padding: 0.75rem 1rem; background: var(--gold-tint); border-radius: var(--radius-sm); font-size: 0.85rem; color: var(--accent); line-height: 1.5; }
+
+/* Auth row (password + confirm) */
+.auth-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.auth-row-2 .form-group { margin-bottom: 0; }
+
+/* Consent checkbox */
+.auth-card .form-check { margin-bottom: 0.25rem; }
+.auth-card .consent-helper { margin-top: 0.5rem !important; }
+
+/* Button spacing */
+.auth-card .btn-lg { margin-top: 1.5rem; padding-top: 0.875rem; padding-bottom: 0.875rem; font-size: 1rem; }
+
+/* Footer links */
+.auth-footer { margin-top: 1.5rem; font-size: 0.9rem; text-align: center; }
+.auth-footer + .auth-footer { margin-top: 0.75rem; }
+
+/* Secondary link: "Forgot password?" should not compete with "Create one" */
+.auth-link-muted { color: var(--text-soft) !important; }
+.auth-link-muted:hover { color: var(--accent) !important; }
+
+/* Remember-me sits under the password field, quieter than the field labels */
+.auth-card .remember-me,
+.auth-card .remember-me .form-check { margin-bottom: 0; }
+.auth-card .remember-me .form-check-label { font-size: 0.9rem; font-weight: 500; }
+.auth-card .remember-me .form-check-input { cursor: pointer; margin-top: 0.2rem; }
+
+/* Card sits in the right half; wider than the 27rem base so the two-column
+   name/contact rows have room. `margin: auto` centres it vertically while the
+   pane has spare height, and collapses to 0 when the form is taller so the
+   top stays reachable by scrolling. */
 .auth-card {
   max-width: 32rem;
-  padding: 2.2rem;
+  padding: 2.4rem;
+  margin: auto;
 }
 .auth-title,
 .auth-subtitle { font-family: var(--font-display); }
@@ -1928,7 +2183,9 @@ h1, h2, h3, h4, h5, h6,
   cursor: pointer;
   font-weight: 600;
   font-size: 0.875rem;
-  transition: border-color var(--hover-speed) ease, background-color var(--hover-speed) ease, box-shadow var(--hover-speed) ease;
+  /* Property-targeted rather than `all`: border, background and shadow are the
+     only things a role toggle changes, so animating the rest is pure churn. */
+  transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
 }
 .role-option:hover {
   border-color: var(--primary);
@@ -1957,8 +2214,8 @@ h1, h2, h3, h4, h5, h6,
   border: 1px solid var(--borders);
   background: var(--canvas-deep);
   border-radius: var(--radius-sm);
-  padding: 1.3rem;
-  margin-bottom: 1.5rem;
+  padding: 1.6rem;
+  margin-bottom: 1.75rem;
 }
 #farmer-fields legend {
   float: none;
@@ -1968,6 +2225,22 @@ h1, h2, h3, h4, h5, h6,
   color: var(--primary);
   padding: 0 0.5rem;
   margin-bottom: 1rem;
+}
+/* Collapse without a magic max-height: 0fr -> 1fr animates to content height. */
+#farmer-fields .collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 280ms var(--ease-decel, cubic-bezier(0.05, 0.7, 0.1, 1));
+}
+#farmer-fields.is-open .collapse {
+  grid-template-rows: 1fr;
+}
+#farmer-fields .collapse-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  #farmer-fields .collapse { transition: none; }
 }
 .farm-grid {
   display: grid;
@@ -1989,6 +2262,47 @@ h1, h2, h3, h4, h5, h6,
   gap: 0.75rem;
   margin-bottom: 1.5rem;
 }
+
+/* Password strength checklist */
+.pw-rules {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.9rem;
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+.pw-rules[hidden] { display: none; }
+.pw-rules li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: color var(--hover-speed) ease;
+}
+.pw-rules li i {
+  font-size: 0.7rem;
+  opacity: 0.35;
+  transition: opacity var(--hover-speed) ease, color var(--hover-speed) ease;
+}
+.pw-rules li.is-met {
+  color: var(--success);
+}
+.pw-rules li.is-met i { opacity: 1; }
+
+/* Submit button busy state */
+#create-acc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+#create-acc-btn:disabled {
+  cursor: progress;
+  opacity: 0.75;
+}
+.btn-spinner[hidden] { display: none; }
 
 @media (max-width: 575.98px) {
   .role-selection { flex-direction: column; }
@@ -2100,22 +2414,35 @@ h1, h2, h3, h4, h5, h6,
   min-width: 0;
   flex: 1 1 auto;
 }
-.sidebar-topbar-title {
-  font-family: var(--font-display);
-  font-weight: 620;
-  font-size: 1.1rem;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-.sidebar-topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
+ .sidebar-topbar-title {
+   font-family: var(--font-display);
+   font-weight: 620;
+   font-size: 1.1rem;
+   color: var(--text);
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   /* min-width: 0 lets this shrink inside the flex side group instead of
+      forcing the whole bar wider than the viewport. */
+   min-width: 0;
+   /* No auto margin: the title must sit hard against the left edge, not centre
+      itself inside the side group. */
+   margin: 0;
+   padding: 0 1rem 0 0;
+ }
+ .sidebar-topbar-actions {
+   display: flex;
+   align-items: center;
+   gap: 0.5rem;
+   /* The utility group never yields space to the title and never wraps. */
+   flex: 0 0 auto;
+   flex-wrap: nowrap;
+   margin-left: auto;
+ }
+ /* Long profile names truncate inside the pill instead of widening the bar. */
+ .sidebar-topbar-actions .profile-btn { max-width: 12rem; }
+ .sidebar-topbar-actions .profile-meta { min-width: 0; overflow: hidden; }
+ .sidebar-topbar-actions .profile-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sidebar-toggle {
   width: 2.4rem;
   height: 2.4rem;
@@ -2231,7 +2558,7 @@ html:not([data-sidebar-collapsed]) .sidebar-toggle-lines { transform: rotate(90d
   padding: 2rem clamp(1rem, 3vw, 2rem);
   width: 100%;
 }
-.sidebar-content .container-fluid { max-width: 90rem; }
+.sidebar-content .container-fluid { max-width: none; }
 
 /* ═══ Responsive — nav / auth / sidebar ═════════════ */
 @media (max-width: 991.98px) {
@@ -2240,28 +2567,42 @@ html:not([data-sidebar-collapsed]) .sidebar-toggle-lines { transform: rotate(90d
   .nav-cta .nav-sell-btn { display: none !important; }
   .nav-cta > .nav-text-link { display: none; }
   .nav-cta .locale-dd { display: none; }
-.nav-utils .nav-text-link { display: none; }
-@media (min-width: 992px) {
-  .nav-utils .nav-text-link { display: inline; }
-}
-  .cart-pill { display: none; }
-  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* NOTE: the cart pill is intentionally NOT hidden here. The mobile drawer has
+     no cart link, so hiding it would strand buyers with no way to reach the cart.
+     The 375px overflow from the utility cluster is tracked separately. */
 
-  .auth-wrap { grid-template-columns: 1fr; }
-  .auth-left { display: none; }
-  .auth-right { padding: 2rem 1rem; }
-  .auth-card { padding: 1.6rem; }
+  /* Split screen holds down to 768px; only tighten the panes here so the form
+     stays comfortable inside a ~50vw column. */
+  .auth-left { padding: 32px; }
+  .auth-right { padding: 24px; }
+  .auth-card { padding: 1.75rem; }
 
   .sidebar-main { margin-left: 0; }
   .sidebar-content { padding: 1.5rem 1rem; }
 }
 
+@media (max-width: 768px) {
+  /* Below this the two columns would leave the card unusably narrow, so the
+     banner steps aside and the form goes full width. */
+  .auth-wrap { grid-template-columns: 1fr; }
+  .auth-left { display: none; }
+  /* Reset the column pin: with only one explicit column, grid-column: 2 would
+     spawn an implicit auto-width second column and shrink the form. */
+  .auth-right { grid-column: 1; padding: 24px 16px; }
+  .auth-card { padding: 1.6rem; }
+}
+
+@media (min-width: 992px) {
+  .nav-utils .nav-text-link { display: inline; }
+}
+
 @media (max-width: 575.98px) {
   .nav-inner { padding: 0 0.9rem; }
   .nav-cta { gap: 0.4rem; }
-  .brand-logo { max-width: 118px; }
-  .nav-cta .dropdown-toggle { padding: 0.25rem 0.35rem; }
-  .nav-cta .dropdown-toggle::after { display: none; }
+  .brand-logo { max-width: 100px; }
+  .nav-cta .dropdown-toggle:not(.profile-btn) { padding: 0.25rem 0.35rem; }
+  .nav-cta .dropdown-toggle:not(.profile-btn)::after { display: none; }
+  .nav-utils { display: none; }
   .grid { grid-template-columns: 1fr; }
   .hero-image-wrapper { transform: none; }
 }
@@ -2411,6 +2752,16 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   .container { padding-left: 2rem; padding-right: 2rem; }
 }
 
+/* Marketplace interface — fill available width between sidebar and viewport edge */
+#market .container {
+  max-width: none;
+  padding-left: clamp(1.5rem, 3vw, 2rem);
+  padding-right: clamp(1.5rem, 3vw, 2rem);
+}
+@media (max-width: 479.98px) {
+  .grid { grid-template-columns: 1fr; }
+}
+
 /* Touch target size increase + text centering */
 .btn {
   display: inline-flex !important;
@@ -2495,6 +2846,14 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
     max-width: 31rem;
     margin-right: 0;
   }
+}
+
+/* .row.g-5 applies -1.5rem side margins, which are wider than the container
+   padding and push the row 8px past the viewport. Zeroing the row margin keeps
+   the 3rem gutter (it comes from the column padding) without the bleed. */
+.story-section .row.g-5 {
+  margin-left: 0;
+  margin-right: 0;
 }
 
 /* ── Process step icons ──────────────────────────────── */
@@ -2734,6 +3093,14 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   background-color: #1B2620 !important;
   border-color: rgba(255, 255, 255, 0.16) !important;
 }
+/* Must follow the block above: it matches .form-control:focus on specificity
+   (0,3,0) and would otherwise win on source order, erasing the focus ring. */
+:root[data-theme="dark"] .form-control:focus,
+:root[data-theme="dark"] .form-select:focus,
+:root[data-theme="dark"] .input-group-text:focus {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 28%, transparent) !important;
+}
 
 /* Dark table headers — soft sage instead of dim green */
 :root[data-theme="dark"] .dash-table th { color: #C8DCC9 !important; }
@@ -2909,4 +3276,468 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   margin: 0 0 1.75rem;
   border: 0;
   border-top: 1px solid var(--borders);
+}
+
+/* ---- Dark-mode readability fixes ---- */
+:root[data-theme="dark"] {
+  /* Base text */
+  color: var(--text);
+  background-color: var(--canvas);
+}
+:root[data-theme="dark"] a {
+  color: var(--accent);
+}
+:root[data-theme="dark"] a:hover {
+  color: var(--accent-hover);
+}
+:root[data-theme="dark"] .form-label,
+:root[data-theme="dark"] .form-check-label,
+:root[data-theme="dark"] legend,
+:root[data-theme="dark"] label {
+  color: var(--text);
+}
+:root[data-theme="dark"] .form-control,
+:root[data-theme="dark"] .form-select,
+:root[data-theme="dark"] .form-check-input {
+  background-color: var(--paper);
+  border-color: var(--borders);
+  color: var(--text);
+}
+:root[data-theme="dark"] .form-control::placeholder {
+  color: var(--text-soft);
+}
+:root[data-theme="dark"] .btn-outline {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+:root[data-theme="dark"] .btn-outline:hover {
+  background-color: var(--accent);
+  color: var(--accent-ink);
+}
+:root[data-theme="dark"] .btn-primary,
+:root[data-theme="dark"] .btn-primary-nav {
+  background: var(--gold) !important;
+  color: var(--gold-ink) !important;
+}
+:root[data-theme="dark"] .btn-primary:hover,
+:root[data-theme="dark"] .btn-primary-nav:hover {
+  background: var(--gold-deep) !important;
+}
+:root[data-theme="dark"] .btn-outline-primary {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  background: var(--paper) !important;
+}
+:root[data-theme="dark"] .btn-outline-primary:hover {
+  background: var(--accent) !important;
+  color: var(--accent-ink) !important;
+  border-color: var(--accent) !important;
+}
+:root[data-theme="dark"] .btn-outline-secondary {
+  border-color: var(--borders) !important;
+  color: var(--text) !important;
+  background: var(--paper) !important;
+}
+:root[data-theme="dark"] .btn-outline-secondary:hover {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  background: var(--canvas) !important;
+}
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .card-body,
+:root[data-theme="dark"] .card-header,
+:root[data-theme="dark"] .card-footer {
+  background-color: var(--paper);
+  border-color: var(--borders);
+}
+:root[data-theme="dark"] .sidebar-link {
+  color: var(--text);
+}
+:root[data-theme="dark"] .sidebar-link:hover,
+:root[data-theme="dark"] .sidebar-link.is-active {
+  background-color: var(--sidebar-active-bg);
+  color: var(--accent);
+}
+:root[data-theme="dark"] .nav-utils .cart-pill,
+:root[data-theme="dark"] .nav-utils .notif-pill {
+  color: var(--text);
+}
+:root[data-theme="dark"] .alert {
+  background-color: var(--paper);
+  border-color: var(--borders);
+  color: var(--text);
+}
+:root[data-theme="dark"] .table th,
+:root[data-theme="dark"] .table td {
+  border-color: var(--borders);
+}
+:root[data-theme="dark"] .badge {
+  background-color: var(--accent);
+  color: var(--accent-ink);
+}
+:root[data-theme="dark"] .badge-fresh {
+  background-color: var(--success);
+  color: var(--success-ink);
+}
+:root[data-theme="dark"] .badge-normal {
+  background-color: var(--accent);
+  color: var(--accent-ink);
+}
+:root[data-theme="dark"] .badge-stale {
+  background-color: var(--danger);
+  color: var(--danger-ink);
+}
+:root[data-theme="dark"] .price {
+  color: var(--text);
+}
+:root[data-theme="dark"] .text-soft,
+:root[data-theme="dark"] .text-muted {
+  color: var(--text-soft);
+}
+:root[data-theme="dark"] .text-danger {
+  color: var(--danger);
+}
+:root[data-theme="dark"] .text-success {
+  color: var(--success);
+}
+
+/* Align buttons in listing CTA */
+.listing-cta .d-flex {
+  align-items: center;
+  flex-wrap: wrap;
+}
+.listing-cta .btn {
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.listing-cta .btn-icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
+
+/* Notification bell button in topbar */
+.notif-btn {
+  position: relative;
+}
+.notif-btn .notif-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  background: var(--gold);
+  color: var(--gold-ink);
+  border-radius: 999px;
+}
+
+/* Ensure profile name visible in dark mode */
+:root[data-theme="dark"] .profile-name,
+:root[data-theme="dark"] .profile-dd-name,
+:root[data-theme="dark"] .profile-dd-email {
+  color: var(--text);
+}
+:root[data-theme="dark"] .role-pill {
+  color: var(--text);
+  background-color: var(--paper);
+  border-color: var(--borders);
+}
+
+/* Top bar utilities flex container */
+.nav-utils,
+ .sidebar-topbar {
+   display: flex;
+   align-items: center;
+   /* Page title/breadcrumb pins left, utility icons + profile pill pin right. */
+   justify-content: space-between;
+   gap: 12px;
+   /* nowrap: wrapping pushed the profile pill onto a second row and made it
+      collide with the title. The title truncates via ellipsis instead. */
+    flex-wrap: nowrap;
+    /* 56px + 6px vertical padding leaves the 2.75rem (44px) buttons a real
+       margin top and bottom. The previous `padding: 0 16px` cancelled the 0.6rem
+       from the base rule, so the buttons filled the bar edge to edge. */
+    min-height: 56px;
+    padding: 6px 16px;
+  }
+ .nav-utils > * {
+   flex-shrink: 0;
+ }
+ /* The public nav cluster is right-aligned and width-constrained, so it must not
+    carry the sidebar bar's 16px inline padding. Only .sidebar-topbar is a
+    full-width bar that needs it. */
+ .nav-utils {
+   padding: 0;
+ }
+ /* .sidebar-topbar's children must NOT be pinned to flex-shrink: 0 here.
+    .sidebar-topbar-side carries `flex: 1 1 auto` and min-width: 0 so the page
+    title can shrink and ellipsise; that was being cancelled, which pushed the
+    profile pill off-bar on phones. Only the utility group is unshrinkable, and
+    it sets `flex: 0 0 auto` on itself. */
+
+
+/* Profile menu wrapper — card styling comes from the shared .profile-btn rules above */
+.profile-menu {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Icon buttons uniform size — 2.75rem satisfies the .theme-toggle min-height tap target above */
+.nav-utils .theme-toggle,
+.nav-utils .motion-toggle,
+.nav-utils .locale-btn,
+.nav-utils .notif-pill,
+.nav-utils .cart-pill,
+.sidebar-topbar .theme-toggle,
+.sidebar-topbar .motion-toggle,
+.sidebar-topbar .locale-btn,
+.sidebar-topbar .notif-pill,
+.sidebar-topbar .cart-pill,
+.sidebar-topbar .sidebar-icon-btn {
+  position: relative;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 1px solid var(--borders);
+  color: var(--text);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+/* Topbar button borders read as too thin against the taller bar, so give the
+   logged-in bar's own controls a slightly heavier stroke than the public nav.
+   2px, not 1.5px: Chromium snaps fractional border widths down to whole device
+   pixels, so 1.5px renders identically to 1px. */
+.sidebar-topbar .theme-toggle,
+.sidebar-topbar .motion-toggle,
+.sidebar-topbar .locale-btn,
+.sidebar-topbar .notif-pill,
+.sidebar-topbar .cart-pill,
+.sidebar-topbar .sidebar-icon-btn {
+  border-width: 2px;
+}
+
+/* Profile button – shared card style (see .profile-btn above); nothing to override here */
+
+/* Icon hover */
+.nav-utils .theme-toggle:hover,
+.nav-utils .motion-toggle:hover,
+.nav-utils .locale-btn:hover,
+.nav-utils .notif-pill:hover,
+.nav-utils .cart-pill:hover,
+.sidebar-topbar .theme-toggle:hover,
+.sidebar-topbar .motion-toggle:hover,
+.sidebar-topbar .locale-btn:hover,
+.sidebar-topbar .notif-pill:hover,
+.sidebar-topbar .cart-pill:hover,
+.sidebar-topbar .sidebar-icon-btn:hover {
+  background: var(--paper);
+  border-color: var(--accent);
+}
+
+/* Badges */
+.nav-utils .notif-count,
+.nav-utils .cart-count,
+.sidebar-topbar .notif-count,
+.sidebar-topbar .cart-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  background: var(--gold);
+  color: var(--gold-ink);
+  border-radius: 999px;
+}
+
+/* Dark mode tweaks */
+:root[data-theme="dark"] .nav-utils .theme-toggle,
+:root[data-theme="dark"] .nav-utils .motion-toggle,
+:root[data-theme="dark"] .nav-utils .locale-btn,
+:root[data-theme="dark"] .nav-utils .notif-pill,
+:root[data-theme="dark"] .nav-utils .cart-pill,
+:root[data-theme="dark"] .sidebar-topbar .theme-toggle,
+:root[data-theme="dark"] .sidebar-topbar .motion-toggle,
+:root[data-theme="dark"] .sidebar-topbar .locale-btn,
+:root[data-theme="dark"] .sidebar-topbar .notif-pill,
+:root[data-theme="dark"] .sidebar-topbar .cart-pill,
+:root[data-theme="dark"] .sidebar-topbar .sidebar-icon-btn {
+  background: var(--paper);
+  border-color: var(--borders);
+}
+
+/* ---- Order Participants panel ----------------------------------------
+   Was a bare Bootstrap .row/.col-md-6 pair. Long buyer or farm names pushed
+   the second column off the panel because .row used flex-wrap and the columns
+   had no min-width: 0. Now a two-column grid with an explicit gap, and names
+   break inside their own column instead of overflowing it. */
+.participants-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+.participant-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  /* min-width: 0 stops a long unbroken name from widening the grid track. */
+  min-width: 0;
+  padding: 1rem 1.1rem;
+  background: var(--canvas-deep);
+  border: 1px solid var(--borders);
+  border-radius: var(--radius-card);
+}
+.participant-card strong {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-soft);
+}
+.participant-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+.participant-card .text-muted {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+/* Single column on phones so names never get a cramped half-width track. */
+@media (max-width: 575.98px) {
+  .participants-grid { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+}
+
+/* ---- Cart table ------------------------------------------------------
+   This app themes via [data-theme], NOT Bootstrap's [data-bs-theme], so
+   Bootstrap's own dark table tokens never engaged and .table/.table-hover
+   kept their light-grey row + hover backgrounds on a dark page. Override the
+   table custom properties directly. Token-driven so light mode stays correct. */
+.cart-table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--text);
+  --bs-table-border-color: var(--borders);
+  --bs-table-striped-color: var(--text);
+  --bs-table-striped-bg: transparent;
+  --bs-table-hover-color: var(--text);
+  --bs-table-hover-bg: color-mix(in srgb, var(--primary) 20%, transparent);
+  --bs-table-accent-bg: transparent;
+  background: transparent;
+  color: var(--text);
+  margin-bottom: 0;
+}
+.cart-table > thead > tr > th {
+  background: var(--canvas-deep);
+  color: var(--text);
+  border-bottom: 1px solid var(--borders);
+  font-weight: 620;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.cart-table > tbody > tr {
+  background: var(--paper);
+  color: var(--text);
+  border-color: var(--borders);
+}
+.cart-table > tbody > tr > td {
+  background: transparent;
+  border-color: var(--borders);
+  color: var(--text);
+}
+.cart-table > tbody > tr:hover > td {
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  color: var(--text);
+}
+.cart-table > tfoot > tr > td {
+  background: var(--canvas-deep);
+  color: var(--text);
+  border-top: 1px solid var(--borders);
+  border-bottom: 0;
+  font-weight: 700;
+}
+.cart-table .text-muted { color: var(--text-soft) !important; }
+.cart-table a { color: var(--text); }
+.cart-table a:hover, .cart-table a:focus-visible { color: var(--gold); }
+
+/* Product thumbnail in the cart */
+.cart-thumb {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  object-fit: cover;
+  border: 1px solid var(--borders);
+  border-radius: 8px;
+}
+
+/* Quantity field */
+.cart-qty-input {
+  width: 90px;
+  background: var(--canvas-deep);
+  color: var(--text);
+  border: 1px solid var(--borders);
+}
+.cart-qty-input:focus {
+  background: var(--canvas-deep);
+  color: var(--text);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 0.2rem var(--gold-tint);
+}
+
+/* Update button.
+   The app-wide `:root[data-theme="dark"] .btn-outline-primary` rule uses
+   !important at specificity (0,2,0), so a plain .cart-qty-update selector
+   loses. Match that specificity, stay scoped to the cart, and keep the
+   important flags so the button does not fall back to a flat light-grey
+   outline on the charcoal surface. */
+.cart-qty-update {
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid color-mix(in srgb, var(--gold) 55%, var(--borders));
+}
+:root[data-theme="dark"] .cart-qty-update {
+  background: transparent !important;
+  color: var(--gold) !important;
+  border-color: color-mix(in srgb, var(--gold) 55%, var(--borders)) !important;
+}
+:root[data-theme="dark"] .cart-qty-update:hover,
+:root[data-theme="dark"] .cart-qty-update:focus-visible {
+  background: var(--gold-tint) !important;
+  color: var(--gold) !important;
+  border-color: var(--gold) !important;
+}
+.cart-qty-update:hover,
+.cart-qty-update:focus-visible {
+  background: var(--gold-tint);
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+/* Remove / trash button */
+.cart-remove {
+  color: var(--danger) !important;
+  text-decoration: none;
+  border-radius: 6px;
+  padding: 0.15rem 0.4rem;
+}
+.cart-remove:hover,
+.cart-remove:focus-visible {
+  color: var(--danger) !important;
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
 }

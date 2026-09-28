@@ -139,7 +139,21 @@ function makeListing(PDO $pdo, int $farmerId, array $data): int
         'is_organic' => $data['is_organic'] ?? 0,
         'status' => 'active',
     ]);
-    return (int) $pdo->lastInsertId();
+
+    $listingId = (int) $pdo->lastInsertId();
+
+    // Listings without an image fall back to this real photo at render time,
+    // so seed one row per listing to keep the marketplace from showing blanks.
+    $image = $pdo->prepare(
+        'INSERT INTO listing_images (listing_id, image_path, is_primary, sort_order)
+         VALUES (:listing_id, :image_path, 1, 0)'
+    );
+    $image->execute([
+        'listing_id' => $listingId,
+        'image_path' => $data['image'] ?? 'assets/images/products/market.jpg',
+    ]);
+
+    return $listingId;
 }
 
 function makeOrder(PDO $pdo, int $buyerId, int $farmerId, int $listingId, float $qty, float $price, float $fee, string $method, string $status, ?string $address): void
@@ -219,6 +233,7 @@ try {
         'unit_id' => $bundle,
         'name' => 'Sitao (String Beans)',
         'description' => 'Fresh-picked string beans, harvested the same morning. Best for ginisa and adobo.',
+        'image' => 'assets/images/products/seedlings.jpg',
         'price_per_unit' => 45.00,
         'available_quantity' => 120,
         'minimum_order_qty' => 1,
@@ -243,6 +258,7 @@ try {
         'unit_id' => $kg,
         'name' => 'Calamansi',
         'description' => 'Juicy calamansi grown in the Lucban highlands.',
+        'image' => 'assets/images/products/oranges.jpg',
         'price_per_unit' => 80.00,
         'available_quantity' => 60,
         'minimum_order_qty' => 0.5,

@@ -37,6 +37,14 @@ try {
         flash_set('error', 'Please provide a delivery address for farmer delivery.');
         redirect_to('cart.php');
     }
+    if (mb_strlen($address) > FIELD_LIMITS['delivery_address']) {
+        flash_set('error', 'Delivery address is too long (max ' . FIELD_LIMITS['delivery_address'] . ' characters).');
+        redirect_to('cart.php');
+    }
+    if (mb_strlen($note) > FIELD_LIMITS['buyer_note']) {
+        flash_set('error', 'Note is too long (max ' . FIELD_LIMITS['buyer_note'] . ' characters).');
+        redirect_to('cart.php');
+    }
 
     $created = 0;
     $firstOrderId = null;

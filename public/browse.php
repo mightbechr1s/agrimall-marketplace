@@ -85,22 +85,6 @@ require __DIR__ . '/partials/header.php';
       <?php endforeach; ?>
     </div>
 
-    <!-- Featured Bulk Deal hero card -->
-    <div class="feature-card" data-reveal="stagger">
-      <div class="thumb">
-        <img src="assets/images/products/mango.jpg" onerror="this.onerror=null;this.src='assets/images/listings/mangoes.svg'" alt="Featured Bulk Deal" loading="lazy">
-      </div>
-      <div class="body">
-        <div class="row">
-          <h3>Bulk deal</h3>
-          <span class="badge badge-fresh">Picked Today</span>
-        </div>
-        <p>Bulk produce for home or business.</p>
-        <div class="price">PHP 999 <small>/ 10kg</small></div>
-        <button class="add-to-basket" type="button">View deal</button>
-      </div>
-    </div>
-
     <div class="grid" id="product-grid" data-reveal="stagger">
       <?php
       $useDb = true;
@@ -188,76 +172,109 @@ require __DIR__ . '/partials/header.php';
               </div>
               <div class="price"><?php echo money($item['price_per_unit']); ?> <small>/ <?php echo e($item['unit_symbol'] ?? 'kg'); ?></small></div>
               <div class="card-actions">
-                <?php if (current_user_id() && current_user_role() === 'buyer'): ?>
+                <?php if (!current_user_id()): ?>
+                  <?php $guestReturn = 'listing.php?id=' . (int) $item['id']; ?>
+                  <a class="buy-now btn btn-primary btn-sm w-100" href="<?php echo e(login_url($guestReturn)); ?>" aria-label="Buy now"><i class="bi bi-lightning-charge-fill me-1" aria-hidden="true"></i>Buy Now</a>
+                  <a class="btn btn-outline-primary btn-icon btn-sm" href="<?php echo e(login_url($guestReturn)); ?>" title="Add to cart" aria-label="Add to cart"><i class="bi bi-cart-plus" aria-hidden="true"></i></a>
+                  <a class="save-btn btn btn-outline-danger" href="<?php echo e(login_url($guestReturn)); ?>" title="Save for later" aria-label="Save for later"><i class="bi bi-heart" aria-hidden="true"></i></a>
+                <?php elseif (current_user_role() === 'buyer'): ?>
                   <?php if ($item['farmer_id'] !== current_user_id()): ?>
-                  <form method="post" action="cart_add.php" class="mb-0">
+                  <form method="post" action="cart_add.php" class="mb-0 buy-now" data-buy-now="true">
                     <?= csrf_field() ?>
                     <input type="hidden" name="listing_id" value="<?php echo (int) $item['id']; ?>">
                     <input type="hidden" name="quantity" value="<?php echo (float) ($item['minimum_order_qty'] ?: $item['available_quantity'] ?: 1); ?>">
-                    <button class="add-to-basket" type="submit" aria-label="Add <?php echo e($item['name']); ?> to cart"><i class="bi bi-plus-lg" aria-hidden="true"></i>Add to cart</button>
+                    <input type="hidden" name="buy_now" value="1">
+                    <button type="submit" class="btn btn-primary btn-sm w-100" aria-label="Buy now"><i class="bi bi-lightning-charge-fill me-1" aria-hidden="true"></i>Buy Now</button>
+                  </form>
+                  <form method="post" action="cart_add.php" class="mb-0" data-ajax="true">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="listing_id" value="<?php echo (int) $item['id']; ?>">
+                    <input type="hidden" name="quantity" value="<?php echo (float) ($item['minimum_order_qty'] ?: $item['available_quantity'] ?: 1); ?>">
+                    <button type="submit" class="btn btn-outline-primary btn-icon btn-sm" title="Add to cart" aria-label="Add to cart"><i class="bi bi-cart-plus" aria-hidden="true"></i></button>
                   </form>
                   <?php else: ?>
                     <span class="btn btn-sm btn-outline-secondary disabled">Your listing</span>
                   <?php endif; ?>
-                  <form method="post" action="saved_toggle.php" class="mb-0">
+                  <form method="post" action="saved_toggle.php" class="mb-0" data-save-ajax="true">
                     <?= csrf_field() ?>
                     <input type="hidden" name="listing_id" value="<?php echo (int) $item['id']; ?>">
                     <input type="hidden" name="return_to" value="browse.php">
-                    <button class="btn btn-sm btn-outline-danger save-btn" type="submit"
-                            aria-label="<?= in_array((int) $item['id'], $savedIds) ? 'Remove from saved' : 'Save for later'; ?>"
-                            aria-pressed="<?= in_array((int) $item['id'], $savedIds) ? 'true' : 'false'; ?>">
+                    <button type="submit" class="save-btn btn btn-outline-danger" aria-label="<?= in_array((int) $item['id'], $savedIds) ? 'Remove from saved' : 'Save for later'; ?>" aria-pressed="<?= in_array((int) $item['id'], $savedIds) ? 'true' : 'false'; ?>">
                       <i class="bi <?= in_array((int) $item['id'], $savedIds) ? 'bi-heart-fill' : 'bi-heart'; ?>" aria-hidden="true"></i>
                     </button>
                   </form>
                 <?php else: ?>
-                  <a class="add-to-basket" href="<?= current_user_id() ? 'browse.php' : 'login.php'; ?>" aria-label="Add to cart"><i class="bi bi-plus-lg" aria-hidden="true"></i>Add to cart</a>
+                  <a class="add-to-basket btn-icon" href="browse.php" aria-label="Add to cart"><i class="bi bi-cart-plus" aria-hidden="true"></i></a>
                 <?php endif; ?>
               </div>
             </div>
           </article>
         <?php endforeach; ?>
       <?php else: ?>
-        <!-- Fallback cards from mockup -->
-        <?php
-        $fallback = [
-          ['name'=>'Carabao Mangoes — 1 kg', 'farm'=>'Encarnacion Farm · Guimaras', 'price'=>180, 'unit'=>'kg', 'cat'=>'fruits', 'badge'=>'Today', 'badgeCls'=>'badge-fresh', 'image'=>'assets/images/listings/mangoes.svg'],
-          ['name'=>'Fresh Carabao Milk — 1 L', 'farm'=>'Delagracia Farm · Laguna', 'price'=>120, 'unit'=>'L', 'cat'=>'livestock-dairy', 'badge'=>'Today', 'badgeCls'=>'badge-fresh', 'image'=>'assets/images/listings/milk.svg'],
-          ['name'=>'Free-Range Native Chicken', 'farm'=>'Mercado Farm · Batangas', 'price'=>390, 'unit'=>'head', 'cat'=>'poultry', 'badge'=>'Today', 'badgeCls'=>'badge-fresh', 'image'=>'assets/images/listings/chicken.svg'],
-          ['name'=>'Fresh Bangus — 1 kg', 'farm'=>'Dizon Aquaculture · Dagupan', 'price'=>240, 'unit'=>'kg', 'cat'=>'seafood', 'badge'=>'2 days', 'badgeCls'=>'badge-normal', 'image'=>'assets/images/listings/bangus.svg'],
-          ['name'=>'Organic Rice — 5 kg', 'farm'=>'Encarnacion Farm · Guimaras', 'price'=>350, 'unit'=>'sack', 'cat'=>'vegetables', 'badge'=>'1 day', 'badgeCls'=>'badge-normal', 'image'=>'assets/images/listings/rice.svg'],
-          ['name'=>'Balut & Duck Eggs — 15 pcs', 'farm'=>'Pateros Co-op · Rizal', 'price'=>150, 'unit'=>'tray', 'cat'=>'poultry', 'badge'=>'4 days', 'badgeCls'=>'badge-stale', 'image'=>'assets/images/listings/eggs.svg'],
-        ];
-        foreach ($fallback as $card): ?>
-          <article class="card" data-reveal="stagger" data-category="<?php echo e($card['cat']); ?>">
-            <div class="swipe-reveal swipe-reveal--left" aria-hidden="true"><i class="bi bi-star"></i></div>
-            <div class="swipe-reveal swipe-reveal--right" aria-hidden="true"><i class="bi bi-basket3"></i></div>
-            <div class="thumb" style="background: var(--canvas);">
-              <img src="<?= e(asset($card['image'])) ?>" alt="<?php echo e($card['name']); ?>" loading="lazy">
-            </div>
-            <div class="body">
-              <div class="badges-top">
-                <span class="badge badge-fresh">Picked Today</span>
-                <span class="badge badge-location"><i class="bi bi-geo-alt"></i><?php echo e($card['farm']); ?></span>
-              </div>
-              <div class="row">
-                <h3><?php echo e($card['name']); ?></h3>
-                <span class="badge <?php echo e($card['badgeCls']); ?>"><?php echo e($card['badge']); ?></span>
-              </div>
-              <div class="price">PHP <?php echo number_format($card['price'], 0); ?> <small>/ <?php echo e($card['unit']); ?></small></div>
-              <button class="add-to-basket" type="button" aria-label="<?php echo e($card['name']); ?> — demo listing"><i class="bi bi-plus-lg" aria-hidden="true"></i>Demo listing</button>
-            </div>
-          </article>
-        <?php endforeach; ?>
+        <?php /* No listings in the database. Show an honest empty state and the
+                 three things a visitor can actually do here. This branch used to
+                 render mockup cards with invented prices and "Local Farm" as the
+                 seller, which read as real inventory. */ ?>
+        <div class="empty-state text-center" style="padding: 3rem 1.5rem;">
+          <div class="empty-state-icon-wrapper mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon"><path d="M8 1a.5.5 0 0 1 .5.5V3h1.5a.5.5 0 0 1 0 1H8.5v1.5h1a.5.5 0 0 1 0 1h-1v1.5h1.5a.5.5 0 0 1 0 1H8.5V9.5h1a.5.5 0 0 1 0 1h-1V11h1.5a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V12H6a.5.5 0 0 1 0-1h1.5V9.5h-1a.5.5 0 0 1 0-1h1V7H7a.5.5 0 0 1 0-1h1.5V4.5H7a.5.5 0 0 1 0-1h.5V1.5A.5.5 0 0 1 8 1z"/><path d="M2 2.5a.5.5 0 0 1 .5.5V4h1a.5.5 0 0 1 0 1h-1v1h1a.5.5 0 0 1 0 1h-1v1h1a.5.5 0 0 1 0 1h-1v3.5a.5.5 0 0 1-1 0V8H1.5a.5.5 0 0 1 0-1H2V6H1a.5.5 0 0 1 0-1h1V4H1.5a.5.5 0 0 1 0-1H2V3a.5.5 0 0 1 .5-.5z"/></svg>
+          </div>
+          <h3 class="empty-state-title"><?= e($locale === 'tl' ? 'Wala pang ibinebenta' : 'Nothing for sale yet') ?></h3>
+          <p class="empty-state-description"><?= e($locale === 'tl'
+              ? 'Walang aktibong listing sa marketplace pa. Suriin muli pagkatapos ng ilang oras, o mag-login para pamahalaan ang iyong sariling listing.'
+              : 'No active listings in the marketplace right now. Check back in a few hours, or log in to manage your own listings.') ?></p>
+          <div class="empty-state-action mt-3 d-flex flex-wrap gap-2 justify-content-center">
+            <a href="<?= e(login_url('browse.php')) ?>" class="btn btn-primary"><?= e($l($copy['nav'], 'login')) ?></a>
+            <a href="register.php" class="btn btn-outline-primary"><?= e($l($copy['auth'], 'create_one')) ?></a>
+            <a href="register.php" class="btn btn-outline-secondary"><?= e($l($copy['nav'], 'become_seller')) ?></a>
+          </div>
+        </div>
       <?php endif; ?>
     </div>
     <?php if ($useDb && $page < $totalPages): ?>
         <div style="text-align:center;margin-top:32px;">
-          <a class="btn btn-outline" href="?page=<?php echo $page+1; ?><?php if (isset($_GET['lang'])): ?>&lang=<?php echo urlencode($_GET['lang']); ?><?php endif; ?><?php if ($q): ?>&q=<?php echo urlencode($q); ?><?php endif; ?>">Load more</a>
+          <a class="btn btn-outline load-more-btn" href="?page=<?php echo $page+1; ?><?php if (isset($_GET['lang'])): ?>&lang=<?php echo urlencode($_GET['lang']); ?><?php endif; ?><?php if ($q): ?>&q=<?php echo urlencode($q); ?><?php endif; ?>">Load more</a>
         </div>
       <?php endif; ?>
   </div>
 </section>
 </main>
+
+<script>
+(function () {
+  'use strict';
+  document.addEventListener('click', async function (e) {
+    var btn = e.target.closest('.load-more-btn');
+    if (!btn) return;
+    e.preventDefault();
+    var url = btn.href;
+    try {
+      var resp = await fetch(url, {
+        headers: { 'X-Requested-With': 'fetch' },
+        credentials: 'same-origin'
+      });
+      if (!resp.ok) return;
+      var html = await resp.text();
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(html, 'text/html');
+      var newCards = doc.querySelectorAll('#product-grid .card');
+      var grid = document.getElementById('product-grid');
+      newCards.forEach(function (card) {
+        grid.appendChild(card.cloneNode(true));
+      });
+      var nextBtn = doc.querySelector('.load-more-btn');
+      if (nextBtn) {
+        btn.href = nextBtn.href;
+      } else {
+        btn.remove();
+      }
+    } catch (err) {
+      // fallback to normal navigation
+      window.location.href = url;
+    }
+  });
+})();
+</script>
 
 <div class="mobile-cta-bar" role="navigation" aria-label="Quick actions">
    <a href="browse.php" class="btn btn-outline">Browse</a>

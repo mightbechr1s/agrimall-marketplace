@@ -40,9 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pricePerUnit = (float) ($_POST['price_per_unit'] ?? 0);
     $availableQuantity = (float) ($_POST['available_quantity'] ?? 0);
     $minimumOrderQty = (float) ($_POST['minimum_order_qty'] ?? 0);
-    $maximumOrderQty = $_POST['maximum_order_qty'] !== '' ? (float) ($_POST['maximum_order_qty'] ?? null) : null;
-    $harvestDate = $_POST['harvest_date'] !== '' ? (string) ($_POST['harvest_date'] ?? null) : null;
-    $expiryDate = $_POST['expiry_date'] !== '' ? (string) ($_POST['expiry_date'] ?? null) : null;
+    $maximumOrderQty = ($_POST['maximum_order_qty'] ?? '') !== '' ? (float) $_POST['maximum_order_qty'] : null;
+    $harvestDate = ($_POST['harvest_date'] ?? '') !== '' ? (string) $_POST['harvest_date'] : null;
+    $expiryDate = ($_POST['expiry_date'] ?? '') !== '' ? (string) $_POST['expiry_date'] : null;
     $isOrganic = isset($_POST['is_organic']) && $_POST['is_organic'] === '1' ? 1 : 0;
 
     // Validation
@@ -72,6 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($maximumOrderQty !== null && $maximumOrderQty < $minimumOrderQty) {
         $errors[] = $l($copy['lf'], 'err_max_qty');
+    }
+
+    foreach (over_limit_fields($_POST) as $field => $max) {
+        $errors[] = sprintf($l($copy['lf'], 'err_too_long'), $max);
     }
 
     // Validate dates
@@ -293,13 +297,13 @@ require __DIR__ . '/partials/dashboard-layout.php';
                     <div style="grid-column:1/-1;">
                         <label class="form-label" for="name"><?= $l($copy['lf'], 'name') ?></label>
                         <input class="form-control" type="text" id="name" name="name"
-                               value="<?= e($old['name'] ?? '') ?>" required maxlength="150" placeholder="Fresh organic tomatoes" />
+                               value="<?= e($old['name'] ?? '') ?>" required maxlength="<?= FIELD_LIMITS['name'] ?>" placeholder="Fresh organic tomatoes" />
                     </div>
 
                     <div style="grid-column:1/-1;">
                         <label class="form-label" for="description"><?= $l($copy['lf'], 'description') ?></label>
                         <textarea class="form-control" id="description" name="description"
-                                  rows="3" placeholder="Describe your harvest..."><?= e($old['description'] ?? '') ?></textarea>
+                                  rows="3" maxlength="<?= FIELD_LIMITS['description'] ?>" placeholder="Describe your harvest..."><?= e($old['description'] ?? '') ?></textarea>
                     </div>
 
                     <div>

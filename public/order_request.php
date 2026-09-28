@@ -55,6 +55,12 @@ try {
     if ($method === 'farmer_delivery' && mb_strlen($address) < 5) {
         throw new RuntimeException('Please provide a delivery address for farmer delivery.');
     }
+    if (mb_strlen($address) > FIELD_LIMITS['delivery_address']) {
+        throw new RuntimeException('Delivery address is too long (max ' . FIELD_LIMITS['delivery_address'] . ' characters).');
+    }
+    if (mb_strlen($note) > FIELD_LIMITS['buyer_note']) {
+        throw new RuntimeException('Note is too long (max ' . FIELD_LIMITS['buyer_note'] . ' characters).');
+    }
 
     $reference = order_ref();
     $stmt = $pdo->prepare(

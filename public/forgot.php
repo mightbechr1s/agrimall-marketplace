@@ -30,6 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = str_replace(':label', $l($copy['auth'], 'email'), $l($copy['auth'], 'err_fill'));
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = $l($copy['auth'], 'err_email_valid');
+    } elseif (mb_strlen($email) > FIELD_LIMITS['email']) {
+        $error = sprintf($l($copy['auth'], 'err_too_long'), FIELD_LIMITS['email']);
     } else {
         // Check if email exists
         $stmt = DB::pdo()->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
@@ -37,18 +39,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch();
 
         if ($user) {
-            // Generate token
+            // Generate token; only its SHA-256 hash is persisted so a DB leak
+            // cannot be replayed as a password reset.
             $token = bin2hex(random_bytes(32));
             $expiresAt = (new DateTime('+1 hour'))->format('Y-m-d H:i:s');
 
-            // Store token
+            // Store token hash
             $insert = DB::pdo()->prepare(
                 'INSERT INTO password_resets (user_id, token, expires_at)
                  VALUES (:user_id, :token, :expires_at)'
             );
             $insert->execute([
                 'user_id' => $user['id'],
-                'token' => $token,
+                'token' => hash('sha256', $token),
                 'expires_at' => $expiresAt
             ]);
 
@@ -91,7 +94,7 @@ require __DIR__ . '/partials/header.php';
             <div style="margin-bottom: 18px;">
                 <label class="form-label" for="email"><?= $l($copy['auth'], 'email') ?></label>
                 <input class="form-control" type="email" id="email" name="email"
-                       value="<?= e($_POST['email'] ?? '') ?>" required autofocus placeholder="you@example.com" />
+                       value="<?= e($_POST['email'] ?? '') ?>" required autofocus placeholder="you@example.com" maxlength="<?= FIELD_LIMITS['email'] ?>" />
             </div>
             <button class="btn btn-primary btn-lg w-100" type="submit">
                 <i class="bi bi-envelope-paper me-1"></i> <?= $l($copy['auth'], 'send_reset_btn') ?>

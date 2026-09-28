@@ -304,6 +304,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="user_id" value="<?= (int) $f['user_id'] ?>">
                                 <input type="text" name="reason" class="form-control form-control-sm" style="max-width: 200px;"
+                                       maxlength="<?= FIELD_LIMITS['reason'] ?>"
                                        placeholder="Reject reason" aria-label="Reject reason">
                                 <button type="submit" name="action" value="approve" class="btn btn-sm btn-primary">Approve</button>
                                 <button type="submit" name="action" value="reject" class="btn btn-sm btn-outline-danger">Reject</button>
@@ -393,61 +394,28 @@ require __DIR__ . '/partials/dashboard-layout.php';
             <a href="create_listing.php" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>New</a>
         </div>
         <?php if ($farmerListings): ?>
-        <div class="table-responsive">
-            <table class="dash-table align-middle">
-                <thead>
-                    <tr>
-                        <th>Produce</th>
-                        <th>Category</th>
-                        <th class="text-end">Price</th>
-                        <th class="text-end">Available</th>
-                        <th>Status</th>
-                        <th class="text-end">Published</th>
-                        <th class="text-end action-col">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($farmerListings as $l): ?>
-                        <tr class="listing-row" data-listing-id="<?= (int) $l['id'] ?>">
-                            <td class="cell-link"><a href="listing.php?id=<?= (int) $l['id'] ?>"><?= e($l['name']) ?></a></td>
-                            <td class="cell-muted"><?= e($l['category_name']) ?></td>
-                            <td class="text-end"><?= money($l['price_per_unit']) ?> / <?= e($l['unit_symbol']) ?></td>
-                            <td class="text-end">
-                                <div class="input-group input-group-sm" style="max-width: 120px;">
-                                    <label class="visually-hidden" for="quantity-<?= (int) $l['id'] ?>">Available quantity for <?= e($l['name']) ?></label>
-                                    <input id="quantity-<?= (int) $l['id'] ?>" type="number" class="form-control form-control-sm text-end"
-                                           value="<?= (int) $l['available_quantity'] ?>"
-                                           min="0" step="1"
-                                           data-listing-id="<?= (int) $l['id'] ?>">
-                                    <span class="input-group-text"><?= e($l['unit_symbol']) ?></span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="form-check form-switch">
-                                    <input id="stock-<?= (int) $l['id'] ?>" class="form-check-input stock-toggle" type="checkbox"
-                                           role="switch"
-                                           <?= $l['status'] === 'active' || $l['status'] === 'pending_verification' ? 'checked' : '' ?>
-                                           data-listing-id="<?= (int) $l['id'] ?>"
-                                           aria-label="Stock status for <?= e($l['name']) ?>">
-                                    <label class="form-check-label" for="stock-<?= (int) $l['id'] ?>"><?= $l['status'] === 'active' || $l['status'] === 'pending_verification' ? 'In Stock' : 'Sold Out' ?></label>
-                                </div>
-                            </td>
-                            <td class="text-muted"><?= $l['published_at'] ? e(date('M j', strtotime($l['published_at']))) : '&mdash;' ?></td>
-                            <td class="text-end action-col">
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="bi bi-three-dots"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li><a class="dropdown-item" href="listing.php?id=<?= (int) $l['id'] ?>">View</a></li>
-                                        <li><a class="dropdown-item" href="create_listing.php?id=<?= (int) $l['id'] ?>">Edit</a></li>
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+        <div class="grid" data-reveal="stagger" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+            <?php foreach ($farmerListings as $l): ?>
+              <?php
+              $listing = [
+                'id' => (int) $l['id'],
+                'title' => $l['name'],
+                'description' => $l['description'] ?? '',
+                'price' => (float) $l['price_per_unit'],
+                'unit' => $l['unit_symbol'] ?? 'kg',
+                'category' => $l['category_name'] ?? 'Produce',
+                'farmer_name' => 'You',
+                'farmer_slug' => '',
+                'image_path' => $l['primary_image'] ?? fallback_produce_image(),
+                'is_fresh' => $l['status'] === 'active',
+                'is_saved' => false,
+                'qty_available' => (int) ($l['available_quantity'] ?? 0),
+              ];
+              $mode = 'grid';
+              $showActions = false;
+              include __DIR__ . '/partials/listing-card.php';
+              ?>
+            <?php endforeach; ?>
         </div>
         <?php else: ?>
         <div class="empty-state">
@@ -796,16 +764,17 @@ require __DIR__ . '/partials/dashboard-layout.php';
         </div>
         <?php
         $savedStmt = DB::pdo()->prepare(
-            'SELECT sl.listing_id, pl.name, pl.price_per_unit, fp.farm_name, qu.symbol,
+            'SELECT sl.listing_id, pl.name, pl.price_per_unit, pl.description, fp.farm_name, qu.symbol,
                     (SELECT li.image_path FROM listing_images li
                       WHERE li.listing_id = pl.id AND li.is_primary = 1
                       ORDER BY li.sort_order LIMIT 1) AS primary_image,
-                    sl.created_at
+                    pc.name AS category_name, sl.created_at
              FROM saved_listings sl
              JOIN produce_listings pl ON sl.listing_id = pl.id
              JOIN farmer_profiles fp ON pl.farmer_id = fp.user_id
              JOIN quantity_units qu ON pl.unit_id = qu.id
-             WHERE sl.user_id = :user AND pl.status = "active"
+             JOIN produce_categories pc ON pl.category_id = pc.id
+             WHERE sl.user_id = :user AND pl.status = \'active\'
              ORDER BY sl.created_at DESC'
         );
         $savedStmt->execute(['user' => current_user_id()]);
@@ -818,32 +787,27 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <a class="btn btn-primary" href="browse.php">Browse Listings</a>
             </div>
         <?php else: ?>
-            <div class="row g-3">
+            <div class="grid" data-reveal="stagger" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
                 <?php foreach ($savedListings as $saved): ?>
                     <?php
-                    $savedImg = $saved['primary_image'] ? asset($saved['primary_image']) : 'assets/images/listings/mangoes.svg';
+                    $listing = [
+                      'id' => (int) $saved['listing_id'],
+                      'title' => $saved['name'],
+                      'description' => $saved['description'] ?? '',
+                      'price' => (float) $saved['price_per_unit'],
+                      'unit' => $saved['symbol'] ?? 'kg',
+                      'category' => $saved['category_name'] ?? 'Produce',
+                      'farmer_name' => $saved['farm_name'],
+                      'farmer_slug' => '',
+                      'image_path' => $saved['primary_image'] ?: fallback_produce_image(),
+                      'is_fresh' => true,
+                      'is_saved' => true,
+                      'qty_available' => 999,
+                    ];
+                    $mode = 'grid';
+                    $showActions = false;
+                    include __DIR__ . '/partials/listing-card.php';
                     ?>
-                    <div class="col-md-3">
-                        <div class="card h-100">
-                            <img src="<?= e($savedImg) ?>" alt="" class="card-img-top" style="height:120px; object-fit:cover;" onerror="this.onerror=null;this.src='assets/images/listings/mangoes.svg'">
-                            <div class="card-body p-3">
-                                <h6 class="card-title mb-1"><a href="listing.php?id=<?= (int) $saved['listing_id'] ?>" class="text-decoration-none"><?= e($saved['name']) ?></a></h6>
-                                <p class="text-muted small mb-1"><i class="bi bi-geo-alt" aria-hidden="true"></i> <?= e($saved['farm_name']) ?></p>
-                                <div class="mb-2"><?= money($saved['price_per_unit']) ?> <small class="text-muted">/ <?= e($saved['symbol']) ?></small></div>
-                                <div class="d-flex gap-2">
-                                    <a href="listing.php?id=<?= (int) $saved['listing_id'] ?>" class="btn btn-outline-primary btn-sm"><i class="bi bi-basket3 me-1" aria-hidden="true"></i>View</a>
-                                    <form method="post" action="saved_toggle.php" class="mb-0">
-                                        <?= csrf_field() ?>
-                                        <input type="hidden" name="listing_id" value="<?= (int) $saved['listing_id'] ?>">
-                                        <input type="hidden" name="return_to" value="dashboard.php#saved">
-                                        <button class="btn btn-link text-danger p-0" style="font-size:0.9rem;" type="submit">
-                                            <i class="bi bi-trash me-1" aria-hidden="true"></i>Remove
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>

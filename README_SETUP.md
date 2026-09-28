@@ -55,11 +55,25 @@ Only edit it for a different DB or a production `base_url`.
 
 ---
 
-## 4. Start MySQL
+## 4. Start the local stack (MySQL + PHP dev server)
+
+```powershell
+cd C:\xampp\htdocs\animal
+powershell -ExecutionPolicy Bypass -File tools\dev-server.ps1
+```
+
+This starts MariaDB (using `C:\xampp\mysql\my.ini`) and the PHP dev server,
+waits for both to answer, and is safe to re-run. Stop everything with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\dev-server.ps1 -Stop
+```
+
+To start MariaDB alone:
 
 ```powershell
 # Run as Administrator the first time
-Start-Process "C:\xampp\mysql\bin\mysqld.exe" -WindowStyle Hidden
+Start-Process "C:\xampp\mysql\bin\mysqld.exe" -WorkingDirectory "C:\xampp\mysql" -WindowStyle Hidden
 Start-Sleep 3
 
 # Verify
@@ -80,10 +94,22 @@ cd C:\xampp\htdocs\animal
 C:\xampp\php\php.exe tools\db-reset.php --yes
 ```
 
-Expected output: `Reset complete ... (9 users, 8 listings)`.
+Expected output: `Reset complete ... (5 users, 6 listings)`.
 
-Result &mdash; **21 tables** (base schema + `password_resets`, `remember_tokens`,
-`user_preferences`, `cart_items`, `saved_listings`, `order_status_history`).
+Result &mdash; **21 tables + 2 views**. `database/schema.sql` creates the 17 base
+tables; migrations add `password_resets`, `user_preferences`, and `notifications`;
+`rate_limits` is created on first use by `rate_limit_check()`. The 2 views are
+`v_active_listings` and `v_order_summary`.
+
+Note: remember-me is **not** a separate table. It is stored on `users` as the
+`remember_token` and `remember_expires` columns (see
+`database/migrations/002_password_resets_and_remember.sql`).
+
+Seed accounts created by `database/seed.php`:
+`admin@animal.local` (admin123, from `schema.sql`),
+`delagracia@animal.local` and `encarnacion@animal.local` (farmers),
+`mercado@animal.local` and `dizon@animal.local` (buyers) &mdash; the last four
+use password `password123`.
 
 ### Alternative &mdash; phpMyAdmin (GUI)
 
@@ -92,7 +118,7 @@ Result &mdash; **21 tables** (base schema + `password_resets`, `remember_tokens`
 3. **Databases** tab &mdash; create `animal_marketplace` (collation `utf8mb4_unicode_ci`).
 4. Select the database &mdash; **Import** tab &mdash; choose `database\animal_marketplace.sql` &mdash; **Go**.
 
-> Note: `database/animal_marketplace.sql` is a static snapshot (19 tables). Use
+> Note: `database/animal_marketplace.sql` is a static snapshot (21 tables + 2 views). Use
 > `tools/db-reset.php` (step 5) instead whenever possible &mdash; it includes the
 > latest cart/saved migration tables.
 
@@ -105,6 +131,11 @@ cd C:\xampp\htdocs\animal
 C:\xampp\php\php.exe -S 127.0.0.1:8000 -t public public/router.php
 ```
 *Keep this console open &mdash; it IS the web server.*
+
+> **`public/router.php` is mandatory as the last argument.** It is what blocks
+> script execution inside `public/uploads/`. Without it, PHP serves files
+> directly, `uploads/.htaccess` is ignored, and an uploaded `.php` file runs as
+> code. `tools/dev-server.ps1` (step 4) always passes it.
 
 ---
 

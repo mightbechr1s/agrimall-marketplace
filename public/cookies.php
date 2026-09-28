@@ -38,10 +38,10 @@ require __DIR__ . '/partials/header.php';
     margin-left: -0.75rem;
 }
 .toc-link:hover {
-    color: var(--ink);
+    color: var(--text);
 }
 .toc-link.is-active {
-    color: var(--ink);
+    color: var(--text);
     font-weight: 600;
     border-left-color: var(--accent);
 }
@@ -70,7 +70,7 @@ require __DIR__ . '/partials/header.php';
 }
 .legal-table th {
     font-weight: 600;
-    color: var(--ink);
+    color: var(--text);
 }
 @media (min-width: 768px) {
     .sticky-sidebar {
@@ -100,7 +100,8 @@ require __DIR__ . '/partials/header.php';
                                 <tr><th>Name</th><th>Type</th><th>Purpose</th><th>Expires</th></tr>
                             </thead>
                             <tbody>
-                                <tr><td><code>PHPSESSID</code></td><td>Session cookie</td><td>Keeps you logged in across pages</td><td>Browser close</td></tr>
+                                <tr><td><code>ANIMAL_SESSID</code></td><td>Session cookie</td><td>Keeps you logged in across pages</td><td>30 minutes after your last activity</td></tr>
+                                <tr><td><code>animal_remember</code></td><td>Persistent cookie</td><td>Keeps you signed in for 30 days when you select &ldquo;Remember me&rdquo; on login</td><td>30 days</td></tr>
                                 <tr><td><code>animal_lang</code></td><td>Persistent cookie</td><td>Remembers your language choice (EN/TL)</td><td>1 year</td></tr>
                             </tbody>
                         </table>

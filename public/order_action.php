@@ -17,6 +17,11 @@ if (!$orderId || !$action) {
     redirect_to('/dashboard.php');
 }
 
+if (mb_strlen($reason) > FIELD_LIMITS['reason']) {
+    flash_set('error', 'Reason is too long (max ' . FIELD_LIMITS['reason'] . ' characters).');
+    redirect_to('order.php?id=' . $orderId);
+}
+
 $pdo = DB::pdo();
 $userId = current_user_id();
 $role   = current_user_role();
@@ -47,6 +52,9 @@ try {
             if ($order['delivery_method'] === 'farmer_delivery') {
                 $fee = (float) ($_POST['delivery_fee'] ?? 0);
                 if ($fee < 0) $fee = 0;
+                if ($fee > MAX_DELIVERY_FEE) {
+                    throw new RuntimeException('Delivery fee exceeds the maximum allowable amount.');
+                }
                 $pdo->prepare('UPDATE orders SET delivery_fee = :fee WHERE id = :id')
                     ->execute(['fee' => $fee, 'id' => $orderId]);
             }

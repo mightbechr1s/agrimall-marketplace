@@ -38,10 +38,10 @@ require __DIR__ . '/partials/header.php';
     margin-left: -0.75rem;
 }
 .toc-link:hover {
-    color: var(--ink);
+    color: var(--text);
 }
 .toc-link.is-active {
-    color: var(--ink);
+    color: var(--text);
     font-weight: 600;
     border-left-color: var(--accent);
 }

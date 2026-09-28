@@ -36,6 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = $l($copy['account'], 'email_same');
         } elseif (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
             $error = $l($copy['account'], 'err_email_valid');
+        } elseif (mb_strlen($newEmail) > FIELD_LIMITS['email']) {
+            $error = sprintf($l($copy['account'], 'err_too_long'), FIELD_LIMITS['email']);
         } elseif (!password_verify((string) ($_POST['current_password'] ?? ''), $hash)) {
             $error = $l($copy['account'], 'invalid_current_password');
         } else {
@@ -58,6 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = $l($copy['account'], 'err_pass_required');
         } elseif (strlen($newPass) < 8) {
             $error = $l($copy['account'], 'err_pass_min');
+        } elseif (strlen($newPass) > FIELD_LIMITS['password']) {
+            $error = sprintf($l($copy['account'], 'err_too_long'), FIELD_LIMITS['password']);
         } elseif ($newPass !== (string) ($_POST['confirm_password'] ?? '')) {
             $error = $l($copy['account'], 'err_pass_match');
         } elseif (!password_verify((string) ($_POST['current_password'] ?? ''), $hash)) {
@@ -142,7 +146,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <div class="form-group">
                     <label class="form-label" for="email"><?= e($l($copy['account'], 'label_email')) ?></label>
                     <input class="form-control" type="email" id="email" name="email"
-                           value="<?= e($user['email']) ?>" autocomplete="email" required>
+                           value="<?= e($user['email']) ?>" autocomplete="email" required maxlength="<?= FIELD_LIMITS['email'] ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="email_current_password"><?= e($l($copy['account'], 'label_current_password')) ?></label>
@@ -166,12 +170,12 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <div class="form-group">
                     <label class="form-label" for="new_password"><?= e($l($copy['account'], 'label_new_password')) ?></label>
                     <input class="form-control" type="password" id="new_password" name="new_password"
-                           autocomplete="new-password" minlength="8" required>
+                           autocomplete="new-password" minlength="8" maxlength="<?= FIELD_LIMITS['password'] ?>" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="confirm_password"><?= e($l($copy['account'], 'label_confirm_password')) ?></label>
                     <input class="form-control" type="password" id="confirm_password" name="confirm_password"
-                           autocomplete="new-password" minlength="8" required>
+                           autocomplete="new-password" minlength="8" maxlength="<?= FIELD_LIMITS['password'] ?>" required>
                 </div>
                 <button class="btn btn-primary" type="submit"><?= e($l($copy['account'], 'btn_save_password')) ?></button>
                 <a href="dashboard.php" class="btn btn-outline"><?= e($l($copy['account'], 'btn_cancel')) ?></a>

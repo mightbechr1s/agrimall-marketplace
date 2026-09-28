@@ -46,7 +46,24 @@ if (is_file($requestedFile) && str_starts_with($requestedFile, realpath($documen
     // Static assets: serve with Cache-Control headers
     $ext = strtolower(pathinfo($requestedFile, PATHINFO_EXTENSION));
     $staticExtensions = ['css', 'js', 'svg', 'png', 'jpg', 'jpeg', 'webp', 'ico', 'json', 'txt', 'woff', 'woff2'];
-    
+
+    // Never expose dotfiles (.htaccess, .env, editor backups)
+    if (str_starts_with(basename($requestedFile), '.')) {
+        http_response_code(404);
+        require __DIR__ . '/404.php';
+        return true;
+    }
+
+    // Deny script execution inside uploads/. Apache's .htaccess is ignored by the
+    // built-in server, so mirror it here: uploads may only serve static assets.
+    $uploadsRoot = realpath($documentRoot . '/uploads');
+    $isUpload = $uploadsRoot !== false
+        && str_starts_with($requestedFile, $uploadsRoot . DIRECTORY_SEPARATOR);
+    if ($isUpload && !in_array($ext, $staticExtensions, true)) {
+        http_response_code(403);
+        exit('Forbidden');
+    }
+
     if (in_array($ext, $staticExtensions, true)) {
         // Skip caching for robots.txt and sitemap (handled by special routes)
         $basename = basename($requestedFile);

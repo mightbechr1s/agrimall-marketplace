@@ -147,15 +147,15 @@ require __DIR__ . '/partials/header.php';
             <!-- Participants -->
             <div class="dash-panel p-4 mt-4">
                 <h5 class="mb-3">Participants</h5>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <strong>Buyer</strong><br>
-                        <?= e($order['buyer_name']) ?><br>
+                <div class="participants-grid">
+                    <div class="participant-card">
+                        <strong>Buyer</strong>
+                        <span class="participant-name"><?= e($order['buyer_name']) ?></span>
                         <small class="text-muted"><?= e($order['buyer_phone'] ?? 'No phone') ?></small>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <strong>Farm</strong><br>
-                        <?= e($order['farm_name']) ?><br>
+                    <div class="participant-card">
+                        <strong>Farm</strong>
+                        <span class="participant-name"><?= e($order['farm_name']) ?></span>
                         <small class="text-muted"><?= e($order['farmer_contact_person'] ?? '') ?> - <?= e($order['farmer_phone'] ?? 'No phone') ?></small>
                     </div>
                 </div>
@@ -207,7 +207,7 @@ require __DIR__ . '/partials/header.php';
                             <?php if ($order['delivery_method'] === 'farmer_delivery'): ?>
                                 <div class="mb-2">
                                     <label class="form-label small">Delivery Fee (₱)</label>
-                                    <input type="number" step="0.01" min="0" name="delivery_fee" class="form-control form-control-sm" value="0.00" required>
+                                    <input type="number" step="0.01" min="0" max="<?= MAX_DELIVERY_FEE ?>" name="delivery_fee" class="form-control form-control-sm" value="0.00" required>
                                 </div>
                             <?php endif; ?>
                             <button type="submit" class="btn btn-primary w-100 btn-sm">
@@ -223,7 +223,7 @@ require __DIR__ . '/partials/header.php';
                             <input type="hidden" name="action" value="set_fee">
                             <div class="mb-2">
                                 <label class="form-label small">Delivery Fee (₱)</label>
-                                <input type="number" step="0.01" min="0" name="delivery_fee" class="form-control form-control-sm" value="<?= (float) $order['delivery_fee'] ?>" required>
+                                <input type="number" step="0.01" min="0" max="<?= MAX_DELIVERY_FEE ?>" name="delivery_fee" class="form-control form-control-sm" value="<?= (float) $order['delivery_fee'] ?>" required>
                             </div>
                             <button type="submit" class="btn btn-outline w-100 btn-sm">
                                 Set Fee
@@ -238,7 +238,7 @@ require __DIR__ . '/partials/header.php';
                             <input type="hidden" name="action" value="reject">
                             <div class="mb-2">
                                 <label class="form-label small">Reason (required)</label>
-                                <textarea name="reason" class="form-control form-control-sm" rows="2" required></textarea>
+                                <textarea name="reason" class="form-control form-control-sm" rows="2" maxlength="<?= FIELD_LIMITS['reason'] ?>" required></textarea>
                             </div>
                             <button type="submit" class="btn btn-outline-danger w-100 btn-sm">
                                 Reject Order
@@ -301,7 +301,7 @@ require __DIR__ . '/partials/header.php';
                             <input type="hidden" name="action" value="cancel">
                             <div class="mb-2">
                                 <label class="form-label small">Reason (required)</label>
-                                <textarea name="reason" class="form-control form-control-sm" rows="2" required></textarea>
+                                <textarea name="reason" class="form-control form-control-sm" rows="2" maxlength="<?= FIELD_LIMITS['reason'] ?>" required></textarea>
                             </div>
                             <button type="submit" class="btn btn-outline-danger w-100 btn-sm">
                                 Cancel Order
@@ -317,7 +317,7 @@ require __DIR__ . '/partials/header.php';
                             <input type="hidden" name="action" value="cancel">
                             <div class="mb-2">
                                 <label class="form-label small">Reason (required)</label>
-                                <textarea name="reason" class="form-control form-control-sm" rows="2" required></textarea>
+                                <textarea name="reason" class="form-control form-control-sm" rows="2" maxlength="<?= FIELD_LIMITS['reason'] ?>" required></textarea>
                             </div>
                             <button type="submit" class="btn btn-outline-danger w-100 btn-sm">
                                 Cancel Order
@@ -348,7 +348,7 @@ require __DIR__ . '/partials/header.php';
                             <input type="hidden" name="action" value="cancel">
                             <div class="mb-2">
                                 <label class="form-label small">Reason (required)</label>
-                                <textarea name="reason" class="form-control form-control-sm" rows="2" required></textarea>
+                                <textarea name="reason" class="form-control form-control-sm" rows="2" maxlength="<?= FIELD_LIMITS['reason'] ?>" required></textarea>
                             </div>
                             <button type="submit" class="btn btn-outline-danger w-100 btn-sm">
                                 Admin Cancel

@@ -56,7 +56,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
             </div>
         <?php else: ?>
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
+                <table class="table table-hover align-middle cart-table">
                     <thead>
                         <tr>
                             <th>Item</th>
@@ -73,12 +73,12 @@ require __DIR__ . '/partials/dashboard-layout.php';
                             <?php
                             $subtotal = (float) $item['price_per_unit'] * (float) $item['quantity'];
                             $total += $subtotal;
-                            $img = $item['primary_image'] ? asset($item['primary_image']) : 'assets/images/listings/mangoes.svg';
+                            $img = asset($item['primary_image'] ?: fallback_produce_image());
                             ?>
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
-                                        <img src="<?= e($img) ?>" alt="" width="48" height="48" class="rounded" style="object-fit:cover;" onerror="this.onerror=null;this.src='assets/images/listings/mangoes.svg'">
+                                        <img src="<?= e($img) ?>" alt="" width="48" height="48" class="rounded cart-thumb" onerror="this.onerror=null;this.src='assets/images/products/market.jpg'">
                                         <a href="listing.php?id=<?= (int) $item['listing_id'] ?>"><?= e($item['name']) ?></a>
                                     </div>
                                 </td>
@@ -88,8 +88,8 @@ require __DIR__ . '/partials/dashboard-layout.php';
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="action" value="update">
                                         <input type="hidden" name="item_id" value="<?= (int) $item['cart_id'] ?>">
-                                        <input type="number" name="quantity" step="0.01" min="<?= (float) $item['minimum_order_qty'] ?>" max="<?= $item['maximum_order_qty'] ? (float) $item['maximum_order_qty'] : (float) $item['available_quantity'] ?>" value="<?= (float) $item['quantity'] ?>" class="form-control form-control-sm" style="width:90px;" aria-label="Quantity for <?= e($item['name']) ?>">
-                                        <button class="btn btn-sm btn-outline-primary" type="submit" aria-label="Update quantity">Update</button>
+                                        <input type="number" name="quantity" step="0.01" min="<?= (float) $item['minimum_order_qty'] ?>" max="<?= $item['maximum_order_qty'] ? (float) $item['maximum_order_qty'] : (float) $item['available_quantity'] ?>" value="<?= (float) $item['quantity'] ?>" class="form-control form-control-sm cart-qty-input" aria-label="Quantity for <?= e($item['name']) ?>">
+                                        <button class="btn btn-sm btn-outline-primary cart-qty-update" type="submit" aria-label="Update quantity">Update</button>
                                     </form>
                                 </td>
                                 <td><?= money($item['price_per_unit']) ?> / <?= e($item['symbol']) ?></td>
@@ -99,7 +99,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="action" value="remove">
                                         <input type="hidden" name="item_id" value="<?= (int) $item['cart_id'] ?>">
-                                        <button class="btn btn-sm btn-link text-danger" type="submit" aria-label="Remove <?= e($item['name']) ?> from cart">
+                                        <button class="btn btn-sm btn-link cart-remove" type="submit" aria-label="Remove <?= e($item['name']) ?> from cart">
                                             <i class="bi bi-trash" aria-hidden="true"></i>
                                         </button>
                                     </form>
@@ -139,11 +139,11 @@ require __DIR__ . '/partials/dashboard-layout.php';
                         </div>
                         <div class="col-12 delivery-field" style="display:none;">
                             <label class="form-label" for="delivery_address">Delivery Address</label>
-                            <textarea class="form-control" id="delivery_address" name="delivery_address" rows="2" placeholder="Full address including barangay, city/municipality, province"></textarea>
+                            <textarea class="form-control" id="delivery_address" name="delivery_address" rows="2" maxlength="<?= FIELD_LIMITS['delivery_address'] ?>" placeholder="Full address including barangay, city/municipality, province"></textarea>
                         </div>
                         <div class="col-12">
                             <label class="form-label" for="buyer_note">Note for Farmer (optional)</label>
-                            <textarea class="form-control" id="buyer_note" name="buyer_note" rows="2" placeholder="Special instructions, packaging preferences, etc."></textarea>
+                            <textarea class="form-control" id="buyer_note" name="buyer_note" rows="2" maxlength="<?= FIELD_LIMITS['buyer_note'] ?>" placeholder="Special instructions, packaging preferences, etc."></textarea>
                         </div>
                         <div class="col-12">
                             <button class="btn btn-primary btn-lg" type="submit">

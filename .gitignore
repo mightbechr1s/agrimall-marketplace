@@ -7,8 +7,11 @@
 config/config.php
 
 # --- Uploaded user content ---
+# Keep the directory empty, but the upload guard must stay versioned: it is
+# what stops Apache from executing a .php file a user managed to upload.
 public/uploads/*
 !public/uploads/.gitkeep
+!public/uploads/.htaccess
 
 # --- Runtime logs ---
 logs/*
@@ -35,18 +38,12 @@ node_modules/
 # --- PHP specifics ---
 *.log
 
-# --- AI prompts & local working junk ---
+# --- Local-only working files ---
+# AGENTS.md and scratch/probe files are mine, not the project's; keep them
+# out of the repo. Generic globs (not one-off filenames) so regenerated
+# debris is still caught.
 AGENTS.md
 *.tmp.js
-test_db.php
-check_listings.php
-desktop-login.png
-desktop-terms.png
-mobile-login.png
-mobile-terms.png
-REVIEWER_50.md
-reviewer_50.py
-server.log
 *.bak
 *PROMPT*.txt
 *Prompt*.txt
