@@ -145,7 +145,7 @@ require __DIR__ . '/partials/header.php';
                 'fish-seafood' => 'assets/images/products/seafood.jpg',
               ];
               $nameImages = [
-                'stitao' => 'assets/images/products/asparagus.jpg',
+                'sitaw' => 'assets/images/products/asparagus.jpg',
                 'kangkong' => 'assets/images/products/market.jpg',
                 'calamansi' => 'assets/images/products/oranges.jpg',
                 'eggplant' => 'assets/images/products/seedlings.jpg',
