@@ -37,10 +37,11 @@
    0. REDUCED MOTION — global kill switch
    Keeps opacity/color for critical state, drops transform
 ──────────────────────────────────────────────────────────── */
-/* Motion verdict knobs (set by the JS FOUC guard / .motion-toggle):
-   - html[data-animations="on"]  → user forced motion ON  (overrides OS reduce)
-   - html[data-animations="off"] → user forced motion OFF (overrides OS no-pref)
-   - absent                      → follow the OS                                       */
+/* Motion is always on: there is no in-app switch. The OS-level
+   prefers-reduced-motion query below is the only thing that turns it off.
+   html[data-animations] is kept as a manual escape hatch for debugging:
+   "on" overrides the OS reduce, "off" forces reduce. Nothing in the app
+   sets it any more. */
 @media (prefers-reduced-motion: reduce) {
   :root:not([data-animations="on"]) *,
   :root:not([data-animations="on"]) *::before,
@@ -415,52 +416,6 @@
 }
 .locale-toggle .locale-label.active {
   opacity: 1; transform: translateY(0);
-}
-
-/* ════════════════════════════════════════════════════════════
-   MOTION TOGGLE — visual twin of .theme-toggle
-   JS toggles html[data-animations]; .is-on reflects state
-════════════════════════════════════════════════════════════ */
-.motion-toggle {
-  position: relative;
-  width: 2.25rem;
-  height: 2.25rem;
-  min-height: 2.75rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 0;
-  border-radius: 2px;
-  color: var(--text);
-  transition: color var(--dur-short) var(--ease-standard),
-              border-color var(--dur-short) var(--ease-standard);
-}
-.motion-toggle:hover { color: var(--accent); }
-.motion-toggle:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-}
-
-/* On/off indicator — corner status dot + icon swap */
-.motion-toggle .motion-icon-off { display: none; }
-.motion-toggle.is-on { color: var(--primary); }
-.motion-toggle:not(.is-on) .motion-icon-on { display: none; }
-.motion-toggle:not(.is-on) .motion-icon-off { display: inline; color: var(--text-soft); }
-.motion-toggle::after {
-  content: '';
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  border: 1px solid var(--borders);
-  background: var(--canvas);
-}
-.motion-toggle.is-on::after {
-  border-color: var(--primary);
-  background: var(--primary);
 }
 
 /* ────────────────────────────────────────────────────────────

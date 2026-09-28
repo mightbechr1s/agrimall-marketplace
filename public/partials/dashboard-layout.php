@@ -134,10 +134,7 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
           ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
           : pref;
         document.documentElement.setAttribute('data-theme', resolved);
-        // Animations (localStorage 'animations' = 'on'|'off'; absent ⇒ follow OS)
-        var animPref = localStorage.getItem('animations');
-        if (animPref === 'on') document.documentElement.setAttribute('data-animations', 'on');
-        else if (animPref === 'off') document.documentElement.setAttribute('data-animations', 'off');
+        // Animations are always on; only the OS prefers-reduced-motion query applies.
         document.documentElement.toggleAttribute('data-reduce-motion', <?= $reduceMotion ? 'true' : 'false' ?>);
         document.documentElement.toggleAttribute('data-larger-text', <?= $largerText ? 'true' : 'false' ?>);
         document.documentElement.toggleAttribute('data-sidebar-collapsed', localStorage.getItem('sidebarCollapsed') === '1');

@@ -3492,12 +3492,10 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 
 /* Icon buttons uniform size — 2.75rem satisfies the .theme-toggle min-height tap target above */
 .nav-utils .theme-toggle,
-.nav-utils .motion-toggle,
 .nav-utils .locale-btn,
 .nav-utils .notif-pill,
 .nav-utils .cart-pill,
 .sidebar-topbar .theme-toggle,
-.sidebar-topbar .motion-toggle,
 .sidebar-topbar .locale-btn,
 .sidebar-topbar .notif-pill,
 .sidebar-topbar .cart-pill,
@@ -3520,7 +3518,6 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
    2px, not 1.5px: Chromium snaps fractional border widths down to whole device
    pixels, so 1.5px renders identically to 1px. */
 .sidebar-topbar .theme-toggle,
-.sidebar-topbar .motion-toggle,
 .sidebar-topbar .locale-btn,
 .sidebar-topbar .notif-pill,
 .sidebar-topbar .cart-pill,
@@ -3532,12 +3529,10 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 
 /* Icon hover */
 .nav-utils .theme-toggle:hover,
-.nav-utils .motion-toggle:hover,
 .nav-utils .locale-btn:hover,
 .nav-utils .notif-pill:hover,
 .nav-utils .cart-pill:hover,
 .sidebar-topbar .theme-toggle:hover,
-.sidebar-topbar .motion-toggle:hover,
 .sidebar-topbar .locale-btn:hover,
 .sidebar-topbar .notif-pill:hover,
 .sidebar-topbar .cart-pill:hover,
@@ -3568,12 +3563,10 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 
 /* Dark mode tweaks */
 :root[data-theme="dark"] .nav-utils .theme-toggle,
-:root[data-theme="dark"] .nav-utils .motion-toggle,
 :root[data-theme="dark"] .nav-utils .locale-btn,
 :root[data-theme="dark"] .nav-utils .notif-pill,
 :root[data-theme="dark"] .nav-utils .cart-pill,
 :root[data-theme="dark"] .sidebar-topbar .theme-toggle,
-:root[data-theme="dark"] .sidebar-topbar .motion-toggle,
 :root[data-theme="dark"] .sidebar-topbar .locale-btn,
 :root[data-theme="dark"] .sidebar-topbar .notif-pill,
 :root[data-theme="dark"] .sidebar-topbar .cart-pill,

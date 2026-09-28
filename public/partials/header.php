@@ -111,10 +111,8 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
         : pref;
       document.documentElement.setAttribute('data-theme', resolved);
 
-      // ----- Animations (localStorage 'animations' = 'on'|'off'; absent ⇒ follow OS) -----
-      var animPref = localStorage.getItem('animations');
-      if (animPref === 'on') document.documentElement.setAttribute('data-animations', 'on');
-      else if (animPref === 'off') document.documentElement.setAttribute('data-animations', 'off');
+      // ----- Animations are always on. No in-app switch; the only override is the
+      // OS-level prefers-reduced-motion media query in motion.css. -----
 
       // ----- Reduce motion / larger text -----
       // The stored preference is the source of truth. A cached localStorage copy
@@ -264,10 +262,6 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
         <button class="theme-toggle" type="button" aria-label="Switch to dark mode">
           <i class="bi bi-moon icon-moon" aria-hidden="true"></i>
           <i class="bi bi-sun icon-sun" aria-hidden="true"></i>
-        </button>
-        <button class="motion-toggle" type="button" role="switch" aria-checked="true" aria-label="Turn animations off">
-          <i class="bi bi-lightning-charge motion-icon-on" aria-hidden="true"></i>
-          <i class="bi bi-lightning motion-icon-off" aria-hidden="true"></i>
         </button>
         <div class="dropdown locale-dd">
           <button class="locale-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Language: <?= e(strtoupper($currentLocale)) ?>" title="<?= e(strtoupper($currentLocale)) ?>">

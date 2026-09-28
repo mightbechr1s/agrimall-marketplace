@@ -513,41 +513,6 @@ function initThemeToggle() {
   });
 }
 
-/* ── Motion toggle (animations on/off, overrides OS reduced-motion) ── */
-function initMotionToggle() {
-  const M_KEY = 'animations';
-  const toggles = document.querySelectorAll('.motion-toggle');
-  if (!toggles.length) return;
-
-  function currentMotion() {
-    const stored = localStorage.getItem(M_KEY);
-    if (stored === 'on') return true;
-    if (stored === 'off') return false;
-    return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  }
-
-  function applyMotion(on) {
-    if (on) {
-      document.documentElement.setAttribute('data-animations', 'on');
-    } else {
-      document.documentElement.setAttribute('data-animations', 'off');
-    }
-    toggles.forEach(toggle => {
-      toggle.classList.toggle('is-on', on);
-      toggle.setAttribute('aria-checked', on ? 'true' : 'false');
-      toggle.setAttribute('aria-label', on ? 'Turn animations off' : 'Turn animations on');
-    });
-  }
-
-  applyMotion(currentMotion());
-
-  toggles.forEach(toggle => toggle.addEventListener('click', () => {
-    const next = !currentMotion();
-    localStorage.setItem(M_KEY, next ? 'on' : 'off');
-    applyMotion(next);
-  }));
-}
-
 /* ── Sidebar (dashboard) ─────────────────────────────────── */
 function initSidebar() {
   const toggles = [...document.querySelectorAll('.sidebar-toggle')];
@@ -678,7 +643,6 @@ function initTocSpy() {
 /* ── Initialize ───────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   initThemeToggle();
-  initMotionToggle();
   initCookieBanner();
   initScrollReveal();
   initLocaleToggle();
