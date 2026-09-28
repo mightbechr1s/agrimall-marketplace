@@ -7,7 +7,7 @@ $config = require __DIR__ . '/../config/config.php';
 
 date_default_timezone_set($config['app']['timezone']);
 
-// ---- Error logging configuration ----
+// ---- Error logging configuration  ----
 if (!empty($config['app']['error_logging'])) {
     $errorConfig = $config['app']['error_logging'];
 
@@ -40,7 +40,7 @@ if ($isProduction) {
     ini_set('display_errors', '1');
 }
 
-// ---- Exception handler (production -> 500.php; dev -> default) ----
+// ---- Exception handler (production -> 500.php; dev -> default)  ----
 set_exception_handler(function (Throwable $e) use ($config, $isProduction): void {
     // Always log full error + stack (daily-rotated log file)
     $logPath = $config['app']['error_logging']['error_log'] ?? __DIR__ . '/../logs/error.log';
@@ -92,7 +92,7 @@ set_exception_handler(function (Throwable $e) use ($config, $isProduction): void
     // Development: let PHP's default handler display the error (already configured via display_errors=1)
 });
 
-// ---- Error handler (catches E_ERROR, E_WARNING, etc.) ----
+// ---- Error handler (catches E_ERROR, E_WARNING, etc.)  ----
 set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline): bool {
     // Don't handle errors suppressed by @
     if (error_reporting() === 0) {
@@ -102,7 +102,7 @@ set_error_handler(function (int $errno, string $errstr, string $errfile, int $er
     throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
 });
 
-// ---- Session hardening -----------------------------------------------------
+// ---- Session hardening  ----
 if (session_status() === PHP_SESSION_NONE) {
     $sessionLifetime = (int) ($config['app']['session_lifetime_minutes'] ?? 30) * 60;
     ini_set('session.gc_maxlifetime', (string) $sessionLifetime);
@@ -117,7 +117,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// ---- Security headers (default best-practice; loosened only behind HTTPS) --
+// ---- Security headers (default best-practice; loosened only behind HTTPS)  ----
 if (!headers_sent()) {
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: DENY');
@@ -141,7 +141,7 @@ if (!headers_sent()) {
     header('Access-Control-Allow-Origin: ');
 }
 
-// ---- Load helpers and core services ----------------------------------------
+// ---- Load helpers and core services  ----
 require_once __DIR__ . '/functions.php';
 require_once __DIR__ . '/i18n.php';
 require_once __DIR__ . '/DB.php';

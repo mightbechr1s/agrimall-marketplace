@@ -3582,7 +3582,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   border-color: var(--borders);
 }
 
-/* ---- Order Participants panel ----------------------------------------
+/* ---- Order Participants panel  ----
    Was a bare Bootstrap .row/.col-md-6 pair. Long buyer or farm names pushed
    the second column off the panel because .row used flex-wrap and the columns
    had no min-width: 0. Now a two-column grid with an explicit gap, and names
@@ -3625,7 +3625,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   .participants-grid { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
 }
 
-/* ---- Cart table ------------------------------------------------------
+/* ---- Cart table  ----
    This app themes via [data-theme], NOT Bootstrap's [data-bs-theme], so
    Bootstrap's own dark table tokens never engaged and .table/.table-hover
    kept their light-grey row + hover backgrounds on a dark page. Override the

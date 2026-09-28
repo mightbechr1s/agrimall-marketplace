@@ -121,7 +121,7 @@ function current_user_role(): ?string
     return $_SESSION['role'] ?? null;
 }
 
-// ---- Remember me ------------------------------------------------------------
+// ---- Remember me  ----
 // Backed by users.remember_token / remember_expires (migration 002). Only the
 // SHA-256 hash of the token is persisted, so a database leak cannot be replayed
 // as a login. Lookup is by that hash, which is an index hit and doubles as the
