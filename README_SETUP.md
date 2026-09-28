@@ -1,7 +1,7 @@
-# AniMAL &mdash; Team Laptop Setup Guide (via GitHub)
+# AniMAL — Team Laptop Setup Guide (via GitHub)
 
 > **Source:** `https://github.com/mightbechr1s/animal-marketplace` (branch `main`)
-> **Last verified:** 2026-09-25 &mdash; 21 tables full schema + migrations, seeded, offline-ready.
+> **Last verified:** 2026-09-25 — 21 tables full schema + migrations, seeded, offline-ready.
 
 ---
 
@@ -9,8 +9,8 @@
 
 | Tool | Version | Install notes |
 |------|---------|---------------|
-| **Git** | any | Required &mdash; used to pull the project |
-| **XAMPP** | PHP 8.1+, MySQL 8.0 | Default install &mdash; `C:\xampp` |
+| **Git** | any | Required — used to pull the project |
+| **XAMPP** | PHP 8.1+, MySQL 8.0 | Default install — `C:\xampp` |
 
 Add to **PATH** (or use full paths below):
 ```
@@ -27,7 +27,7 @@ cd C:\xampp\htdocs
 git clone https://github.com/mightbechr1s/animal-marketplace.git animal
 ```
 
-Result &mdash; web root is `C:\xampp\htdocs\animal\public`.
+Result — web root is `C:\xampp\htdocs\animal\public`.
 
 **Later updates** (the repo is the single source of truth):
 ```powershell
@@ -41,11 +41,12 @@ migrations and re-seed.
 
 ## 3. Create the local config
 
+From here on, run every command from the project root `C:\xampp\htdocs\animal`.
+
 `config/config.php` is never committed (holds credentials). On a fresh
-clone only `config/config.example.php` exists &mdash; copy it once:
+clone only `config/config.example.php` exists — copy it once:
 
 ```powershell
-cd C:\xampp\htdocs\animal
 Copy-Item config\config.example.php config\config.php
 ```
 
@@ -58,7 +59,6 @@ Only edit it for a different DB or a production `base_url`.
 ## 4. Start the local stack (MySQL + PHP dev server)
 
 ```powershell
-cd C:\xampp\htdocs\animal
 powershell -ExecutionPolicy Bypass -File tools\dev-server.ps1
 ```
 
@@ -83,20 +83,19 @@ Start-Sleep 3
 
 ---
 
-## 5. Create the database (use the reset tool &mdash; it applies ALL migrations)
+## 5. Create the database (use the reset tool — it applies ALL migrations)
 
 The reset tool drops and rebuilds the DB from `database/schema.sql` + every
 `database/migrations/*.sql` and seeds demo data. It needs `config/config.php`
 (created in step 3) to read DB credentials:
 
 ```powershell
-cd C:\xampp\htdocs\animal
 C:\xampp\php\php.exe tools\db-reset.php --yes
 ```
 
 Expected output: `Reset complete ... (5 users, 6 listings)`.
 
-Result &mdash; **21 tables + 2 views**. `database/schema.sql` creates the 17 base
+Result — **21 tables + 2 views**. `database/schema.sql` creates the 17 base
 tables; migrations add `password_resets`, `user_preferences`, and `notifications`;
 `rate_limits` is created on first use by `rate_limit_check()`. The 2 views are
 `v_active_listings` and `v_order_summary`.
@@ -108,18 +107,18 @@ Note: remember-me is **not** a separate table. It is stored on `users` as the
 Seed accounts created by `database/seed.php`:
 `admin@animal.local` (admin123, from `schema.sql`),
 `delagracia@animal.local` and `encarnacion@animal.local` (farmers),
-`mercado@animal.local` and `dizon@animal.local` (buyers) &mdash; the last four
+`mercado@animal.local` and `dizon@animal.local` (buyers) — the last four
 use password `password123`.
 
-### Alternative &mdash; phpMyAdmin (GUI)
+### Alternative — phpMyAdmin (GUI)
 
 1. Start **Apache** in XAMPP Control Panel.
 2. Open **http://127.0.0.1/phpmyadmin**
-3. **Databases** tab &mdash; create `animal_marketplace` (collation `utf8mb4_unicode_ci`).
-4. Select the database &mdash; **Import** tab &mdash; choose `database\animal_marketplace.sql` &mdash; **Go**.
+3. **Databases** tab — create `animal_marketplace` (collation `utf8mb4_unicode_ci`).
+4. Select the database — **Import** tab — choose `database\animal_marketplace.sql` — **Go**.
 
 > Note: `database/animal_marketplace.sql` is a static snapshot (21 tables + 2 views). Use
-> `tools/db-reset.php` (step 5) instead whenever possible &mdash; it includes the
+> `tools/db-reset.php` (step 5) instead whenever possible — it includes the
 > latest cart/saved migration tables.
 
 ---
@@ -127,10 +126,9 @@ use password `password123`.
 ## 6. Start the PHP dev server
 
 ```powershell
-cd C:\xampp\htdocs\animal
 C:\xampp\php\php.exe -S 127.0.0.1:8000 -t public public/router.php
 ```
-*Keep this console open &mdash; it IS the web server.*
+*Keep this console open — it IS the web server.*
 
 > **`public/router.php` is mandatory as the last argument.** It is what blocks
 > script execution inside `public/uploads/`. Without it, PHP serves files
@@ -162,9 +160,9 @@ buyer    mercado@animal.local  password123
 
 ## 8. Verify OFFLINE (unplug network / disable Wi-Fi)
 
-- Reload all URLs above &mdash; must render.
-- DevTools &mdash; **Console** &mdash; 0 errors.
-- **Network** tab &mdash; every request to `127.0.0.1` (no CDN, no Google Fonts).
+- Reload all URLs above — must render.
+- DevTools — **Console** — 0 errors.
+- **Network** tab — every request to `127.0.0.1` (no CDN, no Google Fonts).
 - CSP header (`default-src 'self'`) guarantees nothing external loads.
 
 ---
@@ -187,7 +185,6 @@ buyer    mercado@animal.local  password123
 ```powershell
 Start-Process "C:\xampp\mysql\bin\mysqld.exe" -WindowStyle Hidden
 Start-Sleep 2
-cd C:\xampp\htdocs\animal
 C:\xampp\php\php.exe -S 127.0.0.1:8000 -t public public/router.php
 ```
 
@@ -197,12 +194,11 @@ C:\xampp\php\php.exe -S 127.0.0.1:8000 -t public public/router.php
 
 ```powershell
 # Pull latest code (and re-apply migrations if the DB changed)
-cd C:\xampp\htdocs\animal
 git pull
 C:\xampp\php\php.exe tools\db-reset.php --yes   # only if the pull touched the schema
 ```
 
-There is no USB sync anymore &mdash; the GitHub repo is the single source of
+There is no USB sync anymore — the GitHub repo is the single source of
 truth. Local-only files (`config/config.php`, `node_modules`, `logs/`,
 `public/uploads/`) are gitignored and survive a pull. Never edit `config.php`
 out of sync with `config.example.php`.
@@ -214,9 +210,9 @@ out of sync with `config.example.php`.
 | Area | Reason |
 |------|--------|
 | `src/functions.php` helpers (`e()`, `csrf_*`, `asset()`, `money()`, `audit_log()`) | Core security / i18n |
-| `public/assets/vendor/*` | Offline assets &mdash; no CDN fallback |
+| `public/assets/vendor/*` | Offline assets — no CDN fallback |
 | CSP header in `src/bootstrap.php` | Keeps site fully offline |
-| `database/migrations/*.sql` (already applied) | Schema adds &mdash; new migration + approval |
+| `database/migrations/*.sql` (already applied) | Schema adds — new migration + approval |
 | `config/config.php` content | Local credentials; stay in sync with `config.example.php` |
 
 ---
