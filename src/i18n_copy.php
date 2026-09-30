@@ -11,9 +11,6 @@ return [
             'trust' => 'Verified farmers list today\'s harvest. You order direct. Fair prices, fresher food.',
             'callout_title' => 'Community Direct',
             'callout_text' => 'Barangay to Table Freshness',
-            'search_label' => 'Search today\'s harvest',
-            'search_placeholder' => 'Try mangoes, rice, milk...',
-            'search_cta' => 'Search market',
             'search_hint' => 'Popular today:',
             'card_label' => 'Today\'s harvest',
         ],
@@ -26,11 +23,27 @@ return [
             'trust' => 'Ang mga na-verify na magsasaka naglilista ng ani ngayon. Direkta kang bumibili. Patas na presyo, mas sariwa.',
             'callout_title' => 'Direkta sa Komunidad',
             'callout_text' => 'Sariwa mula Barangay hanggang Mesa',
-            'search_label' => 'Maghanap ng ani ngayon',
-            'search_placeholder' => 'Subukan: mangga, bigas, gatas...',
-            'search_cta' => 'Maghanap',
             'search_hint' => 'Patok ngayon:',
             'card_label' => 'Ani ngayon',
+        ],
+    ],
+
+    /*
+     * The only search box in the product is on browse.php, so its copy lives
+     * in a block named for that page. A whole search trio was originally
+     * written into the hero block for a search field on the landing page that
+     * never got built, which left three keys nothing could reference. The
+     * label matters beyond looks: it is what gives the input an accessible
+     * name, because a placeholder is not one.
+     */
+    'search' => [
+        'en' => [
+            'label' => 'Search today\'s harvest',
+            'placeholder' => 'Try mangoes, rice, milk...',
+        ],
+        'tl' => [
+            'label' => 'Maghanap ng ani ngayon',
+            'placeholder' => 'Subukan: mangga, bigas, gatas...',
         ],
     ],
 
@@ -421,6 +434,10 @@ return [
 
     'errors' => [
         'en' => [
+            'unavailable' => [
+                'title' => 'Marketplace unavailable',
+                'message' => 'We could not load the listings right now. Please try again in a moment.',
+            ],
             '404' => [
                 'title' => 'Page Not Found',
                 'message' => 'The page you\'re looking for doesn\'t exist or has been moved.',
@@ -431,6 +448,10 @@ return [
             ],
         ],
         'tl' => [
+            'unavailable' => [
+                'title' => 'Hindi available ang Marketplace',
+                'message' => 'Hindi namin ma-load ang mga listing sa ngayon. Pakisubukan muli sa ilang sandali.',
+            ],
             '404' => [
                 'title' => 'Hindi Nauukol ang Pahina',
                 'message' => 'Ang pahina na hinahanap mo ay hindi nabubuo o nawala na.',

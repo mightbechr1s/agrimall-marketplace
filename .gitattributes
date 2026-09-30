@@ -1,0 +1,25 @@
+# Normalise line endings in the repository, and keep the working tree LF too.
+#
+# Without this, core.autocrlf on Windows rewrites files on checkout and git
+# warns on every diff of any file that was written by a different tool. The
+# warning is noisy enough to hide real ones, and mixed endings inside a PHP
+# partial break nothing visibly while making future diffs unreadable.
+* text=auto eol=lf
+
+# Assets and vendored libraries are checked in as-is.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
+*.zip  binary
+
+# Keep the vendored third-party bundles untouched: normalising them would
+# rewrite files we do not own and cannot regenerate identically.
+public/assets/vendor/** -text

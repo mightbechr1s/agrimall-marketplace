@@ -2,31 +2,37 @@
 /**
  * Empty State Partial
  *
- * Usage:
- *   include __DIR__ . '/partials/empty-state.php';
- *   Variables:
- *     $icon (string)        — SVG markup or icon class (default: database)
- *     $title (string)       — Title text (required)
- *     $description (string) — Description text
- *     $action (array)       — ['label' => 'Button text', 'href' => 'url', 'class' => 'btn-primary']
- *     $size (string)        — 'sm'|'md'|'lg' (default md)
- *     $class (string)       — Extra wrapper classes
+ * Usage: set the variables below, then include this file. They are read with
+ * ?? so the caller's values win and nothing needs unsetting afterwards.
+ *
+ *   $icon        (string) - SVG markup or icon class (default: database)
+ *   $title       (string) - Title text (required)
+ *   $description (string) - Description text
+ *   $action      (array)  - single button: ['label' => '...', 'href' => '...', 'class' => 'btn-primary']
+ *   $actions     (array)  - several buttons: [['label' => ..., 'href' => ..., 'class' => ...], ...]
+ *                          Takes precedence over $action. Use this when the
+ *                          buttons differ by auth state or other condition.
+ *   $size        (string) - 'sm'|'md'|'lg' (default md)
+ *   $class       (string) - Extra wrapper classes
  */
-$icon = $icon ?? '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon"><path d="M2 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H1.5a.5.5 0 0 1 0-1H2v-1h-.5a.5.5 0 0 1 0-1H2v-1h-.5a.5.5 0 0 1 0-1H2v-1h-.5a.5.5 0 0 1 0-1H2V6h-.5a.5.5 0 0 1 0-1H2v-1h-.5a.5.5 0 0 1 0-1H2V4h-.5a.5.5 0 0 1 0-1H2V2h-.5a.5.5 0 0 1 0-1H2zm9.853-1.354a.5.5 0 0 1 .354-.853H14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H8.5a.5.5 0 0 1 0-1H14a1 1 0 0 0 1-1V4H8.5a.5.5 0 0 1 0-1H15V2a1 1 0 0 0-1-1H10.5v2.5a.5.5 0 0 1-1 0V2a.5.5 0 0 1 .146-.354l.207-.207z"/>';
+$icon = $icon ?? '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon"><path d="M2 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H1.5a.5.5 0 0 1 0-1H2v-1h-.5a.5.5 0 0 1 0-1H2v-1h-.5a.5.5 0 0 1 0-1H2v-1h-.5a.5.5 0 0 1 0-1H2V6h-.5a.5.5 0 0 1 0-1H2v-1h-.5a.5.5 0 0 1 0-1H2V4h-.5a.5.5 0 0 1 0-1H2V2h-.5a.5.5 0 0 1 0-1H2zm9.853-1.354a.5.5 0 0 1 .354-.853H14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H8.5a.5.5 0 0 1 0-1H14a1 1 0 0 0 1-1V4H8.5a.5.5 0 0 1 0-1H15V2a.5.5 0 0 0-1-1H10.5v2.5a.5.5 0 0 1-1 0V2a.5.5 0 0 1 .146-.354l.207-.207z"/>';
 $title = $title ?? 'No records found';
 $description = $description ?? '';
 $action = $action ?? null;
+$actions = $actions ?? null;
 $size = $size ?? 'md';
 $class = $class ?? '';
 
-$sizeClasses = [
-    'sm' => 'py-3 px-3',
-    'md' => 'py-5 px-4',
-    'lg' => 'py-6 px-6',
-];
-$sizeClass = $sizeClasses[$size] ?? $sizeClasses['md'];
+// A single $action is the common case; normalise both shapes to one list.
+if ($actions === null && $action !== null) {
+    $actions = [$action];
+}
+$actions = is_array($actions) ? array_values(array_filter($actions, 'is_array')) : [];
+
+$sizes = ['sm' => 'empty-state--sm', 'md' => 'empty-state--md', 'lg' => 'empty-state--lg'];
+$sizeClass = $sizes[$size] ?? $sizes['md'];
 ?>
-<div class="empty-state text-center <?= e($class) ?>" style="padding: <?= e($sizeClass) ?>;">
+<div class="empty-state text-center <?= e($class) ?> <?= e($sizeClass) ?>">
   <?php if ($icon): ?>
     <div class="empty-state-icon-wrapper mb-3">
       <?= $icon ?>
@@ -36,11 +42,13 @@ $sizeClass = $sizeClasses[$size] ?? $sizeClasses['md'];
   <?php if ($description): ?>
     <p class="empty-state-description"><?= e($description) ?></p>
   <?php endif; ?>
-  <?php if ($action): ?>
-    <div class="empty-state-action mt-3">
-      <a href="<?= e($action['href']) ?>" class="btn <?= e($action['class'] ?? 'btn-primary') ?>">
-        <?= e($action['label']) ?>
-      </a>
+  <?php if ($actions): ?>
+    <div class="empty-state-action mt-3 d-flex flex-wrap gap-2 justify-content-center">
+      <?php foreach ($actions as $a): ?>
+        <a href="<?= e($a['href'] ?? '#') ?>" class="btn <?= e($a['class'] ?? 'btn-primary') ?>">
+          <?= e($a['label'] ?? '') ?>
+        </a>
+      <?php endforeach; ?>
     </div>
   <?php endif; ?>
 </div>

@@ -56,8 +56,11 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
         <a href="index.php#faq"><?= $f('link_faq') ?></a>
       </div>
       <div>
-        <h2><?= $f('heading_for_farmers') ?></h2>
-        <a href="register.php"><?= $f('link_become_a_seller') ?></a>
+<h2><?= $f('heading_for_farmers') ?></h2>
+<?php /* register.php bounces an already-signed-in visitor straight to the
+         dashboard, so showing this to one is a link to nowhere. The seller
+         handbook below stays useful either way. */ ?>
+<?php if (!current_user_id()): ?><a href="register.php"><?= $f('link_become_a_seller') ?></a><?php endif; ?>
         <a href="index.php#faq"><?= $f('link_seller_handbook') ?></a>
         <a href="index.php#faq"><?= $f('link_verification') ?></a>
       </div>

@@ -619,6 +619,19 @@ h1, h2, h3, h4, h5, h6,
   text-align: center;
   padding: 3rem 1rem;
 }
+/* Size modifiers. The partial used to interpolate these into an inline
+   style="padding: …", which is not valid CSS, so the size option silently
+   did nothing. These are real classes, and md matches the previous hardcoded
+   browse.php value so adopting the partial changes no rendered spacing. */
+.empty-state--sm {
+  padding: 1.5rem 1rem;
+}
+.empty-state--md {
+  padding: 3rem 1.5rem;
+}
+.empty-state--lg {
+  padding: 4.5rem 2rem;
+}
 .empty-state .empty-state-icon {
   width: 4rem;
   height: 4rem;

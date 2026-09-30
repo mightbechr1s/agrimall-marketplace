@@ -63,7 +63,8 @@ require __DIR__ . '/partials/header.php';
       <?php if (isset($_GET['lang'])): ?>
         <input type="hidden" name="lang" value="<?php echo htmlspecialchars($_GET['lang']); ?>">
       <?php endif; ?>
-      <input type="text" name="q" placeholder="Search..." value="<?php echo htmlspecialchars($q); ?>">
+      <label class="visually-hidden" for="market-search"><?= e($l($copy['search'], 'label')) ?></label>
+      <input id="market-search" type="search" name="q" placeholder="<?= e($l($copy['search'], 'placeholder')) ?>" value="<?php echo htmlspecialchars($q); ?>">
     </form>
     <div class="filters" data-reveal>
       <?php
@@ -89,38 +90,38 @@ require __DIR__ . '/partials/header.php';
 
     <div class="grid" id="product-grid" data-reveal="stagger">
       <?php
-      $useDb = true;
+      $listings = [];
+      $total = 0;
+      // A database failure and a marketplace with nothing in it are different
+      // states and must not share a flag: the old $useDb conflated them, so an
+      // outage rendered as "nothing for sale yet" and looked like normal stock.
+      $listingsFailed = false;
       try {
         $offset = ($page - 1) * 12;
         if ($q) {
-          $stmt = DB::pdo()->prepare('SELECT * FROM v_active_listings WHERE status = "active" AND name LIKE :q ORDER BY published_at DESC LIMIT 12 OFFSET :offset');
+          $stmt = DB::pdo()->prepare('SELECT * FROM v_active_listings WHERE status = \'active\' AND name LIKE :q ORDER BY published_at DESC LIMIT 12 OFFSET :offset');
           $stmt->bindValue(':q', '%'.$q.'%', PDO::PARAM_STR);
           $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
           $stmt->execute();
           $listings = $stmt->fetchAll();
 
-          $totalStmt = DB::pdo()->prepare('SELECT COUNT(*) FROM v_active_listings WHERE status = "active" AND name LIKE :q');
+          $totalStmt = DB::pdo()->prepare('SELECT COUNT(*) FROM v_active_listings WHERE status = \'active\' AND name LIKE :q');
           $totalStmt->bindValue(':q', '%'.$q.'%', PDO::PARAM_STR);
           $total = $totalStmt->fetchColumn();
         } else {
-          $stmt = DB::pdo()->prepare('SELECT * FROM v_active_listings WHERE status = "active" ORDER BY published_at DESC LIMIT 12 OFFSET :offset');
+          $stmt = DB::pdo()->prepare('SELECT * FROM v_active_listings WHERE status = \'active\' ORDER BY published_at DESC LIMIT 12 OFFSET :offset');
           $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
           $stmt->execute();
           $listings = $stmt->fetchAll();
 
-          $total = DB::pdo()->query('SELECT COUNT(*) FROM v_active_listings WHERE status = "active"')->fetchColumn();
-        }
-        if (empty($listings)) {
-          $useDb = false;
+          $total = DB::pdo()->query('SELECT COUNT(*) FROM v_active_listings WHERE status = \'active\'')->fetchColumn();
         }
       } catch (Exception $e) {
-        $useDb = false;
+        $listingsFailed = true;
+        error_log('browse: listing query failed: ' . $e->getMessage());
       }
 
-      if (!$useDb) {
-        $listings = []; // trigger fallback
-      }
-      $totalPages = $useDb ? (int)ceil($total / 12) : 0; ?>
+      $totalPages = $listingsFailed ? 0 : (int)ceil($total / 12); ?>
       <?php if ($listings): ?>
         <?php foreach ($listings as $item): ?>
           <article class="card" data-reveal="stagger" data-category="<?php echo e(strtolower($item['category_name'] ?? '')); ?>">
@@ -219,37 +220,54 @@ require __DIR__ . '/partials/header.php';
                  second one is a search result. The viewer state also decides
                  whether "log in" and "sign up" are advice or an insult. */ ?>
         <?php $searchMiss = trim($q) !== ''; $viewerId = current_user_id(); ?>
-        <div class="empty-state text-center" style="grid-column: 1 / -1; padding: 3rem 1.5rem;">
-          <div class="empty-state-icon-wrapper mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon"><path d="M8 1a.5.5 0 0 1 .5.5V3h1.5a.5.5 0 0 1 0 1H8.5v1.5h1a.5.5 0 0 1 0 1h-1v1.5h1.5a.5.5 0 0 1 0 1H8.5V9.5h1a.5.5 0 0 1 0 1h-1V11h1.5a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V12H6a.5.5 0 0 1 0-1h1.5V9.5h-1a.5.5 0 0 1 0-1h1V7H7a.5.5 0 0 1 0-1h1.5V4.5H7a.5.5 0 0 1 0-1h.5V1.5A.5.5 0 0 1 8 1z"/><path d="M2 2.5a.5.5 0 0 1 .5.5V4h1a.5.5 0 0 1 0 1h-1v1h1a.5.5 0 0 1 0 1h-1v1h1a.5.5 0 0 1 0 1h-1v3.5a.5.5 0 0 1-1 0V8H1.5a.5.5 0 0 1 0-1H2V6H1a.5.5 0 0 1 0-1h1V4H1.5a.5.5 0 0 1 0-1H2V3a.5.5 0 0 1 .5-.5z"/></svg>
-          </div>
-          <?php if ($searchMiss): ?>
-            <h3 class="empty-state-title"><?= e($locale === 'tl'
-                ? 'Walang nahanap para sa "' . $q . '"'
-                : 'No results for "' . $q . '"') ?></h3>
-            <p class="empty-state-description"><?= e($locale === 'tl'
-                ? 'Walang aktibong listing na tumutugma sa paghahanap na ito. Subukang ibang salita o burahin ang teksto sa kahon sa itaas.'
-                : 'No active listings match this search. Try a different word, or clear the box above.') ?></p>
-          <?php else: ?>
-            <h3 class="empty-state-title"><?= e($locale === 'tl' ? 'Wala pang ibinebenta' : 'Nothing for sale yet') ?></h3>
-            <p class="empty-state-description"><?= e($locale === 'tl'
-                ? 'Walang aktibong listing sa marketplace pa. Suriin muli pagkatapos ng ilang oras, o mag-login para pamahalaan ang iyong sariling listing.'
-                : 'No active listings in the marketplace right now. Check back in a few hours, or log in to manage your own listings.') ?></p>
-          <?php endif; ?>
-          <div class="empty-state-action mt-3 d-flex flex-wrap gap-2 justify-content-center">
-            <?php if ($viewerId): ?>
-              <a href="create_listing.php" class="btn btn-primary"><?= e($l($copy['nav'], 'sell')) ?></a>
-              <a href="dashboard.php" class="btn btn-outline"><?= e($l($copy['nav'], 'dashboard')) ?></a>
-            <?php else: ?>
-              <a href="<?= e(login_url('browse.php')) ?>" class="btn btn-primary"><?= e($l($copy['nav'], 'login')) ?></a>
-              <a href="register.php" class="btn btn-outline-primary"><?= e($l($copy['auth'], 'create_one')) ?></a>
-              <a href="register.php" class="btn btn-outline-secondary"><?= e($l($copy['nav'], 'become_seller')) ?></a>
-            <?php endif; ?>
-          </div>
+        <div style="grid-column: 1 / -1;">
+          <?php
+            // A load failure is not an empty marketplace, so it gets its own
+            // message and a retry instead of the stock copy below.
+            $icon = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon"><path d="M8 1a.5.5 0 0 1 .5.5V3h1.5a.5.5 0 0 1 0 1H8.5v1.5h1a.5.5 0 0 1 0 1h-1v1.5h1.5a.5.5 0 0 1 0 1H8.5V9.5h1a.5.5 0 0 1 0 1h-1V11h1.5a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V12H6a.5.5 0 0 1 0-1h1.5V9.5h-1a.5.5 0 0 1 0-1h1V7H7a.5.5 0 0 1 0-1h1.5V4.5H7a.5.5 0 0 1 0-1h.5V1.5A.5.5 0 0 1 8 1z"/><path d="M2 2.5a.5.5 0 0 1 .5.5V4h1a.5.5 0 0 1 0 1h-1v1h1a.5.5 0 0 1 0 1h-1v1h1a.5.5 0 0 1 0 1h-1v3.5a.5.5 0 0 1-1 0V8H1.5a.5.5 0 0 1 0-1H2V6H1a.5.5 0 0 1 0-1h1V4H1.5a.5.5 0 0 1 0-1H2V3a.5.5 0 0 1 .5-.5z"/>';
+
+            if ($listingsFailed) {
+                $title = $l($copy['errors']['unavailable'], 'title');
+                $description = $l($copy['errors']['unavailable'], 'message');
+                $actions = [['label' => 'Retry', 'href' => 'browse.php' . ($searchMiss ? '?q=' . urlencode($q) : ''), 'class' => 'btn-primary']];
+            } elseif ($searchMiss) {
+                $title = $locale === 'tl' ? 'Walang nahanap para sa "' . $q . '"' : 'No results for "' . $q . '"';
+                $description = $locale === 'tl'
+                    ? 'Walang aktibong listing na tumutugma sa paghahanap na ito. Subukang ibang salita o burahin ang teksto sa kahon sa itaas.'
+                    : 'No active listings match this search. Try a different word, or clear the box above.';
+                $actions = $viewerId
+                    ? [
+                        ['label' => $l($copy['nav'], 'sell'), 'href' => 'create_listing.php', 'class' => 'btn-primary'],
+                        ['label' => $l($copy['nav'], 'dashboard'), 'href' => 'dashboard.php', 'class' => 'btn-outline'],
+                      ]
+                    : [
+                        ['label' => $l($copy['nav'], 'login'), 'href' => login_url('browse.php'), 'class' => 'btn-primary'],
+                        ['label' => $l($copy['auth'], 'create_one'), 'href' => 'register.php', 'class' => 'btn-outline-primary'],
+                        ['label' => $l($copy['nav'], 'become_seller'), 'href' => 'register.php', 'class' => 'btn-outline-secondary'],
+                      ];
+            } else {
+                $title = $locale === 'tl' ? 'Wala pang ibinebenta' : 'Nothing for sale yet';
+                $description = $locale === 'tl'
+                    ? 'Walang aktibong listing sa marketplace pa. Suriin muli pagkatapos ng ilang oras, o mag-login para pamahalaan ang iyong sariling listing.'
+                    : 'No active listings in the marketplace right now. Check back in a few hours, or log in to manage your own listings.';
+                $actions = $viewerId
+                    ? [
+                        ['label' => $l($copy['nav'], 'sell'), 'href' => 'create_listing.php', 'class' => 'btn-primary'],
+                        ['label' => $l($copy['nav'], 'dashboard'), 'href' => 'dashboard.php', 'class' => 'btn-outline'],
+                      ]
+                    : [
+                        ['label' => $l($copy['nav'], 'login'), 'href' => login_url('browse.php'), 'class' => 'btn-primary'],
+                        ['label' => $l($copy['auth'], 'create_one'), 'href' => 'register.php', 'class' => 'btn-outline-primary'],
+                        ['label' => $l($copy['nav'], 'become_seller'), 'href' => 'register.php', 'class' => 'btn-outline-secondary'],
+                      ];
+            }
+
+            include __DIR__ . '/partials/empty-state.php';
+          ?>
         </div>
       <?php endif; ?>
     </div>
-    <?php if ($useDb && $page < $totalPages): ?>
+      <?php if (!$listingsFailed && $page < $totalPages): ?>
         <div style="text-align:center;margin-top:32px;">
           <a class="btn btn-outline load-more-btn" href="?page=<?php echo $page+1; ?><?php if (isset($_GET['lang'])): ?>&lang=<?php echo urlencode($_GET['lang']); ?><?php endif; ?><?php if ($q): ?>&q=<?php echo urlencode($q); ?><?php endif; ?>">Load more</a>
         </div>
