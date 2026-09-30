@@ -216,6 +216,9 @@ truth. Local-only files (`config/config.php`, `node_modules`, `logs/`,
 `public/uploads/`) are gitignored and survive a pull. Never edit `config.php`
 out of sync with `config.example.php`.
 
+`database/migrations/README.md` records which migrations are applied to the
+live database, and which of them are safe to run twice.
+
 ---
 
 ## 12. What MUST NOT be changed
@@ -225,7 +228,7 @@ out of sync with `config.example.php`.
 | `src/functions.php` helpers (`e()`, `csrf_*`, `asset()`, `money()`, `audit_log()`) | Core security / i18n |
 | `public/assets/vendor/*` | Offline assets — no CDN fallback |
 | CSP header in `src/bootstrap.php` | Keeps site fully offline |
-| `database/migrations/*.sql` (already applied) | Schema adds — new migration + approval |
+| `database/migrations/*.sql` (already applied) | Schema adds — new migration + approval; see `database/migrations/README.md` for what is applied and which files are safe to re-run |
 | `config/config.php` content | Local credentials; stay in sync with `config.example.php` |
 
 ---
