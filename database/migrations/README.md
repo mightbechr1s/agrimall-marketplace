@@ -22,23 +22,37 @@ have followed are now folded into `schema.sql`.
 
 ## Re-applying a migration
 
-Most of these are safe to run twice, but not all of them. Verified on
+Every file in this directory is safe to run more than once. Verified on
 2026-09-30 by applying the full set to a scratch database and then applying the
-whole set a second time:
+whole set twice more:
 
-| File | Second run |
-|------|------------|
-| `002_password_resets_and_remember.sql` | succeeds (prints row counts) |
-| `003_user_preferences.sql` | idempotent |
-| `004_cart_and_saved.sql` | idempotent |
-| `005_notifications.sql` | idempotent |
-| `006_account_deletion.sql` | **fails** - `ERROR 1060 Duplicate column name 'anonymized_at'` |
-| `007_password_reset_expiry.sql` | idempotent |
+| File | Repeat runs |
+|------|-------------|
+| `002_password_resets_and_remember.sql` | clean |
+| `003_user_preferences.sql` | clean |
+| `004_cart_and_saved.sql` | clean |
+| `005_notifications.sql` | clean |
+| `006_account_deletion.sql` | clean |
+| `007_password_reset_expiry.sql` | clean |
 
-`006` needs its `ALTER TABLE` statements guarded before it can be re-applied.
-Until then, do not re-run it against a database that already has it: the abort
-is harmless but noisy, and it leaves the migrations' later steps unrun if you
-treat a non-zero exit as fatal.
+Also verified by re-applying all six to the live database, which already had
+them: every file exited 0 and the schema and row counts were unchanged.
+
+The unguarded forms do not survive a second run. `006` originally used a bare
+`ALTER TABLE ... ADD COLUMN anonymized_at` and `ADD KEY idx_users_status`, which
+abort with `ERROR 1060 Duplicate column name 'anonymized_at'`. `002` and `007`
+already guarded theirs against `information_schema` and execute a no-op
+(`SELECT 1` and `DO 0` respectively) when the change is already present. `006`
+now follows the same pattern.
+
+Note that `002`–`005` print a `1` on every guarded no-op, because their
+fallback is `SELECT 1`. `007` uses `DO 0` specifically to avoid that, since
+anything a migration prints is read as a failure by the test harness. Judge a
+migration by its exit code, not its output.
+
+Every file also carries its own `USE \`animal_marketplace\`;`, so it does not
+depend on the caller having selected a database. `006` and `007` were missing
+this and failed with `ERROR 1046 No database selected` when run without one.
 
 ## Applied state
 

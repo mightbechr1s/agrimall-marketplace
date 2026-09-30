@@ -33,6 +33,8 @@
 -- branch is `DO 0` rather than the `SELECT 1` used by the older migrations,
 -- because `SELECT 1` prints a result set and the test harness reads any
 -- migration output as a failure.
+USE `animal_marketplace`;
+
 SET @col_type = (SELECT DATA_TYPE FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = 'animal_marketplace'
     AND TABLE_NAME = 'password_resets'

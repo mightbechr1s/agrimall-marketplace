@@ -20,15 +20,42 @@
 -- orders, listings and audit relationships stay intact.
 --
 -- Adds the terminal 'anonymized' status plus the timestamp it happened.
+--
+-- MODIFY is declarative and safe to repeat, but ADD COLUMN and ADD KEY are not:
+-- MySQL has no ADD COLUMN IF NOT EXISTS, so a second run aborts with
+-- ERROR 1060. Both are guarded against information_schema the same way
+-- 002 does it, which keeps this file re-runnable. db-reset.php replays the
+-- whole migrations directory on every rebuild, so a file that fails on its
+-- second application is a file that eventually blocks someone.
+
+USE `animal_marketplace`;
 
 ALTER TABLE `users`
     MODIFY COLUMN `status`
         ENUM('active','suspended','pending_verification','anonymized')
-        NOT NULL DEFAULT 'pending_verification',
-    ADD COLUMN `anonymized_at` TIMESTAMP NULL DEFAULT NULL AFTER `last_login_at`;
+        NOT NULL DEFAULT 'pending_verification';
+
+SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = 'animal_marketplace' AND TABLE_NAME = 'users'
+    AND COLUMN_NAME = 'anonymized_at');
+
+SET @ddl = IF(@col_exists = 0,
+  'ALTER TABLE `users` ADD COLUMN `anonymized_at` TIMESTAMP NULL DEFAULT NULL AFTER `last_login_at`',
+  'SELECT 1');
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- Anonymized users must never be resumable from a remember-me cookie.
 -- login.php already refuses any status other than 'active'; this index keeps
 -- that lookup cheap as the user table grows.
-ALTER TABLE `users`
-    ADD KEY `idx_users_status` (`status`);
+SET @idx_exists = (SELECT COUNT(*) FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = 'animal_marketplace' AND TABLE_NAME = 'users'
+    AND INDEX_NAME = 'idx_users_status');
+
+SET @ddl = IF(@idx_exists = 0,
+  'ALTER TABLE `users` ADD INDEX `idx_users_status` (`status`)',
+  'SELECT 1');
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
