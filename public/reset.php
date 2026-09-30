@@ -62,10 +62,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
 
                 // Invalidate every outstanding token for this user
-                $deleteToken = DB::pdo()->prepare(
-                    'DELETE FROM password_resets WHERE user_id = :id'
-                );
-                $deleteToken->execute(['id' => $reset['user_id']]);
+                password_resets_revoke((int) $reset['user_id']);
+
+                // A password change must also end the persistent way back in.
+                // Sessions here are PHP's own file-backed store, so an
+                // already-signed-in session on some other tab or device cannot
+                // be enumerated and killed from here; revoking the remember-me
+                // token is the part that is actually enforceable. Revoking live
+                // sessions across devices needs a DB-backed session store, i.e.
+                // putting the vestigial `sessions` table back in use.
+                remember_revoke((int) $reset['user_id']);
+
+                security_event_log('password_reset_completed', [
+                    'target_user_id' => (int) $reset['user_id'],
+                ]);
 
                 $success = $l($copy['auth'], 'reset_success_msg');
             }

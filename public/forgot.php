@@ -13,6 +13,7 @@ if (current_user_id()) {
 
 $error = null;
 $success = null;
+$resetLink = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
@@ -44,6 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $token = bin2hex(random_bytes(32));
             $expiresAt = (new DateTime('+1 hour'))->format('Y-m-d H:i:s');
 
+            // Any token issued earlier stays usable until it expires on its
+            // own, so a re-request has to retire the previous ones.
+            password_resets_revoke((int) $user['id']);
+
             // Store token hash
             $insert = DB::pdo()->prepare(
                 'INSERT INTO password_resets (user_id, token, expires_at)
@@ -55,8 +60,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'expires_at' => $expiresAt
             ]);
 
-            // In a real application, you would send an email here
-            // For now, we'll just show a success message
+            // No mail transport exists in this project, so the link is handed
+            // to the operator over the local-only channel instead. Returns
+            // null in production, where the token must never be displayed.
+            $resetLink = password_reset_deliver_local((int) $user['id'], $token);
+
             $success = $l($copy['auth'], 'reset_success');
         } else {
             // Don't reveal that the email doesn't exist for security
@@ -86,6 +94,22 @@ require __DIR__ . '/partials/header.php';
         <?php if ($success): ?>
             <div style="background: var(--ok-soft); color: var(--ok); padding: 12px 16px; border-radius: var(--radius-sm); font-size: 14px; margin-bottom: 20px; font-weight: 500; display: flex; gap: 8px; align-items: flex-start; line-height: 1.5;">
                 <i class="bi bi-check-circle-fill mt-1"></i> <span><?= e($success) ?></span>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($resetLink): ?>
+            <div class="auth-card-local-link" role="status">
+                <p class="auth-card-local-link__title">
+                    <i class="bi bi-terminal me-1"></i>
+                    <?= e($l($copy['auth'], 'reset_link_local_heading')) ?>
+                </p>
+                <p class="auth-card-local-link__body">
+                    <?= e($l($copy['auth'], 'reset_link_local_body')) ?>
+                </p>
+                <code class="auth-card-local-link__url" id="reset-link"><?= e($resetLink) ?></code>
+                <p class="auth-card-local-link__note">
+                    <?= e($l($copy['auth'], 'reset_link_local_note')) ?>
+                </p>
             </div>
         <?php endif; ?>
 

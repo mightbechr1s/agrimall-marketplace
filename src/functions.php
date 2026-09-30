@@ -507,3 +507,296 @@ function unread_notification_count(int $userId): int
         return 0;
     }
 }
+
+// =====================================================================
+// Account security events and account erasure
+// =====================================================================
+
+/**
+ * Append a security-relevant event to logs/security.log.
+ *
+ * admin_audit_log is deliberately not used here: audit_log() is a no-op
+ * unless the current actor is an administrator, and admin_audit_log.admin_id
+ * is ON DELETE RESTRICT, so it is the wrong home for events raised by
+ * ordinary users acting on their own account (password reset, name change,
+ * account erasure).
+ *
+ * Never pass raw personal values in $context. Record which fields changed and
+ * the stable user id; the authoritative values stay in the users/profile
+ * tables where retention and anonymization controls can reach them
+ * (NFR-PRIV-010).
+ */
+function security_event_log(string $event, array $context = []): void
+{
+    global $config;
+    try {
+        $logDir = $config['app']['security_log'] ?? (__DIR__ . '/../logs/security.log');
+        $logDir = dirname((string) $logDir);
+        if (!is_dir($logDir)) {
+            @mkdir($logDir, 0755, true);
+        }
+        $line = json_encode([
+            'ts'    => date('c'),
+            'event' => $event,
+            'uid'   => current_user_id(),
+            'ip'    => $_SERVER['REMOTE_ADDR'] ?? null,
+            'ctx'   => $context,
+        ], JSON_UNESCAPED_SLASHES);
+        error_log((string) $line . PHP_EOL, 3, (string) ($config['app']['security_log'] ?? (__DIR__ . '/../logs/security.log')));
+    } catch (Throwable $e) {
+        // Never let logging break the request.
+    }
+}
+
+/**
+ * Whether password reset links may be surfaced in the page body.
+ *
+ * This is a local-only delivery channel with no mail transport behind it, so
+ * it is refused outright in production: on a real deployment the same page
+ * would otherwise print a live reset token to whoever submitted the form.
+ */
+function local_reset_links_enabled(): bool
+{
+    global $config;
+    if (($config['app']['env'] ?? 'development') === 'production') {
+        return false;
+    }
+    return !empty($config['app']['local_password_reset_links']);
+}
+
+/**
+ * Deliver a password reset link over the local-only channel.
+ *
+ * There is no mailer in this project, so the raw token has to reach the
+ * operator somehow. It is appended to logs/security.log for out-of-band
+ * retrieval and, when local_reset_links_enabled() allows it, returned so the
+ * caller can show it. Returns null when the link must not be displayed.
+ */
+function password_reset_deliver_local(int $userId, string $rawToken): ?string
+{
+    global $config;
+    $base = rtrim((string) ($config['app']['base_url'] ?? ''), '/');
+    $link = $base . '/reset.php?token=' . rawurlencode($rawToken);
+
+    security_event_log('password_reset_link_issued', [
+        'user_id'    => $userId,
+        'delivered'  => 'local_log',
+    ]);
+    error_log(
+        sprintf('[%s] password reset link for user #%d: %s', date('c'), $userId, $link) . PHP_EOL,
+        3,
+        (string) ($config['app']['security_log'] ?? (__DIR__ . '/../logs/security.log'))
+    );
+
+    return local_reset_links_enabled() ? $link : null;
+}
+
+/**
+ * Drop outstanding password reset tokens for a user.
+ *
+ * Issuing a new token must invalidate the previous ones, otherwise every
+ * earlier "reset my password" mail stays usable until it expires on its own.
+ */
+function password_resets_revoke(int $userId): void
+{
+    DB::pdo()->prepare('DELETE FROM password_resets WHERE user_id = :id')
+        ->execute(['id' => $userId]);
+}
+
+/**
+ * True when an administrator has placed an unreleased retention hold on the
+ * user (FR-ADM-019, BR-034). An active hold outranks an erasure request.
+ */
+function user_has_active_retention_hold(int $userId): bool
+{
+    $stmt = DB::pdo()->prepare(
+        "SELECT COUNT(*) FROM retention_holds
+          WHERE entity_type = 'user' AND entity_id = :id AND released_at IS NULL"
+    );
+    $stmt->execute(['id' => $userId]);
+    return (int) $stmt->fetchColumn() > 0;
+}
+
+/** Order states that still represent an in-flight commitment. */
+const NONTERMINAL_ORDER_STATUSES = [
+    'pending',
+    'delivery_fee_review',
+    'confirmed',
+    'preparing',
+    'ready_for_pickup',
+    'out_for_delivery',
+];
+
+/**
+ * Count a user's orders that have not reached a terminal state, on either the
+ * buying or the selling side.
+ *
+ * FR-ADM-019 conditions anonymization on having no nonterminal orders. An
+ * order still in flight names a counterparty who still needs to reach this
+ * person, and cancelling or completing it on their behalf would be a
+ * substantive decision made without consent.
+ */
+function user_nonterminal_order_count(int $userId): int
+{
+    $in  = implode(',', array_fill(0, count(NONTERMINAL_ORDER_STATUSES), '?'));
+    $stmt = DB::pdo()->prepare(
+        "SELECT COUNT(*) FROM orders
+          WHERE (buyer_id = ? OR farmer_id = ?)
+            AND status IN ($in)"
+    );
+    $stmt->execute(array_merge([$userId, $userId], NONTERMINAL_ORDER_STATUSES));
+    return (int) $stmt->fetchColumn();
+}
+
+/**
+ * Irreversibly anonymize an account (NFR-PRIV-006, NFR-PRIV-009).
+ *
+ * The users row and its primary key survive as the stable internal subject
+ * reference that orders, listings and audit records point at; identifying
+ * values are overwritten rather than the row being dropped. Profile rows are
+ * scrubbed in place and never removed, because orders.buyer_id and
+ * orders.farmer_id are ON DELETE RESTRICT through them and a physical delete
+ * would fail for any account that has ever traded.
+ *
+ * Listings belonging to the user are archived rather than deleted
+ * (NFR-REL-004); order quantities, prices, statuses and dates are preserved
+ * while the free-text and exact-location fields that can carry personal data
+ * are cleared.
+ *
+ * Throws RuntimeException if the transaction cannot be committed, so the
+ * caller can refuse rather than report a deletion that did not happen.
+ */
+function account_anonymize(int $userId): array
+{
+    $pdo = DB::pdo();
+    $summary = [];
+
+    $pdo->beginTransaction();
+    try {
+        // 1. Neutralise the account itself. A random hash replaces the real
+        //    one so the row can never authenticate again, and the tombstone
+        //    address is unique per id so the email constraint still holds.
+        $pdo->prepare(
+            "UPDATE users
+                SET email = :email,
+                    password_hash = :hash,
+                    status = 'anonymized',
+                    anonymized_at = NOW(),
+                    remember_token = NULL,
+                    remember_expires = NULL
+              WHERE id = :id AND status <> 'anonymized'"
+        )->execute([
+            'email' => 'deleted-user-' . $userId . '@anonymized.invalid',
+            'hash'  => password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT),
+            'id'    => $userId,
+        ]);
+
+        // 2. Farmer identity fields. The row stays so listings and orders keep
+        //    resolving to a real farmer_profiles key. barangay, municipality_city,
+        //    province, region and farm_name, contact_person, address and
+        //    valid_id_number are all NOT NULL, so those become placeholders
+        //    rather than NULL; only genuinely nullable columns are cleared.
+        $pdo->prepare(
+            "UPDATE farmer_profiles
+                SET farm_name = :farm_name,
+                    farm_description = NULL,
+                    contact_person = :contact_person,
+                    contact_phone = NULL,
+                    contact_email = NULL,
+                    address = :address,
+                    barangay = :barangay,
+                    municipality_city = :municipality_city,
+                    province = :province,
+                    region = :region,
+                    latitude = NULL,
+                    longitude = NULL,
+                    valid_id_number = :valid_id_number,
+                    valid_id_image = NULL,
+                    rejection_reason = NULL
+              WHERE user_id = :id"
+        )->execute([
+            'farm_name'         => 'Anonymized Farm ' . $userId,
+            'contact_person'    => 'Anonymized',
+            'address'           => 'Anonymized',
+            'barangay'          => 'Anonymized',
+            'municipality_city' => 'Anonymized',
+            'province'          => 'Anonymized',
+            'region'            => 'Anonymized',
+            'valid_id_number'   => 'ANON-' . $userId,
+            'id'                => $userId,
+        ]);
+
+        // 3. Buyer identity fields.
+        $pdo->prepare(
+            "UPDATE buyer_profiles
+                SET full_name = :full_name,
+                    contact_phone = NULL,
+                    delivery_address = NULL,
+                    barangay = NULL,
+                    municipality_city = NULL,
+                    province = NULL,
+                    region = NULL,
+                    latitude = NULL,
+                    longitude = NULL
+              WHERE user_id = :id"
+        )->execute([
+            'full_name' => 'Anonymized User ' . $userId,
+            'id'        => $userId,
+        ]);
+
+        // 4. Exact fulfillment locations and user-authored free text on
+        //    historical orders (NFR-PRIV-009). Statuses, quantities, prices
+        //    and dates are the non-identifying record that must survive.
+        $orders = $pdo->prepare(
+            'UPDATE orders
+                SET delivery_address = NULL,
+                    buyer_note = NULL,
+                    farmer_note = NULL,
+                    admin_note = NULL
+              WHERE buyer_id = :buyer_id OR farmer_id = :farmer_id'
+        );
+        $orders->execute(['buyer_id' => $userId, 'farmer_id' => $userId]);
+        $summary['orders_scrubbed'] = $orders->rowCount();
+
+        // 5. Archive the user's listings instead of deleting them.
+        $listings = $pdo->prepare(
+            "UPDATE produce_listings
+                SET status = 'archived'
+              WHERE farmer_id = ? AND status <> 'archived'"
+        );
+        $listings->execute([$userId]);
+        $summary['listings_archived'] = $listings->rowCount();
+
+        // 6. Session and notification state cannot outlive the account. These
+        //    only cascade on a physical user delete, which is not what happens
+        //    here, so they are cleared explicitly.
+        $tables = [
+            'cart_items'         => 'buyer_id',
+            'saved_listings'     => 'user_id',
+            'notifications'      => 'user_id',
+            'user_preferences'   => 'user_id',
+            'user_suspensions'   => 'user_id',
+            'password_resets'    => 'user_id',
+        ];
+        foreach ($tables as $table => $column) {
+            $pdo->prepare("DELETE FROM `$table` WHERE `$column` = :id")
+                ->execute(['id' => $userId]);
+        }
+
+        $pdo->commit();
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        security_event_log('account_anonymize_failed', ['target_user_id' => $userId]);
+        throw new RuntimeException('Anonymization failed: ' . $e->getMessage(), 0, $e);
+    }
+
+    security_event_log('account_anonymized', [
+        'target_user_id'    => $userId,
+        'orders_scrubbed'   => $summary['orders_scrubbed'] ?? 0,
+        'listings_archived' => $summary['listings_archived'] ?? 0,
+    ]);
+
+    return $summary;
+}

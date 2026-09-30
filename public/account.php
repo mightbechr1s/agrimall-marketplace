@@ -74,6 +74,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $success = $l($copy['account'], 'password_updated');
             audit_log('account_password_changed', 'user', $userId);
         }
+    } elseif ($action === 'name') {
+        // Admins have no profile table, so there is no name for them to change.
+        // Every name edit re-checks the current password, matching the email
+        // and password branches: a hijacked session must not be enough to
+        // repoint someone's public identity.
+        if (!password_verify((string) ($_POST['current_password'] ?? ''), $hash)) {
+            $error = $l($copy['account'], 'invalid_current_password');
+        } elseif ($role === 'farmer') {
+            $farmName = trim((string) ($_POST['farm_name'] ?? ''));
+            $contactPerson = trim((string) ($_POST['contact_person'] ?? ''));
+
+            $cur = DB::pdo()->prepare('SELECT farm_name, contact_person FROM farmer_profiles WHERE user_id = :id');
+            $cur->execute(['id' => $userId]);
+            $current = $cur->fetch() ?: ['farm_name' => '', 'contact_person' => ''];
+
+            if ($farmName === '' || $contactPerson === '') {
+                $error = $l($copy['account'], 'err_name_required');
+            } elseif (mb_strlen($farmName) > FIELD_LIMITS['farm_name']) {
+                $error = sprintf($l($copy['account'], 'err_too_long'), FIELD_LIMITS['farm_name']);
+            } elseif (mb_strlen($contactPerson) > FIELD_LIMITS['contact_person']) {
+                $error = sprintf($l($copy['account'], 'err_too_long'), FIELD_LIMITS['contact_person']);
+            } elseif ($farmName === $current['farm_name'] && $contactPerson === $current['contact_person']) {
+                $error = $l($copy['account'], 'name_same');
+            } else {
+                DB::pdo()->prepare(
+                    'UPDATE farmer_profiles SET farm_name = :farm_name, contact_person = :contact_person
+                      WHERE user_id = :id'
+                )->execute(['farm_name' => $farmName, 'contact_person' => $contactPerson, 'id' => $userId]);
+                $success = $l($copy['account'], 'name_updated');
+                security_event_log('account_name_changed', ['fields' => ['farm_name', 'contact_person']]);
+                audit_log('account_name_changed', 'user', $userId);
+            }
+        } elseif ($role === 'buyer') {
+            $fullName = trim((string) ($_POST['full_name'] ?? ''));
+
+            $cur = DB::pdo()->prepare('SELECT full_name FROM buyer_profiles WHERE user_id = :id');
+            $cur->execute(['id' => $userId]);
+            $current = (string) $cur->fetchColumn();
+
+            if ($fullName === '') {
+                $error = $l($copy['account'], 'err_name_required');
+            } elseif (mb_strlen($fullName) > FIELD_LIMITS['full_name']) {
+                $error = sprintf($l($copy['account'], 'err_too_long'), FIELD_LIMITS['full_name']);
+            } elseif ($fullName === $current) {
+                $error = $l($copy['account'], 'name_same');
+            } else {
+                DB::pdo()->prepare('UPDATE buyer_profiles SET full_name = :full_name WHERE user_id = :id')
+                    ->execute(['full_name' => $fullName, 'id' => $userId]);
+                $success = $l($copy['account'], 'name_updated');
+                security_event_log('account_name_changed', ['fields' => ['full_name']]);
+                audit_log('account_name_changed', 'user', $userId);
+            }
+        } else {
+            $error = $l($copy['account'], 'err_name_required');
+        }
     }
 }
 
@@ -87,6 +142,24 @@ $profileRole = $roleLabels[$role] ?? ucfirst((string) $role);
 $profileStatus = $statusLabels[$user['status']] ?? ucfirst((string) $user['status']);
 $memberSince = $user['created_at'] ? date('M Y', strtotime($user['created_at'])) : '—';
 $lastLogin = $user['last_login_at'] ? date('M j, g:i A', strtotime($user['last_login_at'])) : 'Never';
+
+// Prefill for the name form. Read after the POST block so a successful update
+// shows the new value instead of re-submitting the old one. Admins have
+// neither profile table, so they keep the empty defaults and no form is shown.
+$nameValues = ['full_name' => '', 'farm_name' => '', 'contact_person' => ''];
+if ($role === 'farmer') {
+    $nStmt = DB::pdo()->prepare('SELECT farm_name, contact_person FROM farmer_profiles WHERE user_id = :id');
+    $nStmt->execute(['id' => $userId]);
+    $n = $nStmt->fetch();
+    if ($n) {
+        $nameValues['farm_name'] = (string) $n['farm_name'];
+        $nameValues['contact_person'] = (string) $n['contact_person'];
+    }
+} elseif ($role === 'buyer') {
+    $nStmt = DB::pdo()->prepare('SELECT full_name FROM buyer_profiles WHERE user_id = :id');
+    $nStmt->execute(['id' => $userId]);
+    $nameValues['full_name'] = (string) $nStmt->fetchColumn();
+}
 
 $activePage = 'account';
 $pageTitle = $l($copy['account'], 'page_title');
@@ -138,6 +211,44 @@ require __DIR__ . '/partials/dashboard-layout.php';
             </div>
         <?php endif; ?>
 
+        <?php if ($role === 'buyer' || $role === 'farmer'): ?>
+            <form method="post" action="account.php" class="account-form">
+                <?= csrf_field() ?>
+                <input type="hidden" name="account_action" value="name">
+                <fieldset>
+                    <legend><?= e($l($copy['account'], 'section_name')) ?></legend>
+                    <p class="account-hint"><?= e($l($copy['account'], 'hint_name')) ?></p>
+                    <?php if ($role === 'farmer'): ?>
+                        <div class="form-group">
+                            <label class="form-label" for="farm_name"><?= e($l($copy['account'], 'label_farm_name')) ?></label>
+                            <input class="form-control" type="text" id="farm_name" name="farm_name"
+                                   value="<?= e($nameValues['farm_name']) ?>" required
+                                   maxlength="<?= FIELD_LIMITS['farm_name'] ?>">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="contact_person"><?= e($l($copy['account'], 'label_contact_person')) ?></label>
+                            <input class="form-control" type="text" id="contact_person" name="contact_person"
+                                   value="<?= e($nameValues['contact_person']) ?>" required
+                                   maxlength="<?= FIELD_LIMITS['contact_person'] ?>">
+                        </div>
+                    <?php else: ?>
+                        <div class="form-group">
+                            <label class="form-label" for="full_name"><?= e($l($copy['account'], 'label_full_name')) ?></label>
+                            <input class="form-control" type="text" id="full_name" name="full_name"
+                                   value="<?= e($nameValues['full_name']) ?>" autocomplete="name" required
+                                   maxlength="<?= FIELD_LIMITS['full_name'] ?>">
+                        </div>
+                    <?php endif; ?>
+                    <div class="form-group">
+                        <label class="form-label" for="name_current_password"><?= e($l($copy['account'], 'label_current_password')) ?></label>
+                        <input class="form-control" type="password" id="name_current_password" name="current_password"
+                               autocomplete="current-password" required>
+                    </div>
+                    <button class="btn btn-primary" type="submit"><?= e($l($copy['account'], 'btn_save_name')) ?></button>
+                </fieldset>
+            </form>
+        <?php endif; ?>
+
         <form method="post" action="account.php" class="account-form">
             <?= csrf_field() ?>
             <input type="hidden" name="account_action" value="email">
@@ -181,6 +292,23 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <a href="dashboard.php" class="btn btn-outline"><?= e($l($copy['account'], 'btn_cancel')) ?></a>
             </fieldset>
         </form>
+
+        <hr class="account-divider">
+
+        <div class="account-danger">
+            <h2 class="account-danger__title"><?= e($l($copy['account'], 'section_danger')) ?></h2>
+            <p class="account-danger__body"><?= e($l($copy['account'], 'danger_body')) ?></p>
+            <?php if ($role === 'admin'): ?>
+                <button class="btn btn-danger" type="button" disabled
+                        aria-disabled="true"><?= e($l($copy['account'], 'btn_delete')) ?></button>
+                <p class="account-danger__note"><?= e($l($copy['account'], 'danger_admin_blocked')) ?></p>
+            <?php else: ?>
+                <a href="account_delete.php" class="btn btn-danger">
+                    <i class="bi bi-trash3 me-1" aria-hidden="true"></i>
+                    <?= e($l($copy['account'], 'btn_delete')) ?>
+                </a>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
 <?php require __DIR__ . '/partials/dashboard-footer.php'; ?>

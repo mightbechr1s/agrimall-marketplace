@@ -147,9 +147,10 @@ C:\xampp\php\php.exe -S 127.0.0.1:8000 -t public public/router.php
 | `http://127.0.0.1:8000/browse.php` | Cards, Add to Cart + Save buttons |
 | `http://127.0.0.1:8000/cart.php` | Cart items, quantities, checkout |
 | `http://127.0.0.1:8000/dashboard.php` (after login) | Role sidebar, orders, saved listings |
-| `http://127.0.0.1:8000/account.php` | Profile + password forms |
+| `http://127.0.0.1:8000/account.php` | Profile, name, email and password forms, danger zone |
+| `http://127.0.0.1:8000/account_delete.php` | Deletion briefing + confirmation (non-admin, no open orders) |
 
-**Demo accounts** (from `DEMO_ACCOUNTS.md`):
+**Demo accounts** (created by the reset tool):
 ```
 admin    admin@animal.local    admin123
 farmer   delagracia@animal.local  password123

@@ -6,7 +6,7 @@
   "scripts": {
     "build:assets": "esbuild public/assets/css/styles.css --minify --outfile=public/assets/css/styles.min.css && esbuild public/assets/css/motion.css --minify --outfile=public/assets/css/motion.min.css && esbuild public/assets/js/motion.js --minify --outfile=public/assets/js/motion.min.js && esbuild public/assets/js/swipe.js --minify --outfile=public/assets/js/swipe.min.js",
     "lint:php": "php -l public/index.php && php -l public/browse.php && php -l src/bootstrap.php && php -l src/i18n_copy.php && php -l config/config.php",
-    "dev": "php -S 127.0.0.1:8009 -t public public/router.php"
+    "dev": "php -S 127.0.0.1:8000 -t public public/router.php"
   },
   "devDependencies": {
     "@axe-core/puppeteer": "^4.13.0",

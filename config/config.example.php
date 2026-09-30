@@ -17,6 +17,12 @@ return [
         'timezone' => 'Asia/Manila',
         'session_lifetime_minutes' => 30,
         'env' => 'production',      // 'development' | 'production'
+        // Local-only password reset delivery. Leave false in production: with
+        // no mail transport configured, a true value would print a live reset
+        // token in the browser. The reset link is always appended to
+        // logs/security.log regardless of this flag.
+        'local_password_reset_links' => false,
+        'security_log' => __DIR__ . '/../logs/security.log',
         // Error logging settings
         'error_logging' => [
             'display_errors' => false,

@@ -25,6 +25,15 @@
   --success: #2E7D32;
   --focus-ring: #B45309;
 
+  /* Soft alert fills + the --ok alias. These were referenced inline by
+     forgot.php, create_listing.php and account_delete.php but never defined,
+     so those alerts rendered with a transparent background. Declared once here
+     and built from --danger / --success with color-mix(), so they follow the
+     dark-theme overrides of those two tokens without a second declaration. */
+  --ok: var(--success);
+  --ok-soft: color-mix(in srgb, var(--success) 14%, transparent);
+  --danger-soft: color-mix(in srgb, var(--danger) 14%, transparent);
+
   /* Right-hand auth pane background. Pales the page slightly darker than
      --paper so the white auth card reads as elevated against it. */
   --bg-primary: #FDFBF7;
@@ -3733,4 +3742,168 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 .cart-remove:focus-visible {
   color: var(--danger) !important;
   background: color-mix(in srgb, var(--danger) 18%, transparent);
+}
+
+/* ===================================================================
+   Account deletion
+   =================================================================== */
+
+/* Delete-account copy runs longer than a login form does, so the auth card
+   gets more room and stops wrapping labels onto two lines. */
+.auth-card--wide {
+  max-width: 560px;
+}
+
+/* What-is-kept / what-is-removed briefing above the confirmation form.
+   Deliberately not a Bootstrap alert: this is reference information the user
+   has to read before acting, not a transient state message. */
+.danger-panel {
+  border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--borders));
+  border-left: 3px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  padding: 16px 18px;
+  margin-bottom: 22px;
+  text-align: left;
+}
+
+.danger-panel__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--danger);
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.danger-panel__lead {
+  font-size: 0.9rem;
+  color: var(--text);
+  margin: 0 0 14px;
+}
+
+.danger-panel__sub {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  margin: 0 0 4px;
+}
+
+.danger-panel__sub + .danger-panel__body {
+  margin-bottom: 12px;
+}
+
+.danger-panel__body {
+  font-size: 0.875rem;
+  color: var(--text-soft);
+  margin: 0;
+  line-height: 1.55;
+}
+
+/* The local-only password reset link. Monospaced and wrapping so a long token
+   never overflows the card on a narrow screen. */
+.auth-card-local-link {
+  border: 1px dashed color-mix(in srgb, var(--gold) 50%, var(--borders));
+  border-radius: var(--radius-sm);
+  background: var(--gold-tint);
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.auth-card-local-link__title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.auth-card-local-link__body {
+  font-size: 0.85rem;
+  color: var(--text);
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+
+.auth-card-local-link__url {
+  display: block;
+  font-size: 0.8rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--borders);
+  border-radius: 6px;
+  padding: 8px 10px;
+  word-break: break-all;
+  user-select: all;
+  color: var(--text);
+}
+
+.auth-card-local-link__note {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+
+.auth-form {
+  margin-top: 4px;
+}
+
+/* ===================================================================
+   Account settings additions
+   =================================================================== */
+
+/* Explanatory line above the name inputs, matching the muted scale used for
+   fieldset legends so the form does not read as three stacked labels. */
+.account-hint {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  margin: -4px 0 14px;
+  max-width: 56ch;
+}
+
+/* Danger zone on the account page. Quieter than the delete page's full
+   briefing panel: this one only has to warn and hand off to account_delete.php. */
+.account-danger {
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--borders));
+  border-left: 3px solid var(--danger);
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  padding: 16px 18px;
+}
+
+.account-danger__title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--danger);
+  margin: 0 0 6px;
+}
+
+.account-danger__body {
+  font-size: 0.875rem;
+  color: var(--text-soft);
+  margin: 0 0 14px;
+  line-height: 1.55;
+  max-width: 62ch;
+}
+
+.account-danger__note {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  margin: 10px 0 0;
+}
+
+.account-danger .btn-danger[disabled],
+.account-danger .btn-danger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
