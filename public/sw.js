@@ -1,18 +1,38 @@
 /**
  * AniMAL Service Worker - network-first with offline fallback
- * Version: 2
+ * Version: 3
  *
  * Strategy: always try the network first so updated HTML/CSS/JS is served
  * immediately, and fall back to the cache only when offline. Bump CACHE_NAME
  * whenever this file changes so old caches are purged on activate.
+ *
+ * Authenticated pages are never cached. Cache Storage is persistent and is not
+ * cleared on logout, so caching a dashboard would hand the previous user's
+ * orders and address to whoever opens the app next on the same device.
  */
 
-const CACHE_NAME = 'animal-v3';
+const CACHE_NAME = 'animal-v4';
 const STATIC_ASSETS = [
   '/index.php',
   '/browse.php',
   '/manifest.json'
 ];
+
+// Mirrors the pages that call require_login() in src/functions.php.
+const PRIVATE_PATHS = new Set([
+  '/account.php',
+  '/account_delete.php',
+  '/cart.php',
+  '/cart_checkout.php',
+  '/cart_update.php',
+  '/create_listing.php',
+  '/dashboard.php',
+  '/notifications.php',
+  '/order.php',
+  '/order_action.php',
+  '/order_request.php',
+  '/upload_image.php'
+]);
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -49,28 +69,37 @@ const OFFLINE_PAGE = `<!doctype html>
 <button onclick="location.reload()">Retry</button>
 </main></body></html>`;
 
-async function networkFirst(request) {
+function offlineResponse() {
+  return new Response(OFFLINE_PAGE, {
+    status: 503,
+    statusText: 'Service Unavailable',
+    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+  });
+}
+
+async function networkFirst(request, url) {
   const cache = await caches.open(CACHE_NAME);
+  const isPrivate = PRIVATE_PATHS.has(url.pathname);
 
   try {
     const response = await fetch(request);
     // Cache successful, non-redirected, same-origin responses for offline use.
-    if (response && response.ok && !response.redirected && response.type === 'basic') {
+    // Authenticated pages are excluded: see PRIVATE_PATHS above.
+    if (!isPrivate && response && response.ok && !response.redirected && response.type === 'basic') {
       cache.put(request, response.clone());
     }
     return response;
   } catch (error) {
+    // Never answer a private page from cache, even stale: a cached copy would
+    // outlive the session that produced it.
+    if (isPrivate) return offlineResponse();
+
     // Exact match first, then the same path ignoring the query string, so a
     // never-before-visited search URL degrades to the browse shell instead of
     // dead-ending on an error page.
     const cached = (await cache.match(request)) ||
       (await cache.match(request, { ignoreSearch: true }));
-    if (cached) return cached;
-    return new Response(OFFLINE_PAGE, {
-      status: 503,
-      statusText: 'Service Unavailable',
-      headers: { 'Content-Type': 'text/html; charset=utf-8' }
-    });
+    return cached || offlineResponse();
   }
 }
 
@@ -85,7 +114,7 @@ self.addEventListener('fetch', (event) => {
   // Let the server handle API calls directly (avoid caching sensitive JSON).
   if (url.pathname.startsWith('/api/')) return;
 
-  event.respondWith(networkFirst(request));
+  event.respondWith(networkFirst(request, url));
 });
 
 // Allow the page to trigger an immediate update.
