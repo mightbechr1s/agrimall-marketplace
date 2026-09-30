@@ -59,7 +59,7 @@ require __DIR__ . '/partials/header.php';
       <p><?php echo $l($copy['preview'], 'intro'); ?></p>
     </div>
 
-    <form class="search-form" method="get" action=".">
+    <form class="search-form" method="get" action="browse.php">
       <?php if (isset($_GET['lang'])): ?>
         <input type="hidden" name="lang" value="<?php echo htmlspecialchars($_GET['lang']); ?>">
       <?php endif; ?>
