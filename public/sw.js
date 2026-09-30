@@ -7,7 +7,7 @@
  * whenever this file changes so old caches are purged on activate.
  */
 
-const CACHE_NAME = 'animal-v2';
+const CACHE_NAME = 'animal-v3';
 const STATIC_ASSETS = [
   '/index.php',
   '/browse.php',
@@ -37,6 +37,18 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Served when the network fails and nothing cached can answer the request.
+// A bare text body reads as a broken site, so return a real document.
+const OFFLINE_PAGE = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Offline - AniMAL</title>
+<style>body{font:16px/1.6 system-ui,sans-serif;margin:0;display:grid;min-height:100vh;place-items:center;background:#faf7f0;color:#22301f}main{max-width:32rem;padding:2rem;text-align:center}h1{font-size:1.5rem;margin:0 0 .5rem}p{margin:0 0 1.5rem;color:#55654f}</style>
+</head><body><main><h1>You're offline</h1>
+<p>AniMAL couldn't reach the server. Check your connection and try again.</p>
+<button onclick="location.reload()">Retry</button>
+</main></body></html>`;
+
 async function networkFirst(request) {
   const cache = await caches.open(CACHE_NAME);
 
@@ -48,9 +60,17 @@ async function networkFirst(request) {
     }
     return response;
   } catch (error) {
-    const cached = await cache.match(request);
+    // Exact match first, then the same path ignoring the query string, so a
+    // never-before-visited search URL degrades to the browse shell instead of
+    // dead-ending on an error page.
+    const cached = (await cache.match(request)) ||
+      (await cache.match(request, { ignoreSearch: true }));
     if (cached) return cached;
-    return new Response('Offline', { status: 503, statusText: 'Offline' });
+    return new Response(OFFLINE_PAGE, {
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: { 'Content-Type': 'text/html; charset=utf-8' }
+    });
   }
 }
 
