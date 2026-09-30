@@ -336,10 +336,11 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
                 </div>
               </li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="dashboard.php"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
+              <li><a class="dropdown-item" href="dashboard.php"><i class="bi bi-speedometer2 me-2"></i><?= t($i18nCopy['nav'], 'dashboard') ?></a></li>
               <li><a class="dropdown-item" href="settings.php"><i class="bi bi-gear me-2"></i><?= t($i18nCopy['settings'], 'nav_settings') ?></a></li>
+              <li><a class="dropdown-item" href="account.php"><i class="bi bi-person-gear me-2" aria-hidden="true"></i><?= t($i18nCopy['dashboard_nav'], 'account') ?></a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="logout.php"><i class="bi bi-box-arrow-left me-2"></i>Log out</a></li>
+              <li><a class="dropdown-item" href="logout.php"><i class="bi bi-box-arrow-left me-2"></i><?= t($i18nCopy['nav'], 'logout') ?></a></li>
             </ul>
           </div>
         <?php else: ?>
@@ -400,6 +401,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
     <div class="mobile-menu-actions">
       <?php if (current_user_id()): ?>
         <a href="settings.php" class="btn btn-outline"><i class="bi bi-gear" aria-hidden="true"></i> <?= t($i18nCopy['settings'], 'nav_settings') ?></a>
+        <a href="account.php" class="btn btn-outline"><i class="bi bi-person-gear" aria-hidden="true"></i> <?= t($i18nCopy['dashboard_nav'], 'account') ?></a>
         <a href="logout.php" class="btn btn-primary"><i class="bi bi-box-arrow-right" aria-hidden="true"></i> <?= t($i18nCopy['nav'], 'logout') ?></a>
       <?php else: ?>
         <a href="register.php" class="btn btn-primary"><?= t($i18nCopy['nav'], 'sell') ?></a>
