@@ -213,22 +213,38 @@ require __DIR__ . '/partials/header.php';
           </article>
         <?php endforeach; ?>
       <?php else: ?>
-        <?php /* No listings in the database. Show an honest empty state and the
-                 three things a visitor can actually do here. This branch used to
-                 render mockup cards with invented prices and "Local Farm" as the
-                 seller, which read as real inventory. */ ?>
-        <div class="empty-state text-center" style="padding: 3rem 1.5rem;">
+        <?php /* No listings to show. Two different situations land here and they
+                 must not share one message: a marketplace with no stock, and a
+                 marketplace full of stock that simply did not match $q. Only the
+                 second one is a search result. The viewer state also decides
+                 whether "log in" and "sign up" are advice or an insult. */ ?>
+        <?php $searchMiss = trim($q) !== ''; $viewerId = current_user_id(); ?>
+        <div class="empty-state text-center" style="grid-column: 1 / -1; padding: 3rem 1.5rem;">
           <div class="empty-state-icon-wrapper mb-3">
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon"><path d="M8 1a.5.5 0 0 1 .5.5V3h1.5a.5.5 0 0 1 0 1H8.5v1.5h1a.5.5 0 0 1 0 1h-1v1.5h1.5a.5.5 0 0 1 0 1H8.5V9.5h1a.5.5 0 0 1 0 1h-1V11h1.5a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V12H6a.5.5 0 0 1 0-1h1.5V9.5h-1a.5.5 0 0 1 0-1h1V7H7a.5.5 0 0 1 0-1h1.5V4.5H7a.5.5 0 0 1 0-1h.5V1.5A.5.5 0 0 1 8 1z"/><path d="M2 2.5a.5.5 0 0 1 .5.5V4h1a.5.5 0 0 1 0 1h-1v1h1a.5.5 0 0 1 0 1h-1v1h1a.5.5 0 0 1 0 1h-1v3.5a.5.5 0 0 1-1 0V8H1.5a.5.5 0 0 1 0-1H2V6H1a.5.5 0 0 1 0-1h1V4H1.5a.5.5 0 0 1 0-1H2V3a.5.5 0 0 1 .5-.5z"/></svg>
           </div>
-          <h3 class="empty-state-title"><?= e($locale === 'tl' ? 'Wala pang ibinebenta' : 'Nothing for sale yet') ?></h3>
-          <p class="empty-state-description"><?= e($locale === 'tl'
-              ? 'Walang aktibong listing sa marketplace pa. Suriin muli pagkatapos ng ilang oras, o mag-login para pamahalaan ang iyong sariling listing.'
-              : 'No active listings in the marketplace right now. Check back in a few hours, or log in to manage your own listings.') ?></p>
+          <?php if ($searchMiss): ?>
+            <h3 class="empty-state-title"><?= e($locale === 'tl'
+                ? 'Walang nahanap para sa "' . $q . '"'
+                : 'No results for "' . $q . '"') ?></h3>
+            <p class="empty-state-description"><?= e($locale === 'tl'
+                ? 'Walang aktibong listing na tumutugma sa paghahanap na ito. Subukang ibang salita o burahin ang teksto sa kahon sa itaas.'
+                : 'No active listings match this search. Try a different word, or clear the box above.') ?></p>
+          <?php else: ?>
+            <h3 class="empty-state-title"><?= e($locale === 'tl' ? 'Wala pang ibinebenta' : 'Nothing for sale yet') ?></h3>
+            <p class="empty-state-description"><?= e($locale === 'tl'
+                ? 'Walang aktibong listing sa marketplace pa. Suriin muli pagkatapos ng ilang oras, o mag-login para pamahalaan ang iyong sariling listing.'
+                : 'No active listings in the marketplace right now. Check back in a few hours, or log in to manage your own listings.') ?></p>
+          <?php endif; ?>
           <div class="empty-state-action mt-3 d-flex flex-wrap gap-2 justify-content-center">
-            <a href="<?= e(login_url('browse.php')) ?>" class="btn btn-primary"><?= e($l($copy['nav'], 'login')) ?></a>
-            <a href="register.php" class="btn btn-outline-primary"><?= e($l($copy['auth'], 'create_one')) ?></a>
-            <a href="register.php" class="btn btn-outline-secondary"><?= e($l($copy['nav'], 'become_seller')) ?></a>
+            <?php if ($viewerId): ?>
+              <a href="create_listing.php" class="btn btn-primary"><?= e($l($copy['nav'], 'sell')) ?></a>
+              <a href="dashboard.php" class="btn btn-outline"><?= e($l($copy['nav'], 'dashboard')) ?></a>
+            <?php else: ?>
+              <a href="<?= e(login_url('browse.php')) ?>" class="btn btn-primary"><?= e($l($copy['nav'], 'login')) ?></a>
+              <a href="register.php" class="btn btn-outline-primary"><?= e($l($copy['auth'], 'create_one')) ?></a>
+              <a href="register.php" class="btn btn-outline-secondary"><?= e($l($copy['nav'], 'become_seller')) ?></a>
+            <?php endif; ?>
           </div>
         </div>
       <?php endif; ?>
