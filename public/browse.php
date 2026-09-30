@@ -227,9 +227,16 @@ require __DIR__ . '/partials/header.php';
             $icon = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon"><path d="M8 1a.5.5 0 0 1 .5.5V3h1.5a.5.5 0 0 1 0 1H8.5v1.5h1a.5.5 0 0 1 0 1h-1v1.5h1.5a.5.5 0 0 1 0 1H8.5V9.5h1a.5.5 0 0 1 0 1h-1V11h1.5a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V12H6a.5.5 0 0 1 0-1h1.5V9.5h-1a.5.5 0 0 1 0-1h1V7H7a.5.5 0 0 1 0-1h1.5V4.5H7a.5.5 0 0 1 0-1h.5V1.5A.5.5 0 0 1 8 1z"/><path d="M2 2.5a.5.5 0 0 1 .5.5V4h1a.5.5 0 0 1 0 1h-1v1h1a.5.5 0 0 1 0 1h-1v1h1a.5.5 0 0 1 0 1h-1v3.5a.5.5 0 0 1-1 0V8H1.5a.5.5 0 0 1 0-1H2V6H1a.5.5 0 0 1 0-1h1V4H1.5a.5.5 0 0 1 0-1H2V3a.5.5 0 0 1 .5-.5z"/>';
 
             if ($listingsFailed) {
-                $title = $l($copy['errors']['unavailable'], 'title');
-                $description = $l($copy['errors']['unavailable'], 'message');
-                $actions = [['label' => 'Retry', 'href' => 'browse.php' . ($searchMiss ? '?q=' . urlencode($q) : ''), 'class' => 'btn-primary']];
+                // The errors block is keyed locale-first, so the nested
+                // `unavailable` group has to be resolved before it can be
+                // indexed. Handing the nested group straight to $l() passes
+                // null, and $l()'s `?? $key` fallback then renders the bare
+                // words "title" / "message" as the page copy.
+                $unavailable = $copy['errors'][$locale]['unavailable']
+                    ?? $copy['errors']['en']['unavailable'] ?? [];
+                $title = $unavailable['title'] ?? 'Marketplace unavailable';
+                $description = $unavailable['message'] ?? '';
+                $actions = [['label' => $unavailable['retry'] ?? 'Retry', 'href' => 'browse.php' . ($searchMiss ? '?q=' . urlencode($q) : ''), 'class' => 'btn-primary']];
             } elseif ($searchMiss) {
                 $title = $locale === 'tl' ? 'Walang nahanap para sa "' . $q . '"' : 'No results for "' . $q . '"';
                 $description = $locale === 'tl'

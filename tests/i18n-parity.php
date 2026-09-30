@@ -56,13 +56,99 @@ if ($blocks === 0) {
     exit(2);
 }
 
+// ---------------------------------------------------------------------------
+// Second check: every copy path a page asks for has to actually exist.
+//
+// Parity alone does not catch a wrong path. Because the deck is keyed
+// locale-first ($copy['errors']['en'][...]), a page that writes
+// $copy['errors']['unavailable'] gets null, and the usual `?? $key` fallback
+// then prints the bare word "title" or "message" as page copy. That renders a
+// plausible page and fails every key-parity assertion, because the deck itself
+// is perfectly consistent.
+// ---------------------------------------------------------------------------
+$missing  = [];
+$checked  = 0;
+$isLocale = static fn(string $k): bool => $k === 'en' || $k === 'tl';
+
+$base = dirname(__DIR__);
+$php  = [];
+foreach (['public', 'src'] as $dir) {
+    if (!is_dir("$base/$dir")) {
+        continue;
+    }
+    $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator("$base/$dir"));
+    foreach ($it as $f) {
+        if ($f->isFile() && $f->getExtension() === 'php') {
+            $php[] = $f->getPathname();
+        }
+    }
+}
+
+// The safe idiom: $l($copy['block'], 'key').
+$callPattern = '/\$l\(\s*\$copy\[\s*\'([a-z0-9_]+)\'\s*\]\s*,\s*\'([a-z0-9_.]+)\'/i';
+// The trap: two literal hops on a locale-first deck, where the second hop is
+// not itself a locale.
+$pathPattern = '/\$copy\[\s*\'([a-z0-9_]+)\'\s*\]\s*\[\s*\'([a-z0-9_]+)\'\s*\]/i';
+
+foreach ($php as $file) {
+    $rel  = str_replace('\\', '/', substr($file, strlen($base) + 1));
+    $code = (string) file_get_contents($file);
+
+    preg_match_all($callPattern, $code, $hits, PREG_SET_ORDER);
+    foreach ($hits as $hit) {
+        [, $block, $key] = $hit;
+        $checked++;
+        if (!isset($copy[$block]['en']) || !is_array($copy[$block]['en'])) {
+            $missing[] = "$rel: \$copy['$block'] is not a bilingual block";
+            continue;
+        }
+        // A dotted key is only legal one level deep; walk it.
+        $node = $copy[$block]['en'];
+        foreach (explode('.', $key) as $seg) {
+            if (!is_array($node) || !array_key_exists($seg, $node)) {
+                $missing[] = "$rel: \$copy['$block']['$key'] does not exist (missing '$seg')";
+                continue 2;
+            }
+            $node = $node[$seg];
+        }
+    }
+
+    preg_match_all($pathPattern, $code, $hits2, PREG_SET_ORDER);
+    foreach ($hits2 as $hit) {
+        [, $block, $sub] = $hit;
+        if ($isLocale($sub)) {
+            continue; // $copy['errors']['en'] is the correct shape
+        }
+        $checked++;
+        if (!isset($copy[$block][$sub]) || !is_array($copy[$block][$sub])) {
+            $missing[] = "$rel: \$copy['$block']['$sub'] misses; the deck is locale-first, so this is null and will fall back to a raw key";
+        }
+    }
+}
+
+if ($checked === 0) {
+    fwrite(STDERR, "FATAL: no copy references found to validate; the check would pass vacuously\n");
+    exit(2);
+}
+
 echo "blocks checked: $blocks\n";
-if ($problems === []) {
+echo "copy references checked: $checked\n";
+
+if ($problems === [] && $missing === []) {
     echo "OK: every block has identical en/tl key sets\n";
+    echo "OK: every referenced copy path resolves\n";
     exit(0);
 }
 foreach ($problems as $p) {
     echo "  $p\n";
 }
-fwrite(STDERR, 'DRIFT: ' . count($problems) . " key(s) missing from one language\n");
+foreach ($missing as $m) {
+    echo "  $m\n";
+}
+if ($problems !== []) {
+    fwrite(STDERR, 'DRIFT: ' . count($problems) . " key(s) missing from one language\n");
+}
+if ($missing !== []) {
+    fwrite(STDERR, 'BROKEN PATH: ' . count($missing) . " copy reference(s) do not resolve\n");
+}
 exit(1);

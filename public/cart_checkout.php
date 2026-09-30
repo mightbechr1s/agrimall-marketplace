@@ -24,7 +24,7 @@ try {
          JOIN produce_listings pl ON ci.listing_id = pl.id
          JOIN quantity_units qu ON pl.unit_id = qu.id
          JOIN farmer_profiles fp ON pl.farmer_id = fp.user_id
-         WHERE ci.buyer_id = :buyer AND pl.status = "active" AND fp.verification_status = "approved"
+         WHERE ci.buyer_id = :buyer AND pl.status = \'active\' AND fp.verification_status = \'approved\'
          FOR UPDATE'
     );
     $cartStmt->execute(['buyer' => current_user_id()]);

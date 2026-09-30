@@ -67,7 +67,10 @@ try {
   (Get-Content (Join-Path $repo 'database\schema.sql') -Raw) -replace 'animal_marketplace', 'animal_marketplace_test' | & $mysql -u root 2>&1 | Out-Null
   foreach ($m in (Get-ChildItem (Join-Path $repo 'database\migrations\*.sql') | Sort-Object Name)) {
     $r = ((Get-Content $m.FullName -Raw) -replace 'animal_marketplace', 'animal_marketplace_test') | & $mysql -u root --database=animal_marketplace_test 2>&1
-    if ($r) { "MIGRATION FAIL $($m.Name): $r" }
+    # Match on ERROR rather than on "any output". A migration is allowed to
+    # print a result set (the older ones emit `SELECT 1` on their no-op
+    # branch), and flagging that as a failure trains you to ignore this line.
+    if ($r -match 'ERROR') { "MIGRATION FAIL $($m.Name): $r" }
   }
   $ids = & $php (Join-Path $repo 'tests\http_seed.php') 2>&1 | ConvertFrom-Json
   "seeded ids: buyer=$($ids.buyer) farmer=$($ids.farmer) open=$($ids.openOrder) blocked=$($ids.blocked) admin=$($ids.admin)"
@@ -309,6 +312,35 @@ try {
     ok 'posting the expired token is refused' ($expiredPost -match 'expired|Expired|invalid|Invalid') 'the POST was accepted'
     ok 'posting the expired token leaves the password unchanged' ((dbq "SELECT password_hash FROM users WHERE id=$($ids.buyer)") -eq $pwBefore) 'password changed through an expired token'
     dbq "DELETE FROM password_resets WHERE token='$expiredHash'" | Out-Null
+
+    "`n--- reset token expiry cannot be moved by an UPDATE ---"
+    # migration 007 exists because expires_at used to be
+    # TIMESTAMP ... ON UPDATE CURRENT_TIMESTAMP. Any UPDATE that touched some
+    # other column silently restamped it to the current time, which brought an
+    # already-expired token back to life. expires_at is DATETIME now, so it
+    # cannot drift no matter what else is updated on the row.
+    $driftRaw = 'drift_reset_token_for_test_0123456789ab'
+    $driftHash = sha256hex $driftRaw
+    dbq "INSERT INTO password_resets (user_id, token, expires_at, created_at) VALUES ($($ids.buyer), '$driftHash', NOW() - INTERVAL 1 HOUR, NOW() - INTERVAL 2 DAY)"
+    $driftBefore = dbq "SELECT expires_at FROM password_resets WHERE token='$driftHash'"
+    # Touch an unrelated column, the way any maintenance query would.
+    dbq "UPDATE password_resets SET created_at = NOW() - INTERVAL 1 DAY WHERE token='$driftHash'" | Out-Null
+    $driftAfter = dbq "SELECT expires_at FROM password_resets WHERE token='$driftHash'"
+    ok 'an UPDATE to another column leaves the reset expiry untouched' ($driftBefore -eq $driftAfter) "expiry moved from '$driftBefore' to '$driftAfter', so an unrelated UPDATE is restamping it"
+    # Compared inside MySQL so the assertion does not lean on the machine's
+    # date parsing or timezone.
+    $driftStillExpired = (dbq "SELECT IFNULL(expires_at < NOW(), 0) FROM password_resets WHERE token='$driftHash'") -eq '1'
+    ok 'the token is still expired after that UPDATE' $driftStillExpired 'the expired token was resurrected'
+    $driftSess = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+    $driftForm = get "$base/reset.php?token=$driftRaw" $driftSess
+    $driftPost = post "$base/reset.php" $driftSess @{
+        csrf_token       = csrf $driftForm
+        token            = $driftRaw
+        password         = 'drifted123'
+        password_confirm = 'drifted123'
+    }
+    ok 'reset.php still refuses a token that was updated after expiry' ($driftPost -match 'expired|Expired|invalid|Invalid') 'an updated-but-expired token was accepted'
+    dbq "DELETE FROM password_resets WHERE token='$driftHash'" | Out-Null
 
     "`n--- login rate limiting ---"
   $rl = New-Object Microsoft.PowerShell.Commands.WebRequestSession

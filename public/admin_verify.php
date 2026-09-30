@@ -59,17 +59,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($action === 'approve') {
                 $pdo->prepare('UPDATE farmer_profiles
-                               SET verification_status = "approved", verified_at = NOW(), verified_by = :admin, rejection_reason = NULL
+                               SET verification_status = \'approved\', verified_at = NOW(), verified_by = :admin, rejection_reason = NULL
                                WHERE user_id = :id')
                     ->execute(['admin' => current_user_id(), 'id' => $uid]);
-                $pdo->prepare('UPDATE users SET status = "active" WHERE id = :id')->execute(['id' => $uid]);
+                $pdo->prepare('UPDATE users SET status = \'active\' WHERE id = :id')->execute(['id' => $uid]);
                 audit_log('verification_approved', 'farmer', $uid,
                     ['verification_status' => 'pending', 'user_status' => $row['user_status']],
                     ['verification_status' => 'approved', 'user_status' => 'active']);
                 $flash = 'Farmer application approved.';
             } else {
                 $pdo->prepare('UPDATE farmer_profiles
-                               SET verification_status = "rejected", verified_at = NOW(), verified_by = :admin, rejection_reason = :reason
+                               SET verification_status = \'rejected\', verified_at = NOW(), verified_by = :admin, rejection_reason = :reason
                                WHERE user_id = :id')
                     ->execute(['admin' => current_user_id(), 'id' => $uid, 'reason' => $reason]);
                 audit_log('verification_rejected', 'farmer', $uid,
@@ -117,9 +117,9 @@ $stmt->execute($params);
 $apps = $stmt->fetchAll();
 
 $counts = [
-    'pending'  => (int) $pdo->query('SELECT COUNT(*) FROM farmer_profiles WHERE verification_status = "pending"')->fetchColumn(),
-    'approved' => (int) $pdo->query('SELECT COUNT(*) FROM farmer_profiles WHERE verification_status = "approved"')->fetchColumn(),
-    'rejected' => (int) $pdo->query('SELECT COUNT(*) FROM farmer_profiles WHERE verification_status = "rejected"')->fetchColumn(),
+    'pending'  => (int) $pdo->query('SELECT COUNT(*) FROM farmer_profiles WHERE verification_status = \'pending\'')->fetchColumn(),
+    'approved' => (int) $pdo->query('SELECT COUNT(*) FROM farmer_profiles WHERE verification_status = \'approved\'')->fetchColumn(),
+    'rejected' => (int) $pdo->query('SELECT COUNT(*) FROM farmer_profiles WHERE verification_status = \'rejected\'')->fetchColumn(),
     'all'      => (int) $pdo->query('SELECT COUNT(*) FROM farmer_profiles')->fetchColumn(),
 ];
 

@@ -32,7 +32,7 @@ if (current_user_role() === 'farmer') {
 
 $pdo = DB::pdo();
 
-$stmt = $pdo->prepare('SELECT id FROM produce_listings WHERE id = :id AND status = "active"');
+$stmt = $pdo->prepare('SELECT id FROM produce_listings WHERE id = :id AND status = \'active\'');
 $stmt->execute(['id' => $listingId]);
 if (!$stmt->fetch()) {
     flash_set('error', 'Listing not found.');

@@ -39,7 +39,7 @@ $stmt = $pdo->prepare(
     'SELECT pl.*, qu.symbol AS unit_symbol FROM produce_listings pl
      JOIN farmer_profiles fp ON pl.farmer_id = fp.user_id
      JOIN quantity_units qu ON pl.unit_id = qu.id
-     WHERE pl.id = :id AND pl.status = "active" AND fp.verification_status = "approved"'
+     WHERE pl.id = :id AND pl.status = \'active\' AND fp.verification_status = \'approved\''
 );
 $stmt->execute(['id' => $listingId]);
 $listing = $stmt->fetch();

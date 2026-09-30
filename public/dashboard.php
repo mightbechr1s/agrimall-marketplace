@@ -53,17 +53,17 @@ if ($role === 'admin') {
             'icon' => 'bi-people'
         ],
         'Pending Verifications' => [
-            'value' => (int) $pdo->query('SELECT COUNT(*) FROM farmer_profiles WHERE verification_status = "pending"')->fetchColumn(),
+            'value' => (int) $pdo->query('SELECT COUNT(*) FROM farmer_profiles WHERE verification_status = \'pending\'')->fetchColumn(),
             'trend' => 'awaiting review',
             'icon' => 'bi-patch-check-fill'
         ],
         'Active Listings' => [
-            'value' => (int) $pdo->query('SELECT COUNT(*) FROM produce_listings WHERE status = "active"')->fetchColumn(),
+            'value' => (int) $pdo->query('SELECT COUNT(*) FROM produce_listings WHERE status = \'active\'')->fetchColumn(),
             'trend' => $listingsNew . ' new this week',
             'icon' => 'bi-basket3-fill'
         ],
         'Pending Orders' => [
-            'value' => (int) $pdo->query('SELECT COUNT(*) FROM orders WHERE status IN ("pending","delivery_fee_review")')->fetchColumn(),
+            'value' => (int) $pdo->query('SELECT COUNT(*) FROM orders WHERE status IN (\'pending\',\'delivery_fee_review\')')->fetchColumn(),
             'trend' => $ordersNew . ' placed this week',
             'icon' => 'bi-clock-history'
         ],
@@ -73,7 +73,7 @@ if ($role === 'admin') {
     $pendingFarmers = $pdo->query('SELECT u.id AS user_id, u.created_at, fp.farm_name, fp.municipality_city, fp.province
                                    FROM farmer_profiles fp
                                    JOIN users u ON u.id = fp.user_id
-                                   WHERE fp.verification_status = "pending"
+                                   WHERE fp.verification_status = \'pending\'
                                    ORDER BY u.created_at ASC LIMIT 5')->fetchAll();
     $recentAudit = $pdo->query('SELECT al.action, al.entity_type, al.entity_id, al.created_at, u.email AS admin_email
                                 FROM admin_audit_log al
@@ -84,17 +84,17 @@ if ($role === 'admin') {
     $pdo = DB::pdo();
     $mine = $pdo->prepare('SELECT COUNT(*) FROM produce_listings WHERE farmer_id = :id');
     $mine->execute(['id' => $userId]);
-    $activeCount = $pdo->prepare('SELECT COUNT(*) FROM produce_listings WHERE farmer_id = :id AND status = "active"');
+    $activeCount = $pdo->prepare('SELECT COUNT(*) FROM produce_listings WHERE farmer_id = :id AND status = \'active\'');
     $activeCount->execute(['id' => $userId]);
-    $pendingOrders = $pdo->prepare('SELECT COUNT(*) FROM v_order_summary WHERE farmer_id = :id AND status IN ("pending","confirmed","preparing")');
+    $pendingOrders = $pdo->prepare('SELECT COUNT(*) FROM v_order_summary WHERE farmer_id = :id AND status IN (\'pending\',\'confirmed\',\'preparing\')');
     $pendingOrders->execute(['id' => $userId]);
 
     // Calculate total earnings and volume sold
-    $earningsStmt = $pdo->prepare('SELECT COALESCE(SUM(o.unit_price * o.quantity + o.delivery_fee), 0) FROM orders o JOIN v_order_summary vos ON o.id = vos.id WHERE vos.farmer_id = :id AND vos.status NOT IN ("cancelled","rejected")');
+    $earningsStmt = $pdo->prepare('SELECT COALESCE(SUM(o.unit_price * o.quantity + o.delivery_fee), 0) FROM orders o JOIN v_order_summary vos ON o.id = vos.id WHERE vos.farmer_id = :id AND vos.status NOT IN (\'cancelled\',\'rejected\')');
     $earningsStmt->execute(['id' => $userId]);
     $totalEarnings = money((float) $earningsStmt->fetchColumn());
 
-    $volumeStmt = $pdo->prepare('SELECT COALESCE(SUM(o.quantity), 0) FROM orders o JOIN v_order_summary vos ON o.id = vos.id WHERE vos.farmer_id = :id AND vos.status NOT IN ("cancelled","rejected")');
+    $volumeStmt = $pdo->prepare('SELECT COALESCE(SUM(o.quantity), 0) FROM orders o JOIN v_order_summary vos ON o.id = vos.id WHERE vos.farmer_id = :id AND vos.status NOT IN (\'cancelled\',\'rejected\')');
     $volumeStmt->execute(['id' => $userId]);
     $totalVolume = rtrim(rtrim(number_format((float) $volumeStmt->fetchColumn(), 2), '0'), '.') . ' units';
 

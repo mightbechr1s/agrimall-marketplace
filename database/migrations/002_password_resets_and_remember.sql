@@ -8,7 +8,12 @@ CREATE TABLE IF NOT EXISTS `password_resets` (
   `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id`    BIGINT UNSIGNED NOT NULL,
   `token`      VARCHAR(128)    NOT NULL,
-  `expires_at` TIMESTAMP       NOT NULL,
+  -- DATETIME, not TIMESTAMP: this server runs
+  -- explicit_defaults_for_timestamp=0, which rewrites a bare TIMESTAMP column
+  -- into `DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`. On a reset
+  -- token that would let any UPDATE silently extend the expiry. See migration
+  -- 007, which repairs databases already built with the old definition.
+  `expires_at` DATETIME        NOT NULL,
   `created_at` TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_pwreset_token` (`token`),

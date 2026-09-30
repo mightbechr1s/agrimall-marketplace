@@ -65,12 +65,12 @@ $cancelRoles = ['buyer' => 'Buyer', 'farmer' => 'Farmer', 'admin' => 'Admin'];
 $farmers = $pdo->query(
     'SELECT u.id, COALESCE(fp.farm_name, u.email) AS label
      FROM users u LEFT JOIN farmer_profiles fp ON fp.user_id = u.id
-     WHERE u.role = "farmer" ORDER BY label'
+     WHERE u.role = \'farmer\' ORDER BY label'
 )->fetchAll();
 $buyers = $pdo->query(
     'SELECT u.id, COALESCE(bp.full_name, u.email) AS label
      FROM users u LEFT JOIN buyer_profiles bp ON bp.user_id = u.id
-     WHERE u.role = "buyer" ORDER BY label'
+     WHERE u.role = \'buyer\' ORDER BY label'
 )->fetchAll();
 $reviewers = $pdo->query(
     'SELECT DISTINCT u.id, u.email FROM farmer_profiles fp
@@ -78,7 +78,7 @@ $reviewers = $pdo->query(
 )->fetchAll();
 $stages = $pdo->query(
     'SELECT DISTINCT from_status FROM order_status_history
-     WHERE to_status = "cancelled" AND from_status IS NOT NULL ORDER BY from_status'
+     WHERE to_status = \'cancelled\' AND from_status IS NOT NULL ORDER BY from_status'
 )->fetchAll(PDO::FETCH_COLUMN);
 
 // ---- Filters ----------------------------------------------------------------
@@ -319,12 +319,12 @@ if ($type === 'registration') {
                    COALESCE(bp.full_name, ub.email) AS buyer, COALESCE(fp.farm_name, uf.email) AS farmer,
                    osh.from_status AS stage
             FROM orders o
-            LEFT JOIN order_status_history osh ON osh.order_id = o.id AND osh.to_status = "cancelled"
+            LEFT JOIN order_status_history osh ON osh.order_id = o.id AND osh.to_status = \'cancelled\'
             LEFT JOIN users ub ON ub.id = o.buyer_id
             LEFT JOIN buyer_profiles bp ON bp.user_id = o.buyer_id
             LEFT JOIN users uf ON uf.id = o.farmer_id
             LEFT JOIN farmer_profiles fp ON fp.user_id = o.farmer_id
-            WHERE o.status = "cancelled"';
+            WHERE o.status = \'cancelled\'';
     if ($where) {
         $sql .= ' AND ' . implode(' AND ', $where);
     }

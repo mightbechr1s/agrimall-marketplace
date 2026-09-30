@@ -437,6 +437,7 @@ return [
             'unavailable' => [
                 'title' => 'Marketplace unavailable',
                 'message' => 'We could not load the listings right now. Please try again in a moment.',
+                'retry' => 'Retry',
             ],
             '404' => [
                 'title' => 'Page Not Found',
@@ -451,10 +452,11 @@ return [
             'unavailable' => [
                 'title' => 'Hindi available ang Marketplace',
                 'message' => 'Hindi namin ma-load ang mga listing sa ngayon. Pakisubukan muli sa ilang sandali.',
+                'retry' => 'Pakisubukan muli',
             ],
             '404' => [
                 'title' => 'Hindi Nauukol ang Pahina',
-                'message' => 'Ang pahina na hinahanap mo ay hindi nabubuo o nawala na.',
+                'message' => 'Ang pahina na hinahanap mo ay hindi umiiral o nawala na.',
                 'cta_home' => 'Pumunta sa Bahay',
                 'cta_browse' => 'Mag-browse ng mga Listing',
                 'help_text' => 'Kung ito ay isang kamalian, mangyaring',
@@ -708,6 +710,9 @@ return [
         'max_qty' => 'Maximum Order Quantity (optional)',
         'harvest_date' => 'Harvest Date (optional)',
         'expiry_date' => 'Expiry Date (optional)',
+        'err_harvest_past' => 'Harvest date cannot be in the past.',
+        'err_expiry_past' => 'Expiry date cannot be in the past.',
+        'err_expiry_before_harvest' => 'Expiry date must be on or after the harvest date.',
         'organic' => 'Organic',
         'primary_image' => 'Primary Image (optional)',
         'img_max' => 'Max size: 5MB. Allowed types: JPG, PNG, WebP',
@@ -750,6 +755,9 @@ return [
         'max_qty' => 'Maximum Order Quantity (opsyonal)',
         'harvest_date' => 'Petsa ng Ani (opsyonal)',
         'expiry_date' => 'Petsa ng Expiry (opsyonal)',
+        'err_harvest_past' => 'Hindi maaaring nakaraan ang petsa ng ani.',
+        'err_expiry_past' => 'Hindi maaaring nakaraan ang petsa ng expiry.',
+        'err_expiry_before_harvest' => 'Ang petsa ng expiry ay dapat pagkatapos o sa parehong araw ng petsa ng ani.',
         'organic' => 'Organik',
         'primary_image' => 'Pangunahing Larawan (opsyonal)',
         'img_max' => 'Max size: 5MB. Allow na types: JPG, PNG, WebP',
