@@ -18,6 +18,18 @@ C:\xampp\php
 C:\xampp\mysql\bin
 ```
 
+The `php` that **PATH** resolves to must be the XAMPP build. If some other
+PHP comes first — a winget or Scoop install, a version manager — it wins, and
+the pages that need `mbstring` (the dashboard) fail with a **blank white page**
+rather than a readable error. Preflight before blaming the app:
+
+```powershell
+php -r "echo extension_loaded('mbstring') ? 'ok' : 'MISSING mbstring';"
+```
+
+If that prints `MISSING`, call the full `C:\xampp\php\php.exe` path in every
+command below — including `npm run dev`, which resolves `php` from PATH.
+
 ---
 
 ## 2. Get the project (clone, then pull for updates)
