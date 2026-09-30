@@ -802,7 +802,7 @@ return [
     ],
     'account' => [
         'en' => [
-            'page_title' => 'Account',
+            'page_title' => 'Profile & Security',
             'page_description' => 'Manage your name, sign-in email and password.',
             'section_profile' => 'Profile',
             'label_email' => 'Email address',
@@ -848,7 +848,7 @@ return [
             'danger_admin_blocked' => 'Administrator accounts cannot be deleted from here.',
         ],
         'tl' => [
-            'page_title' => 'Account',
+            'page_title' => 'Profile at Seguridad',
             'page_description' => 'Pamahalaan ang iyong pangalan, email at password sa pag-login.',
             'section_profile' => 'Profile',
             'label_email' => 'Email address',
@@ -896,7 +896,7 @@ return [
     ],
     'settings' => [
         'en' => [
-            'page_title' => 'Settings',
+            'page_title' => 'Preferences',
             'page_description' => 'Manage your account preferences.',
             'legend_locale' => 'Language',
             'label_locale' => 'Language',
@@ -917,12 +917,12 @@ return [
             'larger_text' => 'Larger text',
             'button_save' => 'Save changes',
             'button_cancel' => 'Cancel',
-            'nav_settings' => 'Settings',
+            'nav_settings' => 'Preferences',
             'saved_success' => 'Settings saved successfully.',
             'save_error' => 'Could not save settings. Please try again.',
         ],
         'tl' => [
-            'page_title' => 'Mga Setting',
+            'page_title' => 'Mga Kagustuhan',
             'page_description' => 'Mga-kwenti ang iyong mga pagpapreferensya.',
             'legend_locale' => 'Wika',
             'label_locale' => 'Wika',
@@ -943,7 +943,7 @@ return [
             'larger_text' => 'Lalong malaking teksto',
             'button_save' => 'I-save ang mga pagbabago',
             'button_cancel' => 'Kanselahin',
-            'nav_settings' => 'Mga setting',
+            'nav_settings' => 'Mga kagustuhan',
             'saved_success' => 'Nag-save nang tagumpay ang iyong setting.',
             'save_error' => 'Hindi naka-save ang setting. Pakisubukan muli.',
         ],
@@ -1026,7 +1026,7 @@ return [
     ],
 
     'dashboard_nav' => [
-        'en' => ['dashboard' => 'Dashboard', 'listings' => 'My Listings', 'create_listing' => 'New Listing', 'orders' => 'Orders', 'analytics' => 'Analytics', 'browse' => 'Browse', 'cart' => 'Cart', 'saved' => 'Saved', 'users' => 'Users', 'verifications' => 'Verifications', 'audit' => 'Audit Log', 'reports' => 'Reports', 'categories' => 'Categories', 'theme' => 'Theme', 'animations' => 'Animation only', 'settings' => 'Settings', 'logout' => 'Log out', 'home' => 'Back to site', 'account' => 'Account Management'],
-        'tl' => ['dashboard' => 'Dashboard', 'listings' => 'Aking mga listing', 'create_listing' => 'Bagong listing', 'orders' => 'Mga order', 'analytics' => 'Analytics', 'browse' => 'Mag-browse', 'cart' => 'Cart', 'saved' => 'Naka-save', 'users' => 'Mga user', 'verifications' => 'Mga beripikasyon', 'audit' => 'Audit log', 'reports' => 'Mga ulat', 'categories' => 'Mga kategorya', 'theme' => 'Hitsura', 'animations' => 'Animation only', 'settings' => 'Mga setting', 'logout' => 'Mag-log out', 'home' => 'Bumalik sa site', 'account' => 'Pamamahala ng account'],
+        'en' => ['dashboard' => 'Dashboard', 'listings' => 'My Listings', 'create_listing' => 'New Listing', 'orders' => 'Orders', 'analytics' => 'Analytics', 'browse' => 'Browse', 'cart' => 'Cart', 'saved' => 'Saved', 'users' => 'Users', 'verifications' => 'Verifications', 'audit' => 'Audit Log', 'reports' => 'Reports', 'categories' => 'Categories', 'theme' => 'Theme', 'animations' => 'Animation only', 'settings' => 'Preferences', 'logout' => 'Log out', 'home' => 'Back to site', 'account' => 'Profile & Security'],
+        'tl' => ['dashboard' => 'Dashboard', 'listings' => 'Aking mga listing', 'create_listing' => 'Bagong listing', 'orders' => 'Mga order', 'analytics' => 'Analytics', 'browse' => 'Mag-browse', 'cart' => 'Cart', 'saved' => 'Naka-save', 'users' => 'Mga user', 'verifications' => 'Mga beripikasyon', 'audit' => 'Audit log', 'reports' => 'Mga ulat', 'categories' => 'Mga kategorya', 'theme' => 'Hitsura', 'animations' => 'Animation only', 'settings' => 'Mga kagustuhan', 'logout' => 'Mag-log out', 'home' => 'Bumalik sa site', 'account' => 'Profile at Seguridad'],
     ],
 ];

@@ -337,7 +337,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
               </li>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item" href="dashboard.php"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a></li>
-              <li><a class="dropdown-item" href="settings.php"><i class="bi bi-gear me-2"></i>Settings</a></li>
+              <li><a class="dropdown-item" href="settings.php"><i class="bi bi-gear me-2"></i><?= t($i18nCopy['settings'], 'nav_settings') ?></a></li>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item" href="logout.php"><i class="bi bi-box-arrow-left me-2"></i>Log out</a></li>
             </ul>

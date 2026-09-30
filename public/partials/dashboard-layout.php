@@ -205,9 +205,6 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
                 <i class="bi bi-moon icon-moon" aria-hidden="true"></i>
                 <i class="bi bi-sun icon-sun" aria-hidden="true"></i>
             </button>
-            <a class="sidebar-icon-btn" href="settings.php" aria-label="Settings">
-                <i class="bi bi-gear" aria-hidden="true"></i>
-            </a>
             <?php
             $unreadCount = unread_notification_count((int) current_user_id());
             $notifLabel = $unreadCount > 0
