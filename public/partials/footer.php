@@ -37,8 +37,8 @@ $footerCopy = $copy['footer'] ?? [
 ];
 $f = function ($key) use ($footerCopy) { return t($footerCopy, $key); };
 $cookieCopy = $copy['cookie'] ?? [
-    'en' => ['text' => 'We use essential cookies to make this site work and optional analytics cookies to improve your experience.', 'learn_more' => 'Learn more', 'accept' => 'Accept'],
-    'tl' => ['text' => 'Gumagamit kami ng mga essential cookies para gumana ang site at optional analytics cookies para mapabuti ang iyong karanasan.', 'learn_more' => 'Matuto pa', 'accept' => 'Tanggapin'],
+'en' => ['text' => 'We use essential cookies to make this site work and optional analytics cookies to improve your experience.', 'learn_more' => 'Learn more', 'accept' => 'Accept', 'decline' => 'Decline'],
+      'tl' => ['text' => 'Gumagamit kami ng mga essential cookies para gumana ang site at optional analytics cookies para mapabuti ang iyong karanasan.', 'learn_more' => 'Matuto pa', 'accept' => 'Tanggapin', 'decline' => 'Tanggihan'],
 ];
 $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
 ?>
@@ -89,9 +89,10 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
             <?= $ck('text') ?>
             <a href="cookies.php"><?= $ck('learn_more') ?></a>
         </p>
-        <div class="cookie-banner__actions">
-            <button type="button" class="btn btn-primary btn-sm" data-cookie-accept><?= $ck('accept') ?></button>
-        </div>
+<div class="cookie-banner__actions">
+              <button type="button" class="btn btn-primary btn-sm" data-cookie-accept><?= $ck('accept') ?></button>
+              <button type="button" class="btn btn-sm cookie-banner__decline" data-cookie-decline><?= $ck('decline') ?></button>
+          </div>
     </div>
 </div>
 

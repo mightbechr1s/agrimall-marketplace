@@ -387,21 +387,54 @@
 }
 
 /* ────────────────────────────────────────────────────────────
-   6. COOKIE BANNER — floating card, bottom-left
+   6. COOKIE BANNER — full-width bar along the bottom
    JS toggles .show
 ──────────────────────────────────────────────────────────── */
 .cookie-banner {
-  position: fixed; bottom: 16px; left: 16px; right: auto;
-  max-width: 22rem;
-  padding: 16px 20px;
-  background: var(--paper); border: 1px solid var(--borders);
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 14px 16px;
+  background: var(--paper);
+  /* styles.css puts a border on all four sides; this bar wants the top edge only */
+  border: 0 !important;
+  border-top: 1px solid var(--borders) !important;
   z-index: 1070;
   opacity: 0; transform: translateY(16px);
+  /* opacity alone would still intercept clicks while hidden */
+  visibility: hidden;
   transition: opacity var(--dur-moderate) var(--ease-enter),
-              transform var(--dur-moderate) var(--ease-enter);
+              transform var(--dur-moderate) var(--ease-enter),
+              visibility 0s linear var(--dur-moderate);
 }
 .cookie-banner.show {
   opacity: 1; transform: translateY(0);
+  visibility: visible;
+  transition-delay: 0s;
+}
+/* gutter and max-width match .nav-inner */
+.cookie-banner__content {
+  display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: flex-start; gap: 10px 16px;
+  max-width: 1440px; margin: 0 auto;
+}
+/* design-system.css overrides .btn padding and min-height with !important */
+.cookie-banner__actions .btn {
+  padding: 0.5rem 1.25rem !important;
+  font-size: 0.875rem;
+}
+.cookie-banner__actions {
+  display: flex; align-items: center; gap: 8px;
+}
+/* --danger already flips for dark mode; scoped deeper than .btn to win !important */
+.cookie-banner .cookie-banner__decline {
+  border: 1px solid var(--danger) !important;
+  color: var(--danger) !important;
+  background: var(--paper) !important;
+}
+.cookie-banner .cookie-banner__decline:hover,
+.cookie-banner .cookie-banner__decline:focus-visible {
+  background: var(--danger) !important;
+  border-color: var(--danger) !important;
+  color: var(--paper) !important;
 }
 
 /* ────────────────────────────────────────────────────────────

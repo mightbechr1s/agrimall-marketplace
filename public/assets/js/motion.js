@@ -4,21 +4,26 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
 
 /* ── Cookie banner ────────────────────────────────────────── */
 function initCookieBanner() {
+  // key value lives in visitors' localStorage; changing it re-shows the banner
   const COOKIE_KEY = 'animCk';
   const cookieBanner = document.getElementById('cookie-banner');
   if (!cookieBanner) return;
-  if (localStorage.getItem(COOKIE_KEY) === '1') return;
+  // '1' accepted, '0' declined; either value counts as a choice made
+  if (localStorage.getItem(COOKIE_KEY)) return;
   const acceptBtn = cookieBanner.querySelector('[data-cookie-accept]');
   if (!acceptBtn) return;
-  cookieBanner.classList.add('show');
-  acceptBtn.addEventListener('click', () => {
-    localStorage.setItem(COOKIE_KEY, '1');
+  const dismiss = (choice) => {
+    localStorage.setItem(COOKIE_KEY, choice);
     cookieBanner.classList.remove('show');
     cookieBanner.classList.add('hide');
     cookieBanner.addEventListener('transitionend', () => {
       cookieBanner.style.display = 'none';
     }, { once: true });
-  });
+  };
+  cookieBanner.classList.add('show');
+  acceptBtn.addEventListener('click', () => dismiss('1'));
+  const declineBtn = cookieBanner.querySelector('[data-cookie-decline]');
+  if (declineBtn) declineBtn.addEventListener('click', () => dismiss('0'));
 }
 
 /* ── Scroll reveals (opt-in [data-reveal]) ────────────────── */

@@ -114,7 +114,7 @@ require __DIR__ . '/partials/header.php';
                                 <tr><th>Key</th><th>Purpose</th><th>Expires</th></tr>
                             </thead>
                             <tbody>
-                                <tr><td><code>animCk</code></td><td>Remembers you accepted the cookie banner</td><td>No expiry (until cleared)</td></tr>
+                                <tr><td><code>animCk</code></td><td>Remembers your cookie banner choice: <code>"1"</code> accepted, <code>"0"</code> declined</td><td>No expiry (until cleared)</td></tr>
                                 <tr><td><code>animal_theme</code></td><td>Remembers light/dark preference</td><td>No expiry</td></tr>
                                 <tr><td><code>animations</code></td><td>Remembers whether animations are on or off</td><td>No expiry</td></tr>
                             </tbody>
@@ -127,7 +127,7 @@ require __DIR__ . '/partials/header.php';
 
                     <section class="legal-block" data-reveal>
                         <h2 id="the-cookie-banner">3. The cookie banner</h2>
-                        <p>On your first visit, a banner appears at the bottom of the page. It explains what we use and links to this policy. Clicking "Accept" sets <code>localStorage.animCk = "1"</code> and hides the banner. You can clear this anytime in your browser settings to see the banner again.</p>
+                        <p>On your first visit, a banner appears at the bottom of the page. It explains what we use and links to this policy. Clicking "Accept" sets <code>localStorage.animCk = "1"</code> and hides the banner. Clicking "Decline" refuses optional cookies and sets <code>localStorage.animCk = "0"</code>; essential cookies still work and no analytics is loaded. Either way the banner stays dismissed. You can clear this anytime in your browser settings to see the banner again.</p>
                         <p>If you have "Do Not Track" or "Reduce Motion" enabled, the banner still appears but without animation.</p>
                     </section>
 

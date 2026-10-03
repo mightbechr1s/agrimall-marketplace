@@ -470,11 +470,13 @@ return [
             'text' => 'We use essential cookies to make this site work and optional analytics cookies to improve your experience.',
             'learn_more' => 'Learn more',
             'accept' => 'Accept',
+            'decline' => 'Decline',
         ],
         'tl' => [
             'text' => 'Gumagamit kami ng mga essential cookies para gumana ang site at optional analytics cookies para mapabuti ang iyong karanasan.',
             'learn_more' => 'Matuto pa',
             'accept' => 'Tanggapin',
+            'decline' => 'Tanggihan',
         ],
     ],
 
