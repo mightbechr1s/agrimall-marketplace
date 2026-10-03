@@ -242,6 +242,20 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
         </div>
     </header>
 
+    <?php
+      // mirrors partials/header.php; flash_get() clears the message, so whichever
+      // layout runs first renders it
+      if ($flashSuccess = flash_get('success')): ?>
+      <div class="container px-3 pt-3">
+        <div class="alert alert-success alert-dismissible fade show" role="alert"><?= e($flashSuccess) ?></div>
+      </div>
+    <?php endif; ?>
+    <?php if ($flashError = flash_get('error')): ?>
+      <div class="container px-3 pt-3">
+        <div class="alert alert-danger alert-dismissible fade show" role="alert"><?= e($flashError) ?></div>
+      </div>
+    <?php endif; ?>
+
     <!-- Page content injected here by including script -->
     <main id="main-content" class="sidebar-content role-<?= e($role) ?>">
 

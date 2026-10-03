@@ -11,7 +11,7 @@ csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
 
 $action = $_POST['action'] ?? '';
 $itemId = (int) ($_POST['item_id'] ?? 0);
-$quantity = (float) ($_POST['quantity'] ?? 0);
+$quantity = number_in($_POST['quantity'] ?? null, 0.0001, MAX_QUANTITY);
 $buyerId = current_user_id();
 $pdo = DB::pdo();
 
@@ -29,7 +29,7 @@ if ($action === 'clear') {
     redirect_to('cart.php');
 }
 
-if ($action === 'update' && $itemId > 0 && $quantity > 0) {
+if ($action === 'update' && $itemId > 0 && $quantity !== null) {
     $stmt = $pdo->prepare(
         'SELECT ci.id, ci.listing_id, ci.quantity, pl.minimum_order_qty, pl.maximum_order_qty, pl.available_quantity, qu.symbol
          FROM cart_items ci

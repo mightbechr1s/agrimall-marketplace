@@ -37,10 +37,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $unitId = (int) ($_POST['unit_id'] ?? 0);
     $name = trim((string) ($_POST['name'] ?? ''));
     $description = trim((string) ($_POST['description'] ?? ''));
-    $pricePerUnit = (float) ($_POST['price_per_unit'] ?? 0);
-    $availableQuantity = (float) ($_POST['available_quantity'] ?? 0);
-    $minimumOrderQty = (float) ($_POST['minimum_order_qty'] ?? 0);
-    $maximumOrderQty = ($_POST['maximum_order_qty'] ?? '') !== '' ? (float) $_POST['maximum_order_qty'] : null;
+    $pricePerUnit = number_in($_POST['price_per_unit'] ?? null, 0.01, MAX_DELIVERY_FEE);
+    $availableQuantity = number_in($_POST['available_quantity'] ?? null, 0, MAX_QUANTITY);
+    $minimumOrderQty = number_in($_POST['minimum_order_qty'] ?? null, 0.0001, MAX_QUANTITY);
+    $maxQtyRaw = $_POST['maximum_order_qty'] ?? '';
+    $maximumOrderQty = $maxQtyRaw !== '' ? number_in($maxQtyRaw, 0.0001, MAX_QUANTITY) : null;
+    $maxQtyInvalid = $maxQtyRaw !== '' && $maximumOrderQty === null;
     $harvestDate = ($_POST['harvest_date'] ?? '') !== '' ? (string) $_POST['harvest_date'] : null;
     $expiryDate = ($_POST['expiry_date'] ?? '') !== '' ? (string) $_POST['expiry_date'] : null;
     $isOrganic = isset($_POST['is_organic']) && $_POST['is_organic'] === '1' ? 1 : 0;
@@ -58,19 +60,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = $l($copy['lf'], 'err_name');
     }
 
-    if ($pricePerUnit <= 0) {
+    if ($pricePerUnit === null) {
         $errors[] = $l($copy['lf'], 'err_price');
     }
 
-    if ($availableQuantity < 0) {
+    if ($availableQuantity === null) {
         $errors[] = $l($copy['lf'], 'err_qty');
     }
 
-    if ($minimumOrderQty <= 0) {
+    if ($minimumOrderQty === null) {
         $errors[] = $l($copy['lf'], 'err_min_qty');
     }
 
-    if ($maximumOrderQty !== null && $maximumOrderQty < $minimumOrderQty) {
+    if ($maxQtyInvalid || ($maximumOrderQty !== null && $maximumOrderQty < $minimumOrderQty)) {
         $errors[] = $l($copy['lf'], 'err_max_qty');
     }
 

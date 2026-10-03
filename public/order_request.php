@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
 
 $listingId = (int) ($_POST['listing_id'] ?? 0);
-$quantity  = (float) ($_POST['quantity'] ?? 0);
+$quantity  = number_in($_POST['quantity'] ?? null, 0.0001, MAX_QUANTITY);
 $method    = ($_POST['delivery_method'] ?? 'pickup') === 'farmer_delivery' ? 'farmer_delivery' : 'pickup';
 $address   = trim((string) ($_POST['delivery_address'] ?? ''));
 $pickupDate = (string) ($_POST['preferred_pickup_date'] ?? '');
@@ -22,9 +22,10 @@ $pdo = DB::pdo();
 $pdo->beginTransaction();
 try {
     $stmt = $pdo->prepare(
-        'SELECT pl.*, fp.verification_status AS farm_verification
+        'SELECT pl.*, fp.verification_status AS farm_verification, qu.symbol AS unit_symbol
          FROM produce_listings pl
          JOIN farmer_profiles fp ON pl.farmer_id = fp.user_id
+         JOIN quantity_units qu ON pl.unit_id = qu.id
          WHERE pl.id = :id FOR UPDATE'
     );
     $stmt->execute(['id' => $listingId]);
@@ -38,19 +39,19 @@ try {
     if ((int) $listing['farmer_id'] === current_user_id()) {
         throw new RuntimeException('You cannot order your own listing.');
     }
-    if ($quantity <= 0) {
-        throw new RuntimeException('Quantity must be greater than zero.');
+    if ($listingId <= 0 || $quantity === null) {
+        throw new RuntimeException('Enter a valid quantity.');
     }
     $min = (float) $listing['minimum_order_qty'];
     $max = $listing['maximum_order_qty'] === null ? null : (float) $listing['maximum_order_qty'];
     if ($quantity < $min) {
-        throw new RuntimeException('Minimum order is ' . $listing['minimum_order_qty'] . ' ' . $listing['unit_symbol'] . '.');
+        throw new RuntimeException('Minimum order is ' . qty_str($listing['minimum_order_qty']) . ' ' . e($listing['unit_symbol']) . '.');
     }
     if ($max !== null && $quantity > $max) {
-        throw new RuntimeException('Maximum order is ' . $listing['maximum_order_qty'] . ' ' . $listing['unit_symbol'] . '.');
+        throw new RuntimeException('Maximum order is ' . qty_str($listing['maximum_order_qty']) . ' ' . e($listing['unit_symbol']) . '.');
     }
     if ($quantity > (float) $listing['available_quantity']) {
-        throw new RuntimeException('Only ' . $listing['available_quantity'] . ' ' . $listing['unit_symbol'] . ' available.');
+        throw new RuntimeException('Only ' . qty_str($listing['available_quantity']) . ' ' . e($listing['unit_symbol']) . ' available.');
     }
     if ($method === 'farmer_delivery' && mb_strlen($address) < 5) {
         throw new RuntimeException('Please provide a delivery address for farmer delivery.');

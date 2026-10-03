@@ -31,6 +31,32 @@ const FIELD_LIMITS = [
 /** Upper bound for a farmer-set delivery fee, in PHP. */
 const MAX_DELIVERY_FEE = 1000000;
 
+/** Upper sanity bound for any submitted quantity, in PHP. */
+const MAX_QUANTITY = 1000000;
+
+/**
+ * Bounded numeric reader for untrusted input.
+ *
+ * Returns null unless $raw is a plain decimal inside [$min, $max]; a bare
+ * (float) cast would pass '12abc' as 12 and '1e999' as INF.
+ */
+function number_in($raw, float $min, float $max): ?float
+{
+    if (is_int($raw) || is_float($raw)) {
+        $n = (float) $raw;
+        return is_finite($n) && $n >= $min && $n <= $max ? $n : null;
+    }
+    if (!is_string($raw)) {
+        return null;
+    }
+    $s = trim($raw);
+    if ($s === '' || !preg_match('/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/', $s)) {
+        return null;
+    }
+    $n = (float) $s;
+    return is_finite($n) && $n >= $min && $n <= $max ? $n : null;
+}
+
 /** Return [field => max] for submitted fields that exceed FIELD_LIMITS. */
 function over_limit_fields(array $input): array
 {
@@ -274,6 +300,12 @@ function asset(string $path): string
 function money($amount): string
 {
     return '₱' . number_format((float) $amount, 2, '.', ',');
+}
+
+/** Quantity for display: DECIMAL(10,4) arrives as "2.0000", shown as "2". */
+function qty_str($value): string
+{
+    return rtrim(rtrim(number_format((float) $value, 4), '0'), '.');
 }
 
 /**

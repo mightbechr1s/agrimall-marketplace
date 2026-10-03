@@ -16,6 +16,7 @@ fresh rebuild only needs that one command.
 | `005_notifications.sql` | `notifications` table |
 | `006_account_deletion.sql` | `users.anonymized_at`; adds `'anonymized'` to the `users.status` enum |
 | `007_password_reset_expiry.sql` | rewrites `password_resets.expires_at` as `DATETIME` |
+| `008_numeric_check_constraints.sql` | `CHECK` constraints on the money and quantity columns of `produce_listings`, `cart_items` and `orders` |
 
 There is no `001`. Numbering starts at `002` because the base tables it would
 have followed are now folded into `schema.sql`.
@@ -34,8 +35,9 @@ whole set twice more:
 | `005_notifications.sql` | clean |
 | `006_account_deletion.sql` | clean |
 | `007_password_reset_expiry.sql` | clean |
+| `008_numeric_check_constraints.sql` | clean |
 
-Also verified by re-applying all six to the live database, which already had
+Also verified by re-applying all seven to the live database, which already had
 them: every file exited 0 and the schema and row counts were unchanged.
 
 The unguarded forms do not survive a second run. `006` originally used a bare
@@ -56,8 +58,9 @@ this and failed with `ERROR 1046 No database selected` when run without one.
 
 ## Applied state
 
-The live development database has all six applied. Last confirmed 2026-09-30:
-21 tables in total, and `password_resets.expires_at` is `DATETIME`:
+The live development database has all eight applied. Last confirmed 2026-10-03:
+21 tables plus 2 views, `password_resets.expires_at` is `DATETIME`, and the
+eight `CHECK` constraints from `008` are present.
 
 ```sql
 SELECT COLUMN_NAME, DATA_TYPE, EXTRA
@@ -83,7 +86,40 @@ dump, carries the corrected definition too.
 
 ## Adding a new migration
 
-Number it `008_`, give it a filename that says what it changes, and add a row
+Number it `009_`, give it a filename that says what it changes, and add a row
 to the table above. It has to be safe to run against a database that does not
 have it, and against one that does, because `db-reset.php` replays the whole
 directory every time someone rebuilds.
+
+### Why 008 exists
+
+`src/functions.php::number_in()` now reads every submitted quantity and price,
+because a bare `(float)` cast cannot validate anything: `(float)'abc'` is
+`0.0`, `(float)'12abc'` is `12.0`, and `(float)'1e999'` is `INF`, which
+satisfies every `> 0` comparison. The worst case was `available_quantity`,
+whose check read `$availableQuantity < 0` — unparseable input produced
+`null`, and `null < 0` is false, so the bad value passed validation and was
+written out.
+
+`008` puts the same floor in the database, so MariaDB refuses a bad
+`INSERT`/`UPDATE` regardless of which endpoint issued it. `number_in()` stays
+the first line of defence and supplies the user-facing message; these
+constraints are the backstop. Verify them with:
+
+```sql
+SELECT TABLE_NAME, CONSTRAINT_NAME
+  FROM information_schema.TABLE_CONSTRAINTS
+ WHERE CONSTRAINT_SCHEMA = 'animal_marketplace'
+   AND CONSTRAINT_TYPE = 'CHECK'
+ ORDER BY TABLE_NAME, CONSTRAINT_NAME;
+```
+
+Eight rows should come back. `admin_audit_log` also carries two pre-existing
+`CHECK` constraints (`old_values`, `new_values`) that have nothing to do with
+this migration.
+
+Keep one constraint per `ALTER TABLE`, each guarded individually. MariaDB 10.4
+accepts only one `ADD` clause per `ALTER`, and the comma-joined form fails with
+`ERROR 1064`. The tuple spelling `ADD (CONSTRAINT a CHECK (...), CONSTRAINT b
+CHECK (...))` parses without complaint and then silently discards every
+constraint, so the migration reports success and the table stays unprotected.

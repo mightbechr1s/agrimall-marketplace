@@ -31,8 +31,12 @@ if (current_user_role() !== 'buyer') {
 }
 
 $listingId = (int) ($_POST['listing_id'] ?? 0);
-$quantity  = max(0.0001, (float) ($_POST['quantity'] ?? 1));
+$quantity  = number_in($_POST['quantity'] ?? null, 0.0001, MAX_QUANTITY);
 $buyNow    = !empty($_POST['buy_now']);
+
+if ($listingId <= 0 || $quantity === null) {
+    $respond(false, 'Enter a valid quantity.', 'browse.php');
+}
 
 $pdo = DB::pdo();
 $stmt = $pdo->prepare(
@@ -53,14 +57,14 @@ if ((int) $listing['farmer_id'] === current_user_id()) {
 $min = (float) $listing['minimum_order_qty'];
 $max = $listing['maximum_order_qty'] === null ? null : (float) $listing['maximum_order_qty'];
 if ($quantity < $min) {
-    $respond(false, 'Minimum order is ' . $listing['minimum_order_qty'] . ' ' . $listing['unit_symbol'] . '.', 'listing.php?id=' . $listingId);
-}
-if ($max !== null && $quantity > $max) {
-    $respond(false, 'Maximum order is ' . $listing['maximum_order_qty'] . ' ' . $listing['unit_symbol'] . '.', 'listing.php?id=' . $listingId);
-}
-if ($quantity > (float) $listing['available_quantity']) {
-    $respond(false, 'Only ' . $listing['available_quantity'] . ' ' . $listing['unit_symbol'] . ' available.', 'listing.php?id=' . $listingId);
-}
+      $respond(false, 'Minimum order is ' . qty_str($listing['minimum_order_qty']) . ' ' . e($listing['unit_symbol']) . '.', 'listing.php?id=' . $listingId);
+  }
+  if ($max !== null && $quantity > $max) {
+      $respond(false, 'Maximum order is ' . qty_str($listing['maximum_order_qty']) . ' ' . e($listing['unit_symbol']) . '.', 'listing.php?id=' . $listingId);
+  }
+  if ($quantity > (float) $listing['available_quantity']) {
+      $respond(false, 'Only ' . qty_str($listing['available_quantity']) . ' ' . e($listing['unit_symbol']) . ' available.', 'listing.php?id=' . $listingId);
+  }
 
 $pdo->beginTransaction();
 try {

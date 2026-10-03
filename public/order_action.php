@@ -50,10 +50,9 @@ try {
                 throw new RuntimeException('Order cannot be confirmed from status: ' . $oldStatus);
             }
             if ($order['delivery_method'] === 'farmer_delivery') {
-                $fee = (float) ($_POST['delivery_fee'] ?? 0);
-                if ($fee < 0) $fee = 0;
-                if ($fee > MAX_DELIVERY_FEE) {
-                    throw new RuntimeException('Delivery fee exceeds the maximum allowable amount.');
+                $fee = number_in($_POST['delivery_fee'] ?? null, 0, MAX_DELIVERY_FEE);
+                if ($fee === null) {
+                    throw new RuntimeException('Enter a delivery fee between 0 and ' . MAX_DELIVERY_FEE . '.');
                 }
                 $pdo->prepare('UPDATE orders SET delivery_fee = :fee WHERE id = :id')
                     ->execute(['fee' => $fee, 'id' => $orderId]);
@@ -73,8 +72,10 @@ try {
             if ($oldStatus !== 'delivery_fee_review') {
                 throw new RuntimeException('Fee can only be set in delivery_fee_review.');
             }
-            $fee = (float) ($_POST['delivery_fee'] ?? 0);
-            if ($fee < 0) $fee = 0;
+            $fee = number_in($_POST['delivery_fee'] ?? null, 0, MAX_DELIVERY_FEE);
+            if ($fee === null) {
+                throw new RuntimeException('Enter a delivery fee between 0 and ' . MAX_DELIVERY_FEE . '.');
+            }
             $pdo->prepare('UPDATE orders SET delivery_fee = :fee WHERE id = :id')
                 ->execute(['fee' => $fee, 'id' => $orderId]);
             // Remain in delivery_fee_review; buyer will be notified

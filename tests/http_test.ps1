@@ -9,8 +9,7 @@
   ('l', $c) -eq 'x', so the operator filters the array instead of yielding a bool.
 #>
   $ErrorActionPreference = 'Continue'
-  # Paths derive from this script's own location so the suite can live in the
-  # repo instead of a temp directory that gets wiped.
+  # paths derive from the script location
   $repo  = Split-Path -Parent $PSScriptRoot
   $php   = if ($env:ANIMAL_PHP)   { $env:ANIMAL_PHP }   else { 'C:\xampp\php\php.exe' }
   $mysql = if ($env:ANIMAL_MYSQL) { $env:ANIMAL_MYSQL } else { 'C:\xampp\mysql\bin\mysql.exe' }
@@ -67,9 +66,7 @@ try {
   (Get-Content (Join-Path $repo 'database\schema.sql') -Raw) -replace 'animal_marketplace', 'animal_marketplace_test' | & $mysql -u root 2>&1 | Out-Null
   foreach ($m in (Get-ChildItem (Join-Path $repo 'database\migrations\*.sql') | Sort-Object Name)) {
     $r = ((Get-Content $m.FullName -Raw) -replace 'animal_marketplace', 'animal_marketplace_test') | & $mysql -u root --database=animal_marketplace_test 2>&1
-    # Match on ERROR rather than on "any output". A migration is allowed to
-    # print a result set (the older ones emit `SELECT 1` on their no-op
-    # branch), and flagging that as a failure trains you to ignore this line.
+    # a migration may print a result set; only ERROR counts as failure
     if ($r -match 'ERROR') { "MIGRATION FAIL $($m.Name): $r" }
   }
   $ids = & $php (Join-Path $repo 'tests\http_seed.php') 2>&1 | ConvertFrom-Json
@@ -112,8 +109,7 @@ try {
 
     "`n--- marketplace search ---"
     $b = get "$base/browse.php" $s
-    # action="." resolved to the directory, which the router serves as the
-    # landing page, so the query was discarded on every search.
+    # action="." resolved to the directory, so the query was discarded
     ok 'search form targets browse.php, not the directory' ($b -match 'class="search-form"\s+method="get"\s+action="browse\.php"') 'form action is wrong'
     ok 'search form no longer targets the bare directory' (-not ($b -match 'search-form"\s+method="get"\s+action="\."')) 'still submitting to "."'
     $miss = get "$base/browse.php?q=zzz_no_such_item_zzz" $s
@@ -122,21 +118,16 @@ try {
     ok 'a search that matches nothing runs the filter' ($miss -match 'empty-state-title') 'filter did not run'
     ok 'a search miss does not claim the market is empty' ($miss -match 'No results for|empty for') 'still says nothing for sale'
     ok 'the empty state spans the product grid' (($miss -match 'grid-column:\s*1\s*/\s*-1') -and ($miss -match 'empty-state')) 'not spanning the grid, renders flush left'
-    # The shared partial now supplies the size modifier as a real class. It used
-    # to interpolate 'py-5 px-4' into style="padding: ...", which is invalid CSS
-    # the browser dropped, so the size option had never taken effect.
+    # the size modifier was interpolated into style=, which the browser dropped
     ok 'the empty state applies a real size class' ($miss -match 'empty-state--md') 'size modifier is not a usable class'
     ok 'the empty state no longer inlines an invalid padding value' (-not ($miss -match 'style="padding:\s*py-')) 'invalid inline padding is back'
-    # t() resolves a flat key only. A dotted path falls through and renders as
-    # the literal key text, so assert that never reaches the page.
+    # t() resolves flat keys only; a dotted path renders as the key text
     ok 'no copy key leaks into the page as literal text' (-not ($miss -match 'unavailable\.(title|message)')) 'a dotted key path rendered verbatim'
-    # The search input had a placeholder and no label at all, so it had no
-    # accessible name. A placeholder is not one.
+    # a placeholder is not an accessible name
     ok 'the search input has a real label' ($b -match '<label[^>]*for="market-search"') 'input has no accessible name'
     ok 'the search label is not just visually hidden text with no target' ($b -match 'id="market-search"') 'label points at no input'
     ok 'the search placeholder is localised, not hardcoded English' ($b -match 'placeholder="Try mangoes, rice, milk\.\.\."') 'hardcoded placeholder is back'
-    # Scope to the CTA row: the header links to register.php on purpose, so a
-    # page-wide match proves nothing.
+    # scoped to the CTA row; the header links to register.php on purpose
     $missAuth = get "$base/browse.php?q=zzz_no_such_item_zzz" $s
     if (-not $missAuth -or $missAuth -match '^HTTPERR') { throw "signed-in fetch failed, CTA assertions would pass vacuously" }
     $ctaAuth = [regex]::Match($missAuth, '(?s)empty-state-action(.*?)</div>').Groups[1].Value
@@ -153,9 +144,7 @@ try {
     ok 'a logged-out search miss does not offer the dashboard' (-not ($ctaAnon -match 'dashboard\.php')) 'offers dashboard to a visitor'
 
     "`n--- footer seller link ---"
-    # register.php bounces an already-signed-in visitor to the dashboard, so the
-    # footer's "Become a seller" link was a link to nowhere. It must be hidden
-    # for signed-in viewers and still shown to everyone else.
+    # register.php bounces signed-in visitors, so the link is hidden for them
     $footAuth = [regex]::Match($missAuth, '(?s)<footer.*?</footer>').Value
     if (-not $footAuth) { throw "no <footer> found, footer assertions would pass vacuously" }
     $footAnon = [regex]::Match($missAnon, '(?s)<footer.*?</footer>').Value
@@ -266,11 +255,7 @@ try {
   }
 
     "`n--- remember me ---"
-    # remember_resume() only accepts a row whose remember_expires is still in
-    # the future, and the cookie carries the raw token while the column stores
-    # its SHA-256. Both halves are asserted here: an expired token must not
-    # authenticate, and an unexpired one must, so the pair cannot pass just
-    # because the mechanism is broken in some other way.
+    # both halves: an expired token is refused, an unexpired one is accepted
     $rawRemember = 'a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90'
     $rememberHash = sha256hex $rawRemember
     $rmUser = [int](dbq 'SELECT id FROM users WHERE role=''farmer'' AND status=''active'' LIMIT 1')
@@ -290,17 +275,14 @@ try {
     ok 'an unexpired remember-me token does sign the user in' ($rmLive -notmatch 'login\.php') 'valid token was rejected, so the pair above proves nothing'
 
     "`n--- reset token expiry ---"
-    # The round-trip test above covers a fresh token. This one covers the other
-    # half of the guard: a token that is past expires_at must be refused, and
-    # the password must survive the attempt untouched.
+    # other half of the guard: an expired token is refused, the password is unchanged
     $expiredRaw = 'expired_reset_token_for_test_0123456789'
     $expiredHash = sha256hex $expiredRaw
     $pwBefore = dbq "SELECT password_hash FROM users WHERE id=$($ids.buyer)"
     dbq "INSERT INTO password_resets (user_id, token, expires_at) VALUES ($($ids.buyer), '$expiredHash', NOW() - INTERVAL 1 HOUR)"
     $expiredPage = get "$base/reset.php?token=$expiredRaw" (New-Object Microsoft.PowerShell.Commands.WebRequestSession)
     ok 'an expired reset token is reported as such' ($expiredPage -match 'expired|Expired|invalid|Invalid') 'expired token was not rejected'
-    # The form is still served on GET so the page can explain itself; what must
-    # not happen is a POST with that token actually changing the password.
+    # GET still serves the form; a POST with the token must not change the password
     $expiredSess = New-Object Microsoft.PowerShell.Commands.WebRequestSession
     $expiredForm = get "$base/reset.php?token=$expiredRaw" $expiredSess
     $expiredPost = post "$base/reset.php" $expiredSess @{
@@ -314,11 +296,7 @@ try {
     dbq "DELETE FROM password_resets WHERE token='$expiredHash'" | Out-Null
 
     "`n--- reset token expiry cannot be moved by an UPDATE ---"
-    # migration 007 exists because expires_at used to be
-    # TIMESTAMP ... ON UPDATE CURRENT_TIMESTAMP. Any UPDATE that touched some
-    # other column silently restamped it to the current time, which brought an
-    # already-expired token back to life. expires_at is DATETIME now, so it
-    # cannot drift no matter what else is updated on the row.
+    # expires_at is DATETIME now, so an unrelated UPDATE cannot restamp it
     $driftRaw = 'drift_reset_token_for_test_0123456789ab'
     $driftHash = sha256hex $driftRaw
     dbq "INSERT INTO password_resets (user_id, token, expires_at, created_at) VALUES ($($ids.buyer), '$driftHash', NOW() - INTERVAL 1 HOUR, NOW() - INTERVAL 2 DAY)"
@@ -327,8 +305,7 @@ try {
     dbq "UPDATE password_resets SET created_at = NOW() - INTERVAL 1 DAY WHERE token='$driftHash'" | Out-Null
     $driftAfter = dbq "SELECT expires_at FROM password_resets WHERE token='$driftHash'"
     ok 'an UPDATE to another column leaves the reset expiry untouched' ($driftBefore -eq $driftAfter) "expiry moved from '$driftBefore' to '$driftAfter', so an unrelated UPDATE is restamping it"
-    # Compared inside MySQL so the assertion does not lean on the machine's
-    # date parsing or timezone.
+    # compared inside MySQL to avoid machine date parsing
     $driftStillExpired = (dbq "SELECT IFNULL(expires_at < NOW(), 0) FROM password_resets WHERE token='$driftHash'") -eq '1'
     ok 'the token is still expired after that UPDATE' $driftStillExpired 'the expired token was resurrected'
     $driftSess = New-Object Microsoft.PowerShell.Commands.WebRequestSession
@@ -359,6 +336,153 @@ try {
     } catch { $codes += [int]$_.Exception.Response.StatusCode }
   }
   ok 'login is rate limited after 5 attempts' (($codes -contains 429) -or ($codes[5] -eq 429)) ($codes -join ',')
+
+  "`n--- numeric validation (number_in) ---"
+  # quantity and money fields took a bare (float) cast, so '12abc' passed as 12
+
+  $listingId = $ids.listing
+  # $ids.openOrder is a user id; look the order up by its number
+  $orderId = dbq "SELECT id FROM orders WHERE order_number = 'ORD-HTTP1';"
+  $catId  = dbq 'SELECT id FROM produce_categories LIMIT 1;'
+  $unitId = dbq 'SELECT id FROM quantity_units LIMIT 1;'
+  # the seed leaves the quantity columns NULL
+  dbq "UPDATE produce_listings SET available_quantity = 50.0000, minimum_order_qty = 1.0000 WHERE id = $listingId" | Out-Null
+
+  # http-buyer@x.test is anonymized by the deletion tests above; use http-block@x.test
+  $buyerId = dbq "SELECT id FROM users WHERE email = 'http-block@x.test';"
+  $vbu = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+  login 'http-block@x.test' $vbu
+  $cartBefore = [int](dbq "SELECT COUNT(*) FROM cart_items WHERE buyer_id = $buyerId")
+  $form = get "$base/listing.php?id=$listingId" $vbu
+  $t = csrf $form
+  $r = post "$base/cart_add.php" $vbu @{ csrf_token = $t; listing_id = $listingId; quantity = 'abc'; return_to = 'browse.php' }
+  $cartAfter = [int](dbq "SELECT COUNT(*) FROM cart_items WHERE buyer_id = $buyerId")
+  ok 'cart_add refuses a non-numeric quantity' ($r -match 'valid quantity') "response did not carry the validation error"
+  ok 'cart_add wrote no row for a non-numeric quantity' ($cartAfter -eq $cartBefore) "cart rows went $cartBefore -> $cartAfter"
+
+  $form = get "$base/listing.php?id=$listingId" $vbu
+  $t = csrf $form
+  post "$base/cart_add.php" $vbu @{ csrf_token = $t; listing_id = $listingId; quantity = '3'; return_to = 'browse.php' } | Out-Null
+  $cartGood = [int](dbq "SELECT COUNT(*) FROM cart_items WHERE buyer_id = $buyerId")
+  ok 'cart_add still accepts a valid quantity' ($cartGood -eq ($cartBefore + 1)) "expected $($cartBefore + 1) cart rows, found $cartGood"
+
+  # Trailing junk is the case that used to pass silently as the leading number.
+  $form = get "$base/listing.php?id=$listingId" $vbu
+  $t = csrf $form
+  $r = post "$base/cart_add.php" $vbu @{ csrf_token = $t; listing_id = $listingId; quantity = '12abc'; return_to = 'browse.php' }
+  ok 'cart_add refuses trailing junk (12abc)' ($r -match 'valid quantity') "'12abc' was coerced instead of refused"
+
+  # Quantity above the availability ceiling is a range failure, not a coercion one.
+  $form = get "$base/listing.php?id=$listingId" $vbu
+  $t = csrf $form
+  $r = post "$base/cart_add.php" $vbu @{ csrf_token = $t; listing_id = $listingId; quantity = '999999'; return_to = 'browse.php' }
+  ok 'cart_add refuses a quantity above available stock' ($r -match 'available|valid quantity') "an over-order quantity was accepted"
+
+  "`n--- order_request numeric validation ---"
+  $ordersBefore = [int](dbq 'SELECT COUNT(*) FROM orders;')
+  $form = get "$base/listing.php?id=$listingId" $vbu
+  $t = csrf $form
+  $r = post "$base/order_request.php" $vbu @{
+      csrf_token = $t; listing_id = $listingId; quantity = 'not-a-number'
+      delivery_method = 'pickup'; delivery_address = ''; buyer_note = ''
+  }
+  $ordersAfter = [int](dbq 'SELECT COUNT(*) FROM orders;')
+  ok 'order_request refuses a non-numeric quantity' ($r -match 'valid quantity|HTTPERR') "no validation error in the response"
+  ok 'order_request created no order' ($ordersAfter -eq $ordersBefore) "order count went $ordersBefore -> $ordersAfter"
+
+  "`n--- order_request bound messages interpolate the unit ---"
+  # these messages format unit_symbol, which needs the quantity_units join; each case pins its own bounds
+  $symbol = dbq "SELECT qu.symbol FROM produce_listings pl JOIN quantity_units qu ON pl.unit_id=qu.id WHERE pl.id=$listingId;"
+  foreach ($case in @(
+      @{ label = 'below the minimum'; min = 2; max = 5;     avail = 10; qty = '1';  expect = "Minimum order is 2 $symbol." }
+      @{ label = 'above the maximum'; min = 2; max = 5;     avail = 10; qty = '7';  expect = "Maximum order is 5 $symbol." }
+      @{ label = 'above available stock'; min = 1; max = 'NULL'; avail = 10; qty = '50'; expect = "Only 10 $symbol available." }
+  )) {
+      dbq "UPDATE produce_listings SET minimum_order_qty=$($case.min), maximum_order_qty=$($case.max), available_quantity=$($case.avail) WHERE id=$listingId;" | Out-Null
+      $before = [int](dbq 'SELECT COUNT(*) FROM orders;')
+      $form = get "$base/listing.php?id=$listingId" $vbu
+      $t = csrf $form
+      $r = post "$base/order_request.php" $vbu @{
+          csrf_token = $t; listing_id = $listingId; quantity = $case.qty
+          delivery_method = 'pickup'; delivery_address = ''; buyer_note = ''
+      }
+      $after = [int](dbq 'SELECT COUNT(*) FROM orders;')
+      ok "order_request names the unit when the quantity is $($case.label)" ($r -match [regex]::Escape($case.expect)) "expected '$($case.expect)' in the response"
+      ok "order_request created no order when the quantity is $($case.label)" ($after -eq $before) "order count went $before -> $after"
+      ok "order_request leaks no PHP notice when the quantity is $($case.label)" ($r -notmatch 'Undefined array key|Warning:|Fatal error') "engine notice surfaced in the response"
+  }
+  dbq "UPDATE produce_listings SET minimum_order_qty=1, maximum_order_qty=NULL, available_quantity=50 WHERE id=$listingId;" | Out-Null
+
+  "`n--- create_listing numeric validation ---"
+  # failure re-renders the form with HTTP 200, so assert that no row appeared
+  $vfar = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+  login 'http-farmer@x.test' $vfar
+  $newBefore = [int](dbq 'SELECT COUNT(*) FROM produce_listings;')
+  $form = get "$base/create_listing.php" $vfar
+  $t = csrf $form
+  $r = post "$base/create_listing.php" $vfar @{
+      csrf_token = $t; category_id = $catId; unit_id = $unitId; name = 'Garbage Price Listing'
+      price_per_unit = 'free'; available_quantity = '10'; minimum_order_qty = '1'
+      description = 'validation probe'; is_organic = '0'
+  }
+  $newAfter = [int](dbq 'SELECT COUNT(*) FROM produce_listings;')
+  ok 'create_listing refuses a non-numeric price' ($r -match 'name="price_per_unit"') "the form was not re-rendered, so the request may have been gated before validation"
+  ok 'create_listing wrote no listing for a bad price' ($newAfter -eq $newBefore) "listing count went $newBefore -> $newAfter"
+
+  $form = get "$base/create_listing.php" $vfar
+  $t = csrf $form
+  $r = post "$base/create_listing.php" $vfar @{
+      csrf_token = $t; category_id = $catId; unit_id = $unitId; name = 'Valid Price Listing'
+      price_per_unit = '25.50'; available_quantity = '10'; minimum_order_qty = '1'
+      description = 'validation probe'; is_organic = '0'
+  }
+  $newGood = [int](dbq 'SELECT COUNT(*) FROM produce_listings;')
+  ok 'create_listing still accepts a valid price' ($newGood -eq ($newBefore + 1)) "expected $($newBefore + 1) listings, found $newGood"
+
+  "`n--- order_action delivery fee bound ---"
+  # only the confirm branch checked MAX_DELIVERY_FEE
+  dbq "UPDATE orders SET status = 'delivery_fee_review' WHERE id = $orderId" | Out-Null
+  dbq "UPDATE orders SET delivery_fee = 0.00 WHERE id = $orderId" | Out-Null
+  $feeSess = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+  login 'http-farmer@x.test' $feeSess
+  $form = get "$base/order.php?id=$orderId" $feeSess
+  $t = csrf $form
+  # positive control: prove the endpoint is reachable before proving it refuses
+  post "$base/order_action.php" $feeSess @{
+      csrf_token = $t; action = 'set_fee'; order_id = $orderId; delivery_fee = '150.00'
+  } | Out-Null
+  $feeOk = dbq "SELECT delivery_fee FROM orders WHERE id = $orderId"
+  # compare numerically; the DECIMAL scale is an implementation detail
+  ok 'set_fee accepts a fee within range' ([double]$feeOk -eq 150) "fee was written as '$feeOk', so the endpoint is not reachable in this test"
+
+  $form = get "$base/order.php?id=$orderId" $feeSess
+  $t = csrf $form
+  post "$base/order_action.php" $feeSess @{
+      csrf_token = $t; action = 'set_fee'; order_id = $orderId; delivery_fee = '99999999'
+  } | Out-Null
+  $fee = dbq "SELECT delivery_fee FROM orders WHERE id = $orderId"
+  ok 'set_fee refuses a fee above the maximum' ([double]$fee -eq 150) "fee was overwritten to '$fee' by an out-of-range value"
+
+  $form = get "$base/order.php?id=$orderId" $feeSess
+  $t = csrf $form
+  post "$base/order_action.php" $feeSess @{
+      csrf_token = $t; action = 'set_fee'; order_id = $orderId; delivery_fee = '-5'
+  } | Out-Null
+  $feeNeg = dbq "SELECT delivery_fee FROM orders WHERE id = $orderId"
+  ok 'set_fee refuses a negative fee' ([double]$feeNeg -eq 150) "fee was overwritten to '$feeNeg' by a negative value"
+
+  "`n--- migration 008 CHECK constraints ---"
+  # the PHP guard is the first line; these prove the database refuses too
+  $negPrice = (& $mysql -u root animal_marketplace_test -e "UPDATE produce_listings SET price_per_unit = -5 WHERE id = $listingId" 2>&1) | Out-String
+  ok 'the database refuses a negative price' ($negPrice -match 'chk_listing_price_positive') "MySQL did not report the expected constraint failure: $negPrice"
+  $negFee = (& $mysql -u root animal_marketplace_test -e "UPDATE orders SET delivery_fee = -100 WHERE id = $orderId" 2>&1) | Out-String
+  ok 'the database refuses a negative delivery fee' ($negFee -match 'chk_order_fee_nonnegative') "MySQL did not report the expected constraint failure: $negFee"
+  $zeroCart = (& $mysql -u root animal_marketplace_test -e "INSERT INTO cart_items (buyer_id, listing_id, quantity) VALUES ($buyerId, $listingId, 0)" 2>&1) | Out-String
+  ok 'the database refuses a zero cart quantity' ($zeroCart -match 'chk_cart_qty_positive') "MySQL did not report the expected constraint failure: $zeroCart"
+  # positive control: a legal write must still land
+  $goodWrite = (& $mysql -u root animal_marketplace_test -e "UPDATE produce_listings SET price_per_unit = 25.00 WHERE id = $listingId" 2>&1) | Out-String
+  $priceBack = dbq "SELECT price_per_unit FROM produce_listings WHERE id = $listingId"
+  ok 'the database still accepts a legal price' (($goodWrite -notmatch 'ERROR') -and ([double]$priceBack -eq 25)) "a valid price was rejected or not written: $priceBack $goodWrite"
 
   "`n--- logout ---"
   $c = get "$base/logout.php" $s

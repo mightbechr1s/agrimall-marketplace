@@ -353,6 +353,20 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
   </div>
 </header>
 
+<?php
+// rendered here so every redirect target shows it; flash_get() clears it,
+    // so a page with its own copy renders nothing
+    if ($flashSuccess = flash_get('success')): ?>
+  <div class="container">
+    <div class="alert alert-success alert-dismissible fade show" role="alert"><?= e($flashSuccess) ?></div>
+  </div>
+<?php endif; ?>
+<?php if ($flashError = flash_get('error')): ?>
+  <div class="container">
+    <div class="alert alert-danger alert-dismissible fade show" role="alert"><?= e($flashError) ?></div>
+  </div>
+<?php endif; ?>
+
 <!-- Mobile menu drawer -->
 <div id="mobile-menu" class="mobile-menu" aria-hidden="true" inert>
   <div class="mobile-menu-inner">
