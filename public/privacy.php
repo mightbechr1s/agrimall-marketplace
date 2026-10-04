@@ -77,7 +77,7 @@ require __DIR__ . '/partials/header.php';
                             <li><strong>Account data:</strong> Name, email, password hash, phone number, role (farmer/buyer), and verification documents (government ID, farm photos) for farmers.</li>
                             <li><strong>Listing data:</strong> Product names, descriptions, prices, quantities, categories, provinces, images you upload, and organic certification flags.</li>
                             <li><strong>Transaction data:</strong> Order details, messages between buyers and sellers, pickup/delivery preferences.</li>
-                            <li><strong>Technical data:</strong> IP address, browser type, device info, pages visited, referral source — via standard web server logs and our own analytics (no third-party trackers; we use a self-hosted, cookie-free counter).</li>
+                            <li><strong>Technical data:</strong> IP address, browser type, device info, pages visited, referral source — via standard web server logs only. We run no analytics script and no page-view tracking.</li>
                             <li><strong>Preferences:</strong> Language choice (EN/TL), UI theme, dismissed banner states — stored in <code>localStorage</code> and a first-party cookie (<code>animal_lang</code>).</li>
                         </ul>
                     </section>
@@ -87,8 +87,8 @@ require __DIR__ . '/partials/header.php';
                         <ul>
                             <li><strong>Contract performance:</strong> To create your account, verify farmers, publish listings, and facilitate buyer–seller communication.</li>
                             <li><strong>Legal obligation:</strong> To comply with the Philippine Data Privacy Act (RA 10173) and tax regulations (e.g., issuing receipts).</li>
-                            <li><strong>Legitimate interest:</strong> Platform security, fraud prevention, improving the marketplace experience, and anonymous aggregate analytics.</li>
-                            <li><strong>Consent:</strong> Optional analytics cookies (you can decline via the cookie banner).</li>
+                            <li><strong>Legitimate interest:</strong> Platform security, fraud prevention, and improving the marketplace experience.</li>
+                            <li><strong>Consent:</strong> Your privacy choice, recorded by the cookie banner. No optional feature is currently enabled, so declining changes nothing about how the site behaves.</li>
                         </ul>
                     </section>
 
@@ -111,7 +111,7 @@ require __DIR__ . '/partials/header.php';
                         <ul>
                             <li>Account & verification data: kept while your account is active, plus 3 years after closure for legal compliance.</li>
                             <li>Listings & orders: kept for 5 years for tax and dispute resolution.</li>
-                            <li>Server logs & anonymous analytics: 90 days.</li>
+                            <li>Server logs: 90 days.</li>
                         </ul>
                     </section>
 
@@ -146,7 +146,7 @@ require __DIR__ . '/partials/header.php';
                             <li><strong>Remember-me cookie</strong> (<code>animal_remember</code>) — only set when you select &ldquo;Remember me&rdquo; on login; signs you back in for 30 days. Clearing it signs you out permanently.</li>
                             <li><strong>Language cookie</strong> (<code>animal_lang</code>) — remembers EN/TL choice for 1 year.</li>
                             <li><strong>localStorage</strong> — UI preferences (dismissed banners, theme); no expiry.</li>
-                            <li><strong>Optional analytics</strong> — only if you accept via the banner.</li>
+                            <li><strong>Your privacy choice</strong> — the banner's answer, stored on this device as <code>animCk</code>; no expiry until you clear site data.</li>
                         </ul>
                     </section>
 

@@ -467,13 +467,13 @@ return [
 
     'cookie' => [
         'en' => [
-            'text' => 'We use essential cookies to make this site work and optional analytics cookies to improve your experience.',
+            'text' => 'We use essential cookies to make this site work, and we save your choice on this device. No trackers or third-party scripts run here.',
             'learn_more' => 'Learn more',
             'accept' => 'Accept',
             'decline' => 'Decline',
         ],
         'tl' => [
-            'text' => 'Gumagamit kami ng mga essential cookies para gumana ang site at optional analytics cookies para mapabuti ang iyong karanasan.',
+            'text' => 'Gumagamit kami ng mga essential cookies para gumana ang site, at iniimpoko namin ang iyong pinili sa device na ito. Walang tracker o third-party script na tumatakbo dito.',
             'learn_more' => 'Matuto pa',
             'accept' => 'Tanggapin',
             'decline' => 'Tanggihan',

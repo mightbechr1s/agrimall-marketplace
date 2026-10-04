@@ -91,7 +91,7 @@ require __DIR__ . '/partials/header.php';
 
                     <section class="legal-block" data-reveal>
                         <h2 id="cookies-we-use">2. Cookies we use</h2>
-                        <p>We use only first-party cookies and <code>localStorage</code>. No third-party trackers, ad pixels, or analytics cookies unless you explicitly accept.</p>
+                        <p>We use only first-party cookies and <code>localStorage</code>. There are no third-party trackers, ad pixels, or analytics scripts at all, whether you accept or decline.</p>
 
                         <h3>Essential (always active)</h3>
                         <div class="legal-table-wrap">
@@ -121,13 +121,13 @@ require __DIR__ . '/partials/header.php';
                         </table>
                         </div>
 
-                        <h3>Analytics (optional, opt-in)</h3>
-                        <p>If you accept analytics via the cookie banner, we set a self-hosted, cookie-free counter that aggregates page views without identifying you. No Google Analytics, Meta Pixel, or third-party scripts.</p>
+                        <h3>Optional features (opt-in)</h3>
+                        <p>None are enabled today. This site contains no analytics counter, no page-view tracking, and no third-party script, so accepting and declining produce the same behaviour: the site works exactly the same either way. The banner's choice is still recorded as <code>animCk</code>, and that flag is the gate any optional feature would have to pass before it could load.</p>
                     </section>
 
                     <section class="legal-block" data-reveal>
                         <h2 id="the-cookie-banner">3. The cookie banner</h2>
-                        <p>On your first visit, a banner appears at the bottom of the page. It explains what we use and links to this policy. Clicking "Accept" sets <code>localStorage.animCk = "1"</code> and hides the banner. Clicking "Decline" refuses optional cookies and sets <code>localStorage.animCk = "0"</code>; essential cookies still work and no analytics is loaded. Either way the banner stays dismissed. You can clear this anytime in your browser settings to see the banner again.</p>
+                        <p>On your first visit, a banner appears at the bottom of the page. It explains what we use and links to this policy. Clicking &ldquo;Accept&rdquo; sets <code>localStorage.animCk = "1"</code>; clicking &ldquo;Decline&rdquo; sets <code>localStorage.animCk = "0"</code>. Either way the banner stays dismissed. Declining is safe: no optional feature exists to turn off, and essential cookies keep working. Clear the key in your browser's site data to see the banner again.</p>
                         <p>If you have "Do Not Track" or "Reduce Motion" enabled, the banner still appears but without animation.</p>
                     </section>
 
@@ -142,7 +142,7 @@ require __DIR__ . '/partials/header.php';
 
                     <section class="legal-block" data-reveal>
                         <h2 id="no-third-party-cookies">5. No third-party cookies</h2>
-                        <p>We do not use Google Analytics, Facebook Pixel, TikTok Pixel, or any third-party advertising/tracking cookies. All analytics (if enabled) are self-hosted and anonymous.</p>
+                        <p>We do not use Google Analytics, Facebook Pixel, TikTok Pixel, or any third-party advertising/tracking cookies, and we do not run a self-hosted analytics counter either. No page-view or behaviour tracking exists in this codebase.</p>
                     </section>
 
                     <section class="legal-block" data-reveal>
