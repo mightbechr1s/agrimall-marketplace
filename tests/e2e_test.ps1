@@ -4,13 +4,16 @@ $ErrorActionPreference = 'Stop'
 
 $repo  = Split-Path -Parent $PSScriptRoot
 $cfg   = Join-Path $repo 'config\config.php'
-$mysql = 'C:\xampp\mysql\bin\mysql.exe'
-$php   = 'C:\xampp\php\php.exe'
-$base  = 'http://127.0.0.1:8000'
+. (Join-Path $PSScriptRoot '_env.ps1')
+$php   = Get-AnimalTool 'ANIMAL_PHP'   'php'   @('C:\xampp\php\php.exe')
+$mysql = Get-AnimalTool 'ANIMAL_MYSQL' 'mysql' @('C:\xampp\mysql\bin\mysql.exe')
+$port  = Get-AnimalPort
+$base  = "http://127.0.0.1:$port"
 $orig  = $null
 $srv   = $null
 
 try {
+  Assert-AnimalMysqlUp $mysql
   $orig = Get-Content -LiteralPath $cfg -Raw
   $orig -replace "'name' => 'animal_marketplace',", "'name' => 'animal_marketplace_test'," |
     Set-Content -LiteralPath $cfg -NoNewline
@@ -29,13 +32,10 @@ try {
   # the seed leaves the fixture out of stock, so the page renders no order form
   & $mysql -u root animal_marketplace_test -e "UPDATE produce_listings SET available_quantity=50.0000, minimum_order_qty=1.0000 WHERE id=$($ids.listing)" 2>&1 | Out-Null
 
-  $srv = Start-Process -FilePath $php -ArgumentList '-S', '127.0.0.1:8000', '-t', 'public' `
+  $srv = Start-Process -FilePath $php -ArgumentList '-S', "127.0.0.1:$port", '-t', 'public' `
           -WorkingDirectory $repo -WindowStyle Hidden -PassThru
-  for ($i = 0; $i -lt 40; $i++) {
-    Start-Sleep -Milliseconds 250
-    if (Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue) { break }
-  }
-  "dev server up on 8000 (PID $($srv.Id))"
+  if (-not (Wait-AnimalServer -Port $port)) { throw "php -S did not come up on port $port" }
+  "dev server up on $port (PID $($srv.Id))"
 
   $env:BASE_URL   = $base
   $env:LISTING_ID = "$($ids.listing)"

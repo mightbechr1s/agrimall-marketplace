@@ -185,7 +185,7 @@ buyer    mercado@animal.local  password123
 | Symptom | Fix |
 |---------|-----|
 | `db-reset.php` says config missing | Run step 3 first (`Copy-Item config\config.example.php config\config.php`) |
-| Port 8000 busy | `-S 127.0.0.1:8001` |
+| Port 8000 busy | `-S 127.0.0.1:8001` for the dev server (the test suites pick a free port themselves) |
 | MySQL not running | Re-run step 4 |
 | Wrong doc root | Must be `public/` |
 | Firewall | Allow `php.exe`, `mysqld.exe` |
@@ -243,6 +243,34 @@ live database, and which of them are safe to run twice.
 - [ ] All smoke-test URLs load, cart/saved/account work
 - [ ] Offline test passes (0 errors, 0 external requests)
 - [ ] Demo accounts work for each role
+
+---
+
+## 14. Running the test suites
+
+```powershell
+npm install             # once, for the browser test
+npm test                # syntax, i18n parity, validation, PDF structure
+npm run test:http       # HTTP flows against a throwaway database
+npm run test:panels     # sidebar links, role gating, admin workflows
+npm run test:e2e        # browser smoke test
+```
+
+- Leave `npm run dev` running if you like. Each suite starts its own `php -S` on
+  a free port and stops only the server it started.
+- The suites build and drop `animal_marketplace_test` only, then restore
+  `config\config.php`. Your live `animal_marketplace` database is never touched.
+- MySQL must be running. If it is not, a suite stops with one clear message
+  instead of reporting a migration error per file.
+
+If your tools are not under `C:\xampp`, point the suites at yours once per
+PowerShell session:
+
+```powershell
+$env:ANIMAL_PHP   = 'D:\xampp\php\php.exe'
+$env:ANIMAL_MYSQL = 'D:\xampp\mysql\bin\mysql.exe'
+$env:ANIMAL_PORT  = 8001          # optional: pin the port instead of auto-picking
+```
 
 ---
 

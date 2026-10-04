@@ -11,11 +11,13 @@
   $ErrorActionPreference = 'Continue'
   # paths derive from the script location
   $repo  = Split-Path -Parent $PSScriptRoot
-  $php   = if ($env:ANIMAL_PHP)   { $env:ANIMAL_PHP }   else { 'C:\xampp\php\php.exe' }
-  $mysql = if ($env:ANIMAL_MYSQL) { $env:ANIMAL_MYSQL } else { 'C:\xampp\mysql\bin\mysql.exe' }
+  . (Join-Path $PSScriptRoot '_env.ps1')
+  $php   = Get-AnimalTool 'ANIMAL_PHP'   'php'   @('C:\xampp\php\php.exe')
+  $mysql = Get-AnimalTool 'ANIMAL_MYSQL' 'mysql' @('C:\xampp\mysql\bin\mysql.exe')
+  $port  = Get-AnimalPort
   $tmp   = $env:TEMP
   $cfg   = Join-Path $repo 'config\config.php'
-  $base  = 'http://127.0.0.1:8000'
+  $base  = "http://127.0.0.1:$port"
 
 $pass = 0; $fail = 0
 function ok($label, $cond, $detail) {
@@ -54,6 +56,7 @@ function login($email, $s, $password) {
 
 $orig = $null; $srv = $null
 try {
+  Assert-AnimalMysqlUp $mysql
   $orig = Get-Content -LiteralPath $cfg -Raw
   $orig -replace "'name' => 'animal_marketplace',", "'name' => 'animal_marketplace_test'," |
     Set-Content -LiteralPath $cfg -NoNewline
@@ -72,15 +75,12 @@ try {
   $ids = & $php (Join-Path $repo 'tests\http_seed.php') 2>&1 | ConvertFrom-Json
   "seeded ids: buyer=$($ids.buyer) farmer=$($ids.farmer) open=$($ids.openOrder) blocked=$($ids.blocked) admin=$($ids.admin)"
 
-  $srv = Start-Process -FilePath $php -ArgumentList '-S','127.0.0.1:8000','-t','public' `
+  $srv = Start-Process -FilePath $php -ArgumentList '-S',"127.0.0.1:$port",'-t','public' `
           -WorkingDirectory $repo -WindowStyle Hidden -PassThru `
           -RedirectStandardOutput (Join-Path $tmp 'srv.log') `
           -RedirectStandardError  (Join-Path $tmp 'srv.err')
-  for ($i = 0; $i -lt 40; $i++) {
-    Start-Sleep -Milliseconds 250
-    if (Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue) { break }
-  }
-  "dev server up on 8000 (PID $($srv.Id))"
+  if (-not (Wait-AnimalServer -Port $port)) { throw "php -S did not come up on port $port" }
+  "dev server up on $port (PID $($srv.Id))"
 
   "`n--- login, session, CSRF ---"
   $s = New-Object Microsoft.PowerShell.Commands.WebRequestSession

@@ -4,9 +4,11 @@ $ErrorActionPreference = 'Stop'
 
 $repo  = Split-Path -Parent $PSScriptRoot
 $cfg   = Join-Path $repo 'config\config.php'
-$mysql = 'C:\xampp\mysql\bin\mysql.exe'
-$php   = 'C:\xampp\php\php.exe'
-$base  = 'http://127.0.0.1:8000'
+. (Join-Path $PSScriptRoot '_env.ps1')
+$php   = Get-AnimalTool 'ANIMAL_PHP'   'php'   @('C:\xampp\php\php.exe')
+$mysql = Get-AnimalTool 'ANIMAL_MYSQL' 'mysql' @('C:\xampp\mysql\bin\mysql.exe')
+$port  = Get-AnimalPort
+$base  = "http://127.0.0.1:$port"
 $orig  = $null
 $srv   = $null
 $script:pass = 0; $script:fail = 0
@@ -49,6 +51,7 @@ function assertRealPage($label, $html) {
 }
 
 try {
+  Assert-AnimalMysqlUp $mysql
   $orig = Get-Content -LiteralPath $cfg -Raw
   $orig -replace "'name' => 'animal_marketplace',", "'name' => 'animal_marketplace_test'," |
     Set-Content -LiteralPath $cfg -NoNewline
@@ -71,13 +74,10 @@ try {
   & $mysql -u root animal_marketplace_test -e "INSERT INTO farmer_profiles (user_id,farm_name,farm_description,contact_person,contact_phone,contact_email,address,barangay,municipality_city,province,region,valid_id_type,valid_id_number,verification_status) VALUES ($pendingId,'Pending Farm','awaiting review','P farmer','09171234567','p@x.test','7 Rural Rd','San Isidro','Bayambang','Pampanga','Pangasinan','national_id','ID-PENDING','pending');" 2>&1 | Out-Null
   "seeded ids: farmer=$($ids.farmer) admin=$($ids.admin) pending=$pendingId"
 
-  $srv = Start-Process -FilePath $php -ArgumentList '-S', '127.0.0.1:8000', '-t', 'public' `
+  $srv = Start-Process -FilePath $php -ArgumentList '-S', "127.0.0.1:$port", '-t', 'public' `
           -WorkingDirectory $repo -WindowStyle Hidden -PassThru
-  for ($i = 0; $i -lt 40; $i++) {
-    Start-Sleep -Milliseconds 250
-    if (Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue) { break }
-  }
-  "dev server up on 8000 (PID $($srv.Id))"
+  if (-not (Wait-AnimalServer -Port $port)) { throw "php -S did not come up on port $port" }
+  "dev server up on $port (PID $($srv.Id))"
 
   $menus = @{
     buyer  = @('Dashboard','Browse','Cart','My Orders','Saved')
@@ -197,19 +197,8 @@ try {
   if ($script:fail -gt 0) { throw "$script:fail panel check(s) failed" }
 }
 finally {
+  # only ever stops its own server: a dev server on 8000 is left untouched
   if ($srv) { Stop-Process -Id $srv.Id -Force -ErrorAction SilentlyContinue }
-  # a leaked php -S holds port 8000 and shadows npm run dev
-  for ($i = 0; $i -lt 20; $i++) {
-    $hold = Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue
-    if (-not $hold) { break }
-    $hp = Get-CimInstance Win32_Process -Filter "ProcessId = $($hold.OwningProcess)" -ErrorAction SilentlyContinue
-    if (-not ($hp -and $hp.Name -eq 'php.exe' -and $hp.CommandLine -match '8000')) {
-      "  note: port 8000 held by pid $($hold.OwningProcess), left alone"
-      break
-    }
-    Stop-Process -Id $hold.OwningProcess -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Milliseconds 150
-  }
   if ($orig) { [System.IO.File]::WriteAllText($cfg, $orig) }
   'config restored'
 }
