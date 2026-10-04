@@ -349,79 +349,14 @@ if (!isset($filters) || empty($filters)) {
     $filters = ['none'];
 }
 
-function output_report_pdf(string $title, string $ref, array $filters, array $rows, ?array $totals): void
-{
-    $generated = date('Y-m-d H:i:s T');
-    $lines = [$title . ' (' . $ref . ')', 'Generated: ' . $generated, 'Filters: ' . implode('; ', $filters), ''];
-    if ($rows) {
-        foreach ($rows as $row) {
-            $parts = [];
-            foreach ($row as $key => $value) {
-                if ($value === null || $value === '') continue;
-                $value = preg_replace('/[\\r\n\\t]+/', ' ', (string) $value);
-                $value = str_replace('₱', 'PHP ', $value);
-                $parts[] = $key . '=' . $value;
-            }
-            foreach (str_split(implode(' | ', $parts), 110) as $line) {
-                $lines[] = $line;
-            }
-        }
-    } else {
-        $lines[] = '(No rows matched.)';
-    }
-    if ($totals !== null) {
-        $lines[] = '';
-        $lines[] = 'Totals: ' . implode(' | ', array_map(
-            static fn ($key, $value): string => $key . '=' . (is_numeric($value) ? number_format((float) $value, 2) : $value),
-            array_keys($totals),
-            array_values($totals)
-        ));
-    }
 
-    $pages = array_chunk($lines, 45);
-    $objects = [
-        '<< /Type /Catalog /Pages 2 0 R >>',
-        '<< /Type /Pages /Kids [PLACEHOLDER] /Count ' . count($pages) . ' >>',
-        '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
-    ];
-    $pageRefs = [];
-    foreach ($pages as $pageLines) {
-        $content = "BT\n/F1 9 Tf\n40 800 Td\n";
-        foreach ($pageLines as $line) {
-            $line = str_replace(['\\\\', '(', ')'], ['\\\\\\\\', '\\\\(', '\\\\)'], $line);
-            $content .= '(' . $line . ") Tj\n0 -16 Td\n";
-        }
-        $content .= "ET\n";
-        $contentObject = count($objects) + 1;
-        $objects[] = "<< /Length " . strlen($content) . " >>\nstream\n" . $content . "endstream";
-        $pageObject = count($objects) + 1;
-        $objects[] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ' . $contentObject . ' 0 R >>';
-        $pageRefs[] = $pageObject . ' 0 R';
-    }
-    $objects[1] = '<< /Type /Pages /Kids [' . implode(' ', $pageRefs) . '] /Count ' . count($pages) . ' >>';
-
-    $pdf = "%PDF-1.4\n%\\xE2\\xE3\\xCF\\xD3\n";
-    $offsets = [0];
-    foreach ($objects as $number => $object) {
-        $offsets[] = strlen($pdf);
-        $pdf .= ($number + 1) . " 0 obj\n" . $object . "\nendobj\n";
-    }
-    $xref = strlen($pdf);
-    $pdf .= "xref\n0 " . (count($objects) + 1) . "\n0000000000 65535 f \n";
-    for ($i = 1; $i <= count($objects); $i++) {
-        $pdf .= sprintf('%010d 00000 n %s', $offsets[$i], "\n");
-    }
-    $pdf .= "trailer\n<< /Size " . (count($objects) + 1) . " /Root 1 0 R >>\nstartxref\n" . $xref . "\n%%EOF";
-
+if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
+    $pdf = build_report_pdf($reportTitle, $reportRef, $filters, $rows, $totals);
     header('Content-Type: application/pdf');
-    header('Content-Disposition: attachment; filename="animal-' . strtolower($ref) . '.pdf"');
+    header('Content-Disposition: attachment; filename="animal-' . strtolower($reportRef) . '.pdf"');
     header('Content-Length: ' . strlen($pdf));
     echo $pdf;
     exit;
-}
-
-if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
-    output_report_pdf($reportTitle, $reportRef, $filters, $rows, $totals);
 }
 
 $pdfUrl = 'admin_reports.php?' . http_build_query(array_merge($_GET, ['export' => 'pdf']));

@@ -178,6 +178,21 @@ try {
   assertRealPage 'admin opens reports' $rp
   ok 'reports page offers at least one report or export' ($rp -match 'report|export|csv|pdf|download') 'no report controls found'
 
+  # the PDF is built by hand, so check the bytes that come back over HTTP
+  try {
+    $pdf = Invoke-WebRequest -Uri "$base/admin_reports.php?t=orders&export=pdf" -WebSession $a -UseBasicParsing -TimeoutSec 20
+    $bytes = if ($pdf.Content -is [byte[]]) { $pdf.Content } else { [System.Text.Encoding]::GetEncoding('ISO-8859-1').GetBytes([string]$pdf.Content) }
+    $head = if ($bytes.Length -ge 8) { [System.Text.Encoding]::ASCII.GetString($bytes[0..7]) } else { '' }
+    ok 'the PDF export returns a real PDF' ($pdf.StatusCode -eq 200 -and $head.StartsWith('%PDF-')) "status $($pdf.StatusCode), head '$head'"
+    ok 'the PDF export is served as application/pdf' ("$($pdf.Headers['Content-Type'])" -match 'application/pdf') "content-type '$($pdf.Headers['Content-Type'])'"
+    ok 'the PDF export is not empty' ($pdf.RawContentLength -gt 400) "$($pdf.RawContentLength) bytes"
+    $tail = [System.Text.Encoding]::ASCII.GetString($bytes[($bytes.Length - 5)..($bytes.Length - 1)])
+    ok 'the PDF export is terminated' ($tail -match '%%EOF') "tail '$tail'"
+  }
+  catch {
+    ok 'the PDF export returns a real PDF' $false $_.Exception.Message
+  }
+
   "`n================ $script:pass passed, $script:fail failed ================"
   if ($script:fail -gt 0) { throw "$script:fail panel check(s) failed" }
 }
