@@ -195,6 +195,8 @@ Requirements use the format `FR-[MODULE]-[NUMBER]` for traceability.
 - **FR-LIST-030:** Stock-adjustment reason categories shall include initial listing quantity, farmer correction, order confirmation, pre-preparation cancellation, and administrator restoration; the recorded before quantity plus signed change shall equal after quantity.
 - **FR-LIST-031:** Restoration exposure shall equal the requested quantities of the listing's confirmed and in-progress orders because those quantities may still be restored by cancellation.
 - **FR-LIST-032:** A farmer stock increase shall be rejected when available quantity plus restoration exposure would exceed `999,999.99`; order confirmation transfers quantity from available quantity into restoration exposure, while completion or administrator non-restoration removes that exposure.
+- **FR-LIST-033:** A listing whose expiry date has passed shall be presented as expired and shall be rejected both when an order is requested and when a pending order is confirmed; it shall remain visible in the catalogue rather than being silently removed, so that the rejection is observable rather than invisible.
+- **FR-LIST-034:** Expiry shall not alter a listing's recorded available quantity, because the stock still exists and an expired listing is withheld from sale rather than written off; expiry shall therefore never produce a stock adjustment.
 
 ### 8.5 Browse, Search, and Filtering
 

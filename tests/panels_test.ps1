@@ -52,6 +52,7 @@ function assertRealPage($label, $html) {
 
 try {
   Assert-AnimalMysqlUp $mysql
+  if (Repair-AnimalConfigSwap $cfg) { 'recovered config.php left pointing at the test database by an earlier aborted run' }
   $orig = Get-Content -LiteralPath $cfg -Raw
   $orig -replace "'name' => 'animal_marketplace',", "'name' => 'animal_marketplace_test'," |
     Set-Content -LiteralPath $cfg -NoNewline

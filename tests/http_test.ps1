@@ -57,6 +57,7 @@ function login($email, $s, $password) {
 $orig = $null; $srv = $null
 try {
   Assert-AnimalMysqlUp $mysql
+  if (Repair-AnimalConfigSwap $cfg) { 'recovered config.php left pointing at the test database by an earlier aborted run' }
   $orig = Get-Content -LiteralPath $cfg -Raw
   $orig -replace "'name' => 'animal_marketplace',", "'name' => 'animal_marketplace_test'," |
     Set-Content -LiteralPath $cfg -NoNewline
@@ -470,6 +471,126 @@ try {
   } | Out-Null
   $feeNeg = dbq "SELECT delivery_fee FROM orders WHERE id = $orderId"
   ok 'set_fee refuses a negative fee' ([double]$feeNeg -eq 150) "fee was overwritten to '$feeNeg' by a negative value"
+
+  "`n--- stock deduction lifecycle (FR-ORD-010, BR-008, BR-009, FR-LIST-029) ---"
+  # Stock moves only on confirmation. The fixture order is for 2 units of $listingId.
+  # Compare numbers rather than DECIMAL strings: the scale is an implementation detail.
+  $stockSess = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+  login 'http-farmer@x.test' $stockSess
+  function stockNow { [double](dbq "SELECT available_quantity FROM produce_listings WHERE id = $listingId") }
+  # FR-LIST-030 invariant: before + signed change = after, checked in SQL so the
+  # DECIMAL string formatting cannot fail the assertion for the wrong reason.
+  function adjInvariant($type) {
+    dbq "SELECT IF(ABS(quantity_before + quantity_change - quantity_after) < 0.00001, 'ok', 'bad')
+          FROM stock_adjustments
+          WHERE listing_id = $listingId AND reference_type = 'order' AND reference_id = $orderId
+            AND adjustment_type = '$type' ORDER BY id DESC LIMIT 1"
+  }
+
+  dbq "UPDATE produce_listings SET available_quantity = 10, status = 'active' WHERE id = $listingId" | Out-Null
+  dbq "UPDATE orders SET status = 'pending', confirmed_at = NULL, cancelled_at = NULL, rejected_at = NULL WHERE id = $orderId" | Out-Null
+
+  # 1. Confirmation deducts exactly the ordered quantity.
+  $t = csrf (get "$base/order.php?id=$orderId" $stockSess)
+  post "$base/order_action.php" $stockSess @{ csrf_token = $t; action = 'confirm'; order_id = $orderId } | Out-Null
+  $confirmStatus = dbq "SELECT status FROM orders WHERE id = $orderId"
+  # positive control first, so a later failure cannot pass vacuously
+  ok 'confirm reaches the confirmed state' ($confirmStatus -eq 'confirmed') "status is '$confirmStatus', so the endpoint is not reachable in this test"
+  $afterConfirm = stockNow
+  ok 'confirm deducts the ordered quantity (10 -> 8)' ($afterConfirm -eq 8) "available_quantity is $afterConfirm, expected 8"
+  ok 'confirm records a sale_deduction that balances before + change = after' ((adjInvariant 'sale_deduction') -eq 'ok') "invariant returned '$(adjInvariant 'sale_deduction')'"
+
+  # 2. Cancelling a confirmed order restores it.
+  $t = csrf (get "$base/order.php?id=$orderId" $stockSess)
+  post "$base/order_action.php" $stockSess @{ csrf_token = $t; action = 'cancel'; order_id = $orderId } | Out-Null
+  $afterCancel = stockNow
+  ok 'cancelling a confirmed order restores the stock (8 -> 10)' ($afterCancel -eq 10) "available_quantity is $afterCancel, expected 10"
+  ok 'cancel records a return adjustment that balances' ((adjInvariant 'return') -eq 'ok') "invariant returned '$(adjInvariant 'return')'"
+
+  # 3. Rejecting a pending order must not touch stock: nothing was deducted.
+  dbq "UPDATE orders SET status = 'pending', cancelled_at = NULL WHERE id = $orderId" | Out-Null
+  $beforeReject = stockNow
+  # Count only what the reject itself adds: an earlier legitimate cancel on this
+  # same order already wrote a return row.
+  $returnsBefore = [int](dbq "SELECT COUNT(*) FROM stock_adjustments WHERE listing_id = $listingId AND reference_type = 'order' AND reference_id = $orderId AND adjustment_type = 'return'")
+  $t = csrf (get "$base/order.php?id=$orderId" $stockSess)
+  post "$base/order_action.php" $stockSess @{ csrf_token = $t; action = 'reject'; order_id = $orderId; reason = 'test' } | Out-Null
+  $rejectStatus = dbq "SELECT status FROM orders WHERE id = $orderId"
+  $afterReject = stockNow
+  ok 'reject reaches the rejected state' ($rejectStatus -eq 'rejected') "status is '$rejectStatus', so the endpoint is not reachable in this test"
+  ok 'rejecting a pending order leaves stock unchanged (10 -> 10)' ($afterReject -eq $beforeReject) "stock moved from $beforeReject to $afterReject; a pending order never deducted, so restoring here would inflate the listing"
+  $returnsAfter = [int](dbq "SELECT COUNT(*) FROM stock_adjustments WHERE listing_id = $listingId AND reference_type = 'order' AND reference_id = $orderId AND adjustment_type = 'return'")
+  ok 'reject adds no return adjustment' ($returnsAfter -eq $returnsBefore) "return adjustments went from $returnsBefore to $returnsAfter"
+
+  # 4. Confirmation cannot oversell: refuse and change nothing.
+  dbq "UPDATE produce_listings SET available_quantity = 1 WHERE id = $listingId" | Out-Null
+  dbq "UPDATE orders SET status = 'pending', rejected_at = NULL, rejection_reason = NULL WHERE id = $orderId" | Out-Null
+  $t = csrf (get "$base/order.php?id=$orderId" $stockSess)
+  post "$base/order_action.php" $stockSess @{ csrf_token = $t; action = 'confirm'; order_id = $orderId } | Out-Null
+  $overStatus = dbq "SELECT status FROM orders WHERE id = $orderId"
+  $afterOver = stockNow
+  ok 'confirm refuses when stock is insufficient (1 available, 2 ordered)' ($overStatus -eq 'pending' -and $afterOver -eq 1) "status='$overStatus' stock=$afterOver; a confirmed order here would oversell the listing"
+
+  "`n--- product expiry (FR-LIST-033, FR-LIST-034) ---"
+  # The listing reaches 'expired' by passing its date, not by a status flag:
+  # there is no expired state to set, so the only thing to drive is the date.
+  $yesterday = (& $mysql -u root animal_marketplace_test -N -B -e 'SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY);' 2>&1 | Out-String).Trim()
+  $tomorrow = (& $mysql -u root animal_marketplace_test -N -B -e 'SELECT DATE_ADD(CURDATE(), INTERVAL 1 DAY);' 2>&1 | Out-String).Trim()
+
+  # A fresh order request against an expired listing must be refused outright.
+  dbq "UPDATE produce_listings SET expiry_date = '$yesterday', available_quantity = 50.0000, minimum_order_qty = 1.0000, status = 'active' WHERE id = $listingId" | Out-Null
+  dbq "UPDATE orders SET status = 'pending', confirmed_at = NULL, cancelled_at = NULL, rejected_at = NULL, rejection_reason = NULL WHERE id = $orderId" | Out-Null
+  $ordersBefore = [int](dbq "SELECT COUNT(*) FROM orders WHERE listing_id = $listingId AND status = 'pending'")
+  # The token comes from browse.php, not the listing page: an expired listing
+# renders no order form, so it carries no csrf field, and borrowing from there
+# would abort the POST on 403 before the expiry guard is ever reached.
+  $t = csrf (get "$base/browse.php" $vbu)
+  $r = post "$base/order_request.php" $vbu @{ csrf_token = $t; listing_id = $listingId; quantity = '2'; delivery_method = 'pickup'; delivery_address = ''; buyer_note = '' }
+  $ordersAfter = [int](dbq "SELECT COUNT(*) FROM orders WHERE listing_id = $listingId AND status = 'pending'")
+  ok 'order_request refuses an expired listing' ($r -match 'no longer be ordered') "response did not carry the expiry refusal (match against 'no longer be ordered')"
+  # Paired with the refusal above, so the refusal cannot pass by rejecting everything:
+  # the same endpoint still has to accept a live listing further down.
+  ok 'order_request wrote no pending order for an expired listing' ($ordersAfter -eq $ordersBefore) "pending orders went $ordersBefore -> $ordersAfter"
+
+  # The listing stays visible and is labelled, rather than vanishing: a buyer
+  # must be able to see why it cannot be bought.
+  $page = get "$base/listing.php?id=$listingId" $vbu
+  ok 'an expired listing is still visible on its detail page' ($page -match 'Best before') "the detail page did not render, so the expired label is unreachable"
+  ok 'an expired listing is marked expired' ($page -match 'data-testid="expired-badge"') "no expired marker was rendered"
+  ok 'an expired listing offers no order form' ($page -notmatch 'name="buyer_note"') "the Place Order form was still rendered for an expired listing"
+
+  # A future expiry must stay purchasable, or the guard would block all sales.
+  dbq "UPDATE produce_listings SET expiry_date = '$tomorrow' WHERE id = $listingId" | Out-Null
+  $t = csrf (get "$base/listing.php?id=$listingId" $vbu)
+  $r = post "$base/order_request.php" $vbu @{ csrf_token = $t; listing_id = $listingId; quantity = '2'; delivery_method = 'pickup'; delivery_address = ''; buyer_note = '' }
+  $futureOrders = [int](dbq "SELECT COUNT(*) FROM orders WHERE listing_id = $listingId AND status = 'pending'")
+  ok 'a listing expiring tomorrow still accepts an order' ($futureOrders -eq ($ordersBefore + 1)) "pending orders went $ordersBefore -> $futureOrders; the guard rejects live listings too"
+
+  # Expiry must not write off stock: quantity and the ledger are untouched
+  # (FR-LIST-034). The buyer's own order reserves nothing until confirmation.
+  $qtyNow = stockNow
+  ok 'expiry leaves available_quantity untouched' ($qtyNow -eq 50) "available_quantity is $qtyNow, expected 50; expiry must not write off stock"
+  $adjAfterExpiry = [int](dbq "SELECT COUNT(*) FROM stock_adjustments WHERE listing_id = $listingId AND adjustment_type = 'spoilage'")
+  ok 'expiry writes no spoilage adjustment' ($adjAfterExpiry -eq 0) "found $adjAfterExpiry spoilage rows; expiry withholds stock from sale, it does not write it off"
+
+  # Confirmation is the second gate: an order placed before the date passed
+  # must still be refused once it has.
+  dbq "UPDATE produce_listings SET expiry_date = '$yesterday' WHERE id = $listingId" | Out-Null
+  $newOrderId = dbq "SELECT id FROM orders WHERE listing_id = $listingId AND status = 'pending' ORDER BY id DESC LIMIT 1"
+  $confirmOrder = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+  login 'http-farmer@x.test' $confirmOrder
+  $t = csrf (get "$base/order.php?id=$newOrderId" $confirmOrder)
+  $r = post "$base/order_action.php" $confirmOrder @{ csrf_token = $t; action = 'confirm'; order_id = $newOrderId }
+  $confirmStatus = dbq "SELECT status FROM orders WHERE id = $newOrderId"
+  ok 'confirm refuses an order whose listing expired after the request' ($confirmStatus -eq 'pending') "status is '$confirmStatus'; a confirm here would sell expired produce"
+  $qtyAfterExpiredConfirm = stockNow
+  ok 'refusing the expired confirm deducted no stock' ($qtyAfterExpiredConfirm -eq 50) "available_quantity is $qtyAfterExpiredConfirm, expected 50"
+
+  "`n--- migration 009 rate_limits ---"
+  # db-reset.php loads schema.sql + migrations, so a fresh clone must have the
+  # table the login throttle queries.
+  $hasRate = dbq "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rate_limits'"
+  ok 'rate_limits exists after schema.sql + migrations' ([int]$hasRate -eq 1) "the login throttle would fail with Unknown table 'rate_limits'"
 
   "`n--- migration 008 CHECK constraints ---"
   # the PHP guard is the first line; these prove the database refuses too

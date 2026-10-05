@@ -139,7 +139,7 @@ $fmtQty = function ($value, $symbol): string {
                         <div><dt><?= $l($copy['listing'], 'harvest_date') ?></dt><dd><?= e($item['harvest_date']) ?></dd></div>
                     <?php endif; ?>
                     <?php if ($item['expiry_date']): ?>
-                        <div><dt><?= $l($copy['listing'], 'best_before') ?></dt><dd><?= e($item['expiry_date']) ?></dd></div>
+                        <div><dt><?= $l($copy['listing'], 'best_before') ?></dt><dd><?= e($item['expiry_date']) ?><?php if (listing_is_expired($item)): ?> <span class="badge text-bg-warning" data-testid="expired-badge"><?= $l($copy['listing'], 'expired_badge') ?></span><?php endif; ?></dd></div>
                     <?php endif; ?>
                     <?php if ($item['maximum_order_qty']): ?>
                         <div><dt><?= $l($copy['listing'], 'max_order') ?></dt><dd><?= $fmtQty($item['maximum_order_qty'], $item['unit_symbol']) ?></dd></div>
@@ -147,7 +147,12 @@ $fmtQty = function ($value, $symbol): string {
                 </dl>
 
                 <div class="listing-cta" data-reveal>
-                    <?php if (current_user_id() && current_user_role() === 'buyer'): ?>
+                    <?php if (listing_is_expired($item)): ?>
+                        <div class="alert alert-warning" role="alert" data-testid="expired-notice">
+                            <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i><?= $l($copy['listing'], 'expired_notice') ?>
+                        </div>
+                        <p class="text-muted mb-0"><?= $l($copy['listing'], 'expired_no_order') ?></p>
+                    <?php elseif (current_user_id() && current_user_role() === 'buyer'): ?>
                         <?php
                         $isSaved = false;
                         try {

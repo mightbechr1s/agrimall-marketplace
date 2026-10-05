@@ -35,6 +35,14 @@ const MAX_DELIVERY_FEE = 1000000;
 const MAX_QUANTITY = 1000000;
 
 /**
+ * Ceiling for a listing's available quantity (FR-LIST-032).
+ *
+ * A restore may not push available_quantity past this value, so a listing
+ * cannot be inflated past the point the farmer could legitimately offer.
+ */
+const MAX_STOCK_QTY = 999999.99;
+
+/**
  * Bounded numeric reader for untrusted input.
  *
  * Returns null unless $raw is a plain decimal inside [$min, $max]; a bare
@@ -377,6 +385,96 @@ function order_ref(): string
 function fallback_produce_image(): string
 {
     return 'assets/images/products/market.jpg';
+}
+
+/**
+ * Has this listing passed its expiry date?
+ *
+ * A null expiry_date means the farmer never set one, which the SRS treats as
+ * "no shelf life declared" rather than "expired". An expiry_date is the last
+ * day the produce may be sold, so the listing is expired only once today is
+ * strictly later (FR-LIST-033).
+ *
+ * Expiry withholds a listing from sale; it never changes available_quantity,
+ * because the stock still exists (FR-LIST-034).
+ *
+ * Accepts either shape because PDO::fetch() returns stdClass while some
+ * callers pass a decoded array.
+ *
+ * @param array|object $listing Any row carrying an expiry_date field.
+ */
+function listing_is_expired($listing, ?string $today = null): bool
+{
+    // Null coalescing on array offsets would still warn or fatal against a
+    // stdClass, so read the field per shape.
+    $date = is_array($listing)
+        ? (string) ($listing['expiry_date'] ?? '')
+        : (string) ($listing->expiry_date ?? '');
+    $date = trim($date);
+    if ($date === '') {
+        return false;
+    }
+
+    $today ??= date('Y-m-d');
+    $expires = strtotime($date);
+    if ($expires === false) {
+        return false;
+    }
+
+    return $expires < strtotime($today);
+}
+
+/**
+ * Apply a signed change to a listing's available quantity and record it.
+ *
+ * Every change to available_quantity must leave an immutable stock_adjustments
+ * row (FR-LIST-029/030), so the update and the audit row are written together
+ * or not at all. The listing row is locked first so two concurrent
+ * confirmations cannot both read the same "before" value and lose one
+ * quantity (NFR-REL-002).
+ *
+ * $delta is signed: negative to deduct, positive to restore. Throws when the
+ * result would fall below zero (insufficient stock, FR-ORD-025) or rise above
+ * MAX_STOCK_QTY (FR-LIST-032).
+ */
+function stock_apply(PDO $pdo, int $listingId, float $delta, string $type, ?int $orderId, int $actorId, ?string $notes = null): void
+{
+    $stmt = $pdo->prepare('SELECT available_quantity FROM produce_listings WHERE id = :id FOR UPDATE');
+    $stmt->execute(['id' => $listingId]);
+    $listing = $stmt->fetch();
+    if (!$listing) {
+        throw new RuntimeException('Listing not found for stock update.');
+    }
+
+    $before = (float) $listing['available_quantity'];
+    $after  = round($before + $delta, 4);
+
+    if ($after < 0) {
+        throw new RuntimeException('Only ' . qty_str($before) . ' available; cannot deduct ' . qty_str(abs($delta)) . '.');
+    }
+    if ($after > MAX_STOCK_QTY) {
+        throw new RuntimeException('Restoring this quantity would exceed the maximum available quantity of ' . qty_str(MAX_STOCK_QTY) . '.');
+    }
+
+    $pdo->prepare('UPDATE produce_listings SET available_quantity = :after WHERE id = :id')
+        ->execute(['after' => $after, 'id' => $listingId]);
+
+    $pdo->prepare(
+        'INSERT INTO stock_adjustments
+            (listing_id, adjustment_type, quantity_change, quantity_before, quantity_after, reference_type, reference_id, notes, created_by)
+         VALUES
+            (:listing_id, :type, :change, :before, :after, :ref_type, :ref_id, :notes, :created_by)'
+    )->execute([
+        'listing_id'  => $listingId,
+        'type'        => $type,
+        'change'      => round($delta, 4),
+        'before'      => $before,
+        'after'       => $after,
+        'ref_type'    => $orderId !== null ? 'order' : 'manual',
+        'ref_id'      => $orderId,
+        'notes'       => $notes,
+        'created_by'  => $actorId,
+    ]);
 }
 
 /** Append a row to order_status_history (same DB connection expected). */

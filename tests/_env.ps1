@@ -71,3 +71,31 @@ function Wait-AnimalServer {
   }
   return $false
 }
+
+function Repair-AnimalConfigSwap {
+  <#
+    Suites point config/config.php at the throwaway test database and restore it
+    afterwards. If a run dies before that restore -- the developer kills the
+    terminal, or the database server disappears mid-run, as it does in this
+    sandbox -- the dev app is left serving the test database, and because
+    config.php is gitignored nothing in git status shows it.
+
+    Call this before swapping. It only rewrites the database name, so it is safe
+    to run when config.php is already correct.
+  #>
+  param(
+    [Parameter(Mandatory)][string]$Cfg,
+    [string]$LiveDb = 'animal_marketplace'
+  )
+
+  if (-not (Test-Path -LiteralPath $Cfg)) { return $false }
+
+  $text = [System.IO.File]::ReadAllText($Cfg)
+  # Anchor on the quoted db name so the app's later 'name' => 'AniMAL' is safe.
+  $stale = "('name'\s*=>\s*')animal_marketplace_test(')"
+  if ($text -notmatch $stale) { return $false }
+
+  $fixed = $text -replace $stale, "`$1$LiveDb`$2"
+  [System.IO.File]::WriteAllText($Cfg, $fixed)
+  return $true
+}

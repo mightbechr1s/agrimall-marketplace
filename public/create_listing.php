@@ -207,6 +207,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $listingId = (int) DB::pdo()->lastInsertId();
 
+              // Record the opening quantity so every later change has a
+              // known starting point (FR-LIST-029).
+              DB::pdo()->prepare(
+                  'INSERT INTO stock_adjustments
+                      (listing_id, adjustment_type, quantity_change, quantity_before, quantity_after, reference_type, reference_id, notes, created_by)
+                   VALUES
+                      (:listing_id, :type, :change, :before, :after, :ref_type, :ref_id, :notes, :created_by)'
+              )->execute([
+                  'listing_id' => $listingId,
+                  'type'       => 'initial',
+                  'change'     => $availableQuantity,
+                  'before'     => 0,
+                  'after'      => $availableQuantity,
+                  'ref_type'   => 'manual',
+                  'ref_id'     => null,
+                  'notes'      => 'Opening quantity when the listing was created.',
+                  'created_by' => $farmerId,
+              ]);
+
             // If we have a primary image, add it to listing_images
             if ($primaryImage) {
                 $imageStmt = DB::pdo()->prepare(

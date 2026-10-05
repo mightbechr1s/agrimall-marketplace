@@ -36,6 +36,9 @@ try {
     if ($listing['status'] !== 'active') {
         throw new RuntimeException('This listing is not available for ordering.');
     }
+    if (listing_is_expired($listing)) {
+        throw new RuntimeException('This listing has expired and can no longer be ordered.');
+    }
     if ((int) $listing['farmer_id'] === current_user_id()) {
         throw new RuntimeException('You cannot order your own listing.');
     }
