@@ -1,0 +1,337 @@
+# AniMAL Requirements Traceability Matrix
+
+> Generated file. Do not edit by hand. Source of truth for requirements is
+> `docs/SRS.md`; source of truth for evidence mapping is
+> `tests/traceability.json`. Regenerate with `php tools/gen_traceability.php`.
+>
+> The generator refuses to run if a mapped assertion does not exist in the suite it
+> names, if a requirement is not in the SRS, or if an assertion is mapped to nothing.
+
+## Coverage summary
+
+| Disposition | Requirements | Share |
+|---|---:|---:|
+| Automated | 45 | 20.8% |
+| Partial | 23 | 10.6% |
+| Manual / inspection | 84 | 38.9% |
+| Not verified (gap) | 64 | 29.6% |
+| **Total** | **216** | 100% |
+
+Automated means at least one executable assertion verifies the requirement.
+Partial means some of it is automated. Manual means verified by inspection of a
+named file. Gap means it is not implemented or not verified - these are listed
+openly rather than hidden.
+
+## Module ADM
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `FR-ADM-001` The administrator dashboard shall display counts of users, pending farmer verifications, acti... | manual | dashboard.php renders administrator count tiles; no automated assertion |
+| `FR-ADM-002` An administrator shall be able to search and filter users by name, role, status, and registra... | gap | no administrator user search or filter page exists |
+| `FR-ADM-003` An administrator shall be able to activate or suspend a user account and record a reason | gap | no administrator activate or suspend action exists |
+| `FR-ADM-004` Suspending an account shall invalidate its active sessions and preserve historical records | gap | account suspension and session invalidation are not implemented |
+| `FR-ADM-005` An administrator shall be able to view listings and orders for oversight | partial | `panels` `tests/panels_test.ps1:180` — reports page offers at least one report or ...<br>Also: oversight is provided through reports; there is no listing or order oversight screen |
+| `FR-ADM-006` An administrator shall not change ownership of a listing or order | manual | no administrator path changes listing or order ownership |
+| `FR-ADM-007` Sensitive administrator actions shall be written to an audit log | automated | `panels` `tests/panels_test.ps1:175` — the audit log shows the approval just made |
+| `FR-ADM-008` Suspending or revoking a farmer shall move all active or unavailable listings to administrato... | gap | no suspension or revocation cascade to listings |
+| `FR-ADM-009` Confirmed and in-progress orders involving a suspended user or administrator-deactivated list... | gap | no suspension or deactivation path to orders |
+| `FR-ADM-010` Suspending a buyer shall cancel that buyer's pending and delivery-fee-review requests without... | gap | no buyer suspension, so no pending-request cascade |
+| `FR-ADM-011` An administrator shall be able to create, rename, activate, and deactivate quantity units, su... | gap | no administrator unit management page exists |
+| `FR-ADM-012` An active administrator shall be able to create another administrator account with a temporar... | gap | no administrator account creation path exists |
+| `FR-ADM-013` The system shall prevent an administrator from suspending the same account and shall prevent ... | partial | `http` `tests/http_test.ps1:214` — admin cannot delete their own account<br>`http` `tests/http_test.ps1:203` — * cannot delete the account<br>Also: self-protection exists for account deletion; self-suspension is not implemented |
+| `FR-ADM-014` An administrator shall resolve each held order by either releasing the hold under FR-STAT-012... | gap | no held-order resolution path exists |
+| `FR-ADM-015` An audit event shall record event type, acting user, target type and identifier, timestamp, o... | automated | `panels` `tests/panels_test.ps1:175` — the audit log shows the approval just made |
+| `FR-ADM-016` Audited events shall include authentication administration, administrator-account creation, u... | manual | audit_log rows carry event type, actor and target; no assertion covers every event class |
+| `FR-ADM-017` Audit events shall be append-only through application functions and shall not be editable or ... | manual | no update or delete path writes to audit_log; append-only holds by construction, not by test |
+| `FR-ADM-018` An administrator shall be able to place and release a retention hold on specified records wit... | gap | no administrator retention hold interface exists |
+| `FR-ADM-019` Retention processing shall skip records under an active hold and shall anonymize an eligible ... | partial | `http` `tests/http_test.ps1:188` — anonymized_at is stamped<br>Also: anonymization runs; no assertion proves an active hold is skipped |
+| `FR-ADM-020` When creating a unit, the administrator shall select whether it accepts whole numbers or up t... | gap | no unit creation UI, so precision selection is not implemented |
+
+## Module AUTH
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `FR-AUTH-001` The system shall allow a visitor to register as a farmer or buyer | manual | register.php implements the farmer/buyer choice; no automated assertion |
+| `FR-AUTH-002` Registration shall require a unique email address, password, full name, contact number, role,... | manual | register.php requires the listed fields and users.email is unique; no automated assertion |
+| `FR-AUTH-003` The system shall validate all registration fields on the server | manual | register.php validates every field server-side; no automated assertion |
+| `FR-AUTH-004` The system shall store passwords using PHP's supported password hashing functions | manual | password_hash(PASSWORD_DEFAULT) in register.php; no dedicated assertion |
+| `FR-AUTH-005` The system shall allow registered users to log in using email and password | automated | `http` `tests/http_test.ps1:92` — valid credentials establish a session<br>`e2e` `tests/e2e/smoke.js:72` — login establishes a session |
+| `FR-AUTH-006` The system shall regenerate the session identifier after successful login | manual | session_regenerate_id(true) at public/login.php:46; no automated assertion |
+| `FR-AUTH-007` The system shall allow an authenticated user to log out and invalidate the active session | automated | `http` `tests/http_test.ps1:611` — after logout the account page is gated |
+| `FR-AUTH-008` The system shall enforce role-based access for farmer, buyer, and administrator pages and act... | automated | `http` `tests/http_test.ps1:145` — a logged-out search miss does not offer the...<br>`http` `tests/http_test.ps1:210` — admin account page hides the name form<br>`panels` `tests/panels_test.ps1:148` — * is refused * |
+| `FR-AUTH-009` The system shall prevent public registration as an administrator | manual | register.php offers only farmer and buyer; no automated assertion |
+| `FR-AUTH-010` The system shall deny suspended accounts access to protected functions | gap | no admin suspend/activate action exists, so no suspended-account denial path |
+| `FR-AUTH-011` An authenticated user shall be able to change the account password after providing the curren... | automated | `http` `tests/http_test.ps1:165` — wrong current password is rejected |
+| `FR-AUTH-012` An administrator shall be able to issue a temporary password for a user account without viewi... | gap | admin temporary-password issuance is not implemented |
+| `FR-AUTH-013` A user who receives a temporary password shall be required to change it at the next login | gap | forced password change on next login is not implemented |
+| `FR-AUTH-014` The initial administrator account shall be created by a documented installation or database-s... | manual | database/schema.sql seeds no administrator; docs/README_SETUP.md documents the seeding procedure |
+| `FR-AUTH-015` An authenticated session shall expire after a configured period of inactivity | manual | session lifetime is read from config in src/bootstrap.php; no automated expiry assertion |
+| `FR-AUTH-016` Passwords shall contain at least 12 characters | manual | register.php enforces a 12-character minimum; no dedicated assertion |
+| `FR-AUTH-017` Temporary passwords shall expire 24 hours after issuance if unused | gap | temporary passwords are not implemented |
+| `FR-AUTH-018` Authenticated sessions shall expire after 30 minutes of inactivity | manual | src/bootstrap.php sets the 30-minute inactivity lifetime; no automated assertion |
+| `FR-AUTH-019` After five failed login attempts for the same normalized email and source IP address within 1... | automated | `http` `tests/http_test.ps1:339` — login is rate limited after 5 attempts |
+| `FR-AUTH-020` A temporary password shall be generated by the system, displayed to the administrator once fo... | gap | temporary password generation and one-time display are not implemented |
+| `FR-AUTH-021` Issuing a temporary password shall invalidate any previous temporary password and all existin... | gap | temporary password invalidation rules are not implemented |
+
+## Module CAT
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `FR-CAT-001` An administrator shall be able to create, update, activate, and deactivate produce categories | gap | no administrator category management page exists |
+| `FR-CAT-002` A category shall have a unique name and optional description | manual | categories.name is unique in database/schema.sql; there is no admin UI to manage it |
+| `FR-CAT-003` Deactivated categories shall remain associated with historical records but shall not be selec... | gap | no deactivation path for categories |
+
+## Module LIST
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `FR-LIST-001` A verified farmer shall be able to create a produce listing | manual | create_listing.php is the entry point and requires verification; no automated assertion |
+| `FR-LIST-002` A listing shall include category, produce name, description, available quantity, unit, price ... | manual | create_listing.php persists the listed fields; no automated assertion |
+| `FR-LIST-003` A listing may include one validated JPEG, PNG, or WebP produce image no larger than 5 MB | manual | 5 MB limit at public/create_listing.php:112 and :156 with a finfo MIME check at :106; no automated assertion |
+| `FR-LIST-004` Allowed units shall come from a controlled list such as kilogram, sack, crate, bundle, or piece | manual | create_listing.php populates units from quantity_units; no automated assertion |
+| `FR-LIST-005` A new listing shall have a positive available quantity and price; subsequent quantity adjustm... | automated | `http` `tests/http_test.ps1:430` — create_listing refuses a non-numeric price<br>`http` `tests/http_test.ps1:441` — create_listing still accepts a valid price<br>`http` `tests/http_test.ps1:598` — the database refuses a negative price<br>`http` `tests/http_test.ps1:606` — the database still accepts a legal price<br>`valid` `tests/validation.php:83` — garbage stock is rejected |
+| `FR-LIST-006` A farmer shall be able to view, edit, close, or reactivate an owned listing subject to the ex... | gap | produce_listings.status is enum(draft,active,paused,sold_out,archived), not the specified lifecycle |
+| `FR-LIST-007` A farmer shall not edit another farmer's listing | manual | listing.php scopes edits by owner id; no cross-farmer automated assertion |
+| `FR-LIST-008` The system shall mark a listing unavailable when its available quantity reaches zero | partial | the enum has no unavailable value and no code moves a listing when quantity reaches zero |
+| `FR-LIST-009` Closed, unavailable, and deactivated listings shall remain available in authorized history views | gap | no authorized history view for closed, unavailable or deactivated listings |
+| `FR-LIST-010` An administrator shall be able to deactivate a listing that violates system rules and record ... | gap | no administrator listing deactivation action |
+| `FR-LIST-011` Editing a listing shall not change immutable values already stored in an existing order | manual | orders store immutable snapshot columns; no automated assertion |
+| `FR-LIST-012` A farmer may adjust only the current available quantity; quantities already deducted for conf... | partial | `http` `tests/http_test.ps1:500` — confirm deducts the ordered quantity (10 -> 8)<br>`http` `tests/http_test.ps1:501` — confirm records a sale_deduction that balan...<br>Also: confirmed deductions are protected; no assertion covers direct farmer quantity edits |
+| `FR-LIST-013` Closing a listing shall prevent new order requests but shall not automatically cancel existin... | gap | farmer close action is not implemented |
+| `FR-LIST-014` Farmer reactivation shall be allowed only for a farmer-closed listing owned by an active, ver... | gap | farmer reactivation is not implemented |
+| `FR-LIST-015` An administrator-deactivated listing shall not be reactivated by the farmer; pending and deli... | gap | administrator deactivation state is not implemented |
+| `FR-LIST-016` An administrator shall manage the active quantity units available to farmers | gap | no administrator unit management page exists |
+| `FR-LIST-017` Kilograms shall allow quantities with up to two decimal places; sacks, crates, bundles, and p... | partial | `valid` `tests/validation.php:43` — integer string<br>`valid` `tests/validation.php:44` — decimal string<br>Also: number_in accepts whole and two-decimal input; per-unit enforcement is not asserted |
+| `FR-LIST-018` Deactivating a unit shall prevent its use on new listings without changing historical listing... | gap | no unit deactivation path |
+| `FR-LIST-019` The system shall decode and re-encode an accepted image into a non-executable generated file ... | gap | no decode or re-encode step; images are stored exactly as uploaded |
+| `FR-LIST-020` Listing status shall be exactly one of `active`, `farmer_closed`, `unavailable`, or `admin_de... | gap | enum is draft/active/paused/sold_out/archived, none of the four required values |
+| `FR-LIST-021` A verified, active farmer may create a listing as active when its category and unit are activ... | manual | create_listing.php checks verification status before insert; no automated assertion |
+| `FR-LIST-022` A farmer may move an owned active or unavailable listing to farmer-closed; no new requests ar... | gap | farmer-close transition is not implemented |
+| `FR-LIST-023` Every listing status change shall enforce the defined transition and authorization rules on t... | gap | no server-side listing transition map exists |
+| `FR-LIST-024` The system shall move an active listing to unavailable when available quantity becomes zero a... | gap | no automatic unavailable transition at zero quantity |
+| `FR-LIST-025` An administrator may move any non-deactivated listing to administrator-deactivated with a rea... | gap | no administrator deactivation action with a reason |
+| `FR-LIST-026` Deactivating a category or unit shall prevent its use for new listings and prevent affected c... | gap | no category or unit deactivation cascade |
+| `FR-LIST-027` Listing quantity and status changes shall be transactional and shall reject a stale concurren... | manual | public/order_request.php locks the listing row FOR UPDATE inside a transaction; no stale-read assertion |
+| `FR-LIST-028` Each managed unit shall define a quantity precision of zero or two decimal places; kilogram s... | manual | quantity_units.step carries the increment; no automated precision assertion |
+| `FR-LIST-029` Every change to available quantity shall create an immutable stock-adjustment record containi... | automated | `http` `tests/http_test.ps1:501` — confirm records a sale_deduction that balan...<br>`http` `tests/http_test.ps1:508` — cancel records a return adjustment that bal... |
+| `FR-LIST-030` Stock-adjustment reason categories shall include initial listing quantity, farmer correction,... | partial | `http` `tests/http_test.ps1:501` — confirm records a sale_deduction that balan...<br>Also: initial listing, sale_deduction and return exist; farmer_correction is not asserted |
+| `FR-LIST-031` Restoration exposure shall equal the requested quantities of the listing's confirmed and in-p... | manual | order_action.php computes restoration exposure from confirmed and in-progress orders; no automated assertion |
+| `FR-LIST-032` A farmer stock increase shall be rejected when available quantity plus restoration exposure w... | gap | no automated assertion for the farmer stock-increase ceiling |
+| `FR-LIST-033` A listing whose expiry date has passed shall be presented as expired and shall be rejected bo... | automated | `valid` `tests/validation.php:143` — a listing expiring today is still sellable<br>`valid` `tests/validation.php:144` — a listing expired yesterday is not sellable<br>`http` `tests/http_test.ps1:550` — order_request refuses an expired listing<br>`http` `tests/http_test.ps1:553` — order_request wrote no pending order for an...<br>`http` `tests/http_test.ps1:558` — an expired listing is still visible on its ...<br>`http` `tests/http_test.ps1:559` — an expired listing is marked expired<br>`http` `tests/http_test.ps1:560` — an expired listing offers no order form<br>`http` `tests/http_test.ps1:567` — a listing expiring tomorrow still accepts a...<br>`http` `tests/http_test.ps1:585` — confirm refuses an order whose listing expi... |
+| `FR-LIST-034` Expiry shall not alter a listing's recorded available quantity, because the stock still exist... | automated | `http` `tests/http_test.ps1:572` — expiry leaves available_quantity untouched<br>`http` `tests/http_test.ps1:574` — expiry writes no spoilage adjustment<br>`http` `tests/http_test.ps1:587` — refusing the expired confirm deducted no stock |
+
+## Module MNT
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `NFR-MNT-001` Application code shall separate configuration, database access, business logic, controllers o... | manual | config, database access, logic and controllers are split across config/, src/DB.php, src/functions.php and public/ |
+| `NFR-MNT-002` Reusable validation, authorization, CSRF, session, and escaping functions shall be centralized | manual | number_in, csrf_token, require_role and escaping helpers are centralized in src/functions.php |
+| `NFR-MNT-003` Names shall describe business meaning and follow one documented convention | manual | requirement identifiers follow FR-[MODULE]-[NNN] and are validated by this tool |
+| `NFR-MNT-004` Environment-specific database credentials shall not be committed to version control | manual | config/config.php is excluded by .gitignore |
+| `NFR-MNT-005` The project shall include installation, database setup, and test instructions | manual | docs/README_SETUP.md and database/migrations/README.md carry setup and test instructions |
+
+## Module ORD
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `FR-ORD-001` Only an authenticated buyer with an active account shall be able to submit an order request | manual | order_request.php requires a logged-in buyer; no automated assertion |
+| `FR-ORD-002` An order request shall reference one active produce listing and one buyer | automated | `e2e` `tests/e2e/smoke.js:79` — listing is orderable in the seeded fixture<br>Also: the happy path proves an active listing is orderable; foreign-key integrity has no dedicated assertion |
+| `FR-ORD-003` A buyer shall provide requested quantity, fulfillment method, preferred fulfillment date, and... | automated | `e2e` `tests/e2e/smoke.js:77` — listing page offers the quantity form<br>`e2e` `tests/e2e/smoke.js:92` — the typed value replaced the default quantity<br>`http` `tests/http_test.ps1:411` — order_request names the unit when the quant... |
+| `FR-ORD-004` Fulfillment method shall be pickup or farmer-arranged local delivery | manual | order_request.php restricts method to pickup or local_delivery; no automated assertion |
+| `FR-ORD-005` A local-delivery request shall require a delivery address appropriate for coordination | manual | order_request.php requires a delivery address for local delivery; no automated assertion |
+| `FR-ORD-006` The system shall calculate the order subtotal from requested quantity and the listing price a... | manual | order_request.php computes subtotal from quantity times unit price; no automated assertion |
+| `FR-ORD-007` The system shall preserve the agreed unit price in the order even if the listing price change... | manual | orders keep a unit_price snapshot column; no automated assertion |
+| `FR-ORD-008` Submitting an order shall create a pending request and shall not immediately deduct listing q... | automated | `http` `tests/http_test.ps1:500` — confirm deducts the ordered quantity (10 -> 8)<br>Also: deduction is proven to occur at confirm rather than at request |
+| `FR-ORD-009` A farmer shall be able to accept a pickup request, quote a delivery fee for a local-delivery ... | manual | order_action.php exposes accept and set_fee; no automated assertion for accept |
+| `FR-ORD-010` Confirming an order shall deduct its requested quantity from available quantity using a datab... | automated | `http` `tests/http_test.ps1:498` — confirm reaches the confirmed state<br>`http` `tests/http_test.ps1:500` — confirm deducts the ordered quantity (10 -> 8) |
+| `FR-ORD-011` The system shall prevent confirmation when the requested quantity exceeds the listing's avail... | automated | `http` `tests/http_test.ps1:532` — confirm refuses when stock is insufficient ... |
+| `FR-ORD-012` Rejecting an order shall require a reason and shall not change listing quantity | automated | `http` `tests/http_test.ps1:520` — reject reaches the rejected state<br>`http` `tests/http_test.ps1:521` — rejecting a pending order leaves stock unch...<br>`http` `tests/http_test.ps1:523` — reject adds no return adjustment |
+| `FR-ORD-013` The farmer shall be able to move a confirmed order through valid preparation and fulfillment ... | gap | preparing, ready and completed transitions are not exercised |
+| `FR-ORD-014` The buyer shall be able to view the current status and status history of an owned order | manual | order.php renders status history; no automated assertion |
+| `FR-ORD-015` The farmer shall be able to view incoming and historical orders for owned listings | manual | dashboard.php lists orders for owned listings; no automated assertion |
+| `FR-ORD-016` For a pending local-delivery request, the listing owner and administrators may view the deliv... | gap | no assertion proves the delivery address is limited to the owner and administrators |
+| `FR-ORD-017` The system shall not record or process online payment information | manual | no payment fields or gateways exist in the schema or forms |
+| `FR-ORD-018` Each order shall preserve immutable snapshots of produce name, unit, requested quantity, unit... | manual | orders store snapshot columns for produce, unit, quantity and price; no automated assertion |
+| `FR-ORD-019` For farmer-arranged local delivery, the farmer shall enter a non-negative delivery-fee quote,... | automated | `http` `tests/http_test.ps1:457` — set_fee accepts a fee within range<br>`http` `tests/http_test.ps1:465` — set_fee refuses a fee above the maximum<br>`http` `tests/http_test.ps1:473` — set_fee refuses a negative fee<br>`valid` `tests/validation.php:78` — fee at cap<br>`valid` `tests/validation.php:79` — fee above cap |
+| `FR-ORD-020` The system shall calculate and store the produce subtotal, delivery fee, and final total; pic... | manual | order_action.php stores subtotal, delivery fee and total; no automated assertion |
+| `FR-ORD-021` Delivery fees and final totals are records for coordination only and shall not constitute onl... | manual | no payment capture path exists anywhere in the order flow |
+| `FR-ORD-022` A farmer accepting a pickup request shall provide the private pickup location and confirm the... | gap | private pickup location capture is not implemented |
+| `FR-ORD-023` Quoting a local-delivery fee shall move the request to delivery-fee review without deducting ... | manual | set_fee moves the request to delivery_fee_review without touching stock; no automated assertion |
+| `FR-ORD-024` A buyer shall be able to accept or decline the quoted delivery fee; acceptance shall confirm ... | gap | divergence: public/order_action.php lets the farmer confirm from delivery_fee_review instead of the buyer accepting a quote |
+| `FR-ORD-025` If stock is insufficient when the buyer accepts a delivery quote, the system shall cancel the... | gap | no buyer acceptance path exists, so this cancellation rule is unreachable |
+| `FR-ORD-026` After confirmation, the buyer and farmer shall be able to view each other's coordination cont... | manual | order.php reveals contacts after confirmation; no automated assertion |
+| `FR-ORD-027` Once a request enters delivery-fee review, its quantity, unit price, fulfillment method, deli... | gap | no assertion proves the request is immutable while in fee review |
+| `FR-ORD-028` The system shall reject a new request whose quantity exceeds the listing's available quantity... | automated | `http` `tests/http_test.ps1:380` — cart_add refuses a quantity above available...<br>`http` `tests/http_test.ps1:391` — order_request refuses a non-numeric quantity<br>`http` `tests/http_test.ps1:392` — order_request created no order<br>`e2e` `tests/e2e/smoke.js:105` — the order failure lands on the listing page<br>`e2e` `tests/e2e/smoke.js:149` — nothing was added to the cart |
+| `FR-ORD-029` Order snapshots shall also preserve the category name, farmer or farm display name, and listi... | manual | order snapshots store category and farm display names; no automated assertion |
+
+## Module PERF
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `NFR-PERF-001` At least 95% of common page requests shall complete within 3 seconds during the defined 20-co... | gap | the 20-concurrent-user acceptance test has not been run |
+| `NFR-PERF-002` Listing and administrative tables shall use pagination | manual | browse.php and dashboard.php paginate with LIMIT; no automated assertion |
+| `NFR-PERF-003` Searchable and relational columns shall be indexed according to measured query needs | manual | indexes are declared in database/schema.sql; no measured query plan |
+| `NFR-PERF-004` Uploaded listing images shall be re-encoded and served from a display-sized generated version... | gap | images are served exactly as uploaded; there is no display-sized version |
+| `NFR-PERF-005` The acceptance-test report shall identify server hardware, PHP and MySQL versions, database s... | gap | no acceptance-test report with hardware, versions or percentiles exists |
+
+## Module PRIV
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `NFR-PRIV-001` The system shall collect only information required for account, verification, listing, and or... | manual | collectable columns are enumerated in database/schema.sql; no assertion |
+| `NFR-PRIV-002` Public pages shall not display private phone numbers, email addresses, or exact addresses | manual | listing.php omits phone, email and exact address for public viewers |
+| `NFR-PRIV-003` Users shall be informed why profile and fulfillment information is collected | manual | public/privacy.php and public/terms.php state the purpose of collection |
+| `NFR-PRIV-004` Access to personal data shall follow role and ownership rules consistent with the Data Privac... | automated | `http` `tests/http_test.ps1:224` — unknown email gives no account-existence hint<br>`http` `tests/http_test.ps1:227` — unknown email still shows the same generic ...<br>Also: account enumeration is closed on the reset path; no equivalent assertion on login or registration |
+| `NFR-PRIV-005` Historical orders, status changes, verification reviews, suspension records, and audit logs s... | manual | status changes and reviews are retained rather than deleted; no assertion |
+| `NFR-PRIV-006` Account anonymization shall replace the user's name, email, contact number, exact addresses, ... | automated | `http` `tests/http_test.ps1:188` — anonymized_at is stamped<br>`http` `tests/http_test.ps1:189` — email is replaced with a tombstone<br>`http` `tests/http_test.ps1:191` — session is destroyed - account page is gated<br>`http` `tests/http_test.ps1:158` — account page links to the delete page<br>`http` `tests/http_test.ps1:171` — delete page renders for a logged-in buyer<br>`http` `tests/http_test.ps1:174` — wrong confirm phrase leaves the account active<br>`http` `tests/http_test.ps1:179` — empty confirm phrase leaves the account active<br>`http` `tests/http_test.ps1:183` — wrong current password leaves the account a...<br>`http` `tests/http_test.ps1:187` — confirm phrase is case-insensitive by design |
+| `NFR-PRIV-007` Only active administrators may create or release retention holds, and each hold shall identif... | gap | no interface creates or releases retention holds |
+| `NFR-PRIV-008` Before a buyer submits a local-delivery request, the interface shall disclose that the exact ... | manual | order_request.php discloses address sharing for local delivery |
+| `NFR-PRIV-009` Anonymization shall also remove exact fulfillment locations and user-authored free-text that ... | manual | account_anonymize clears addresses and notes fields; no automated assertion for free text |
+| `NFR-PRIV-010` Audit events shall identify actors and targets by stable internal references; personal values... | manual | audit rows reference users by id rather than by name or email |
+
+## Module PROF
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `FR-PROF-001` Farmers and buyers shall be able to view and update their own profile | automated | `http` `tests/http_test.ps1:161` — name change persists to the database |
+| `FR-PROF-002` A profile shall include name, contact number, barangay, municipality or city, and province | partial | `http` `tests/http_test.ps1:161` — name change persists to the database<br>Also: only the name field is asserted; contact, barangay, municipality and province have no assertion |
+| `FR-PROF-003` A buyer may optionally provide a business name and buyer type | manual | account.php renders optional business-name and buyer-type inputs; no automated assertion |
+| `FR-PROF-004` A farmer shall provide farm name, farm description, and a request for administrator verification | manual | register.php collects farm name and description and creates the pending verification record; no automated assertion |
+| `FR-PROF-005` A newly registered farmer shall have a pending verification status | automated | `panels` `tests/panels_test.ps1:159` — fixture starts with a pending farmer<br>`panels` `tests/panels_test.ps1:155` — the pending farmer appears in the queue |
+| `FR-PROF-006` A pending or rejected farmer shall not publish produce listings | manual | create_listing.php requires approved verification before publishing; no automated assertion |
+| `FR-PROF-007` An administrator shall be able to approve or reject a farmer verification request and record ... | automated | `panels` `tests/panels_test.ps1:169` — approving flips the farmer to approved<br>`panels` `tests/panels_test.ps1:170` — the approval is confirmed back to the admin |
+| `FR-PROF-008` A farmer shall be able to view the current verification status and rejection reason, when app... | manual | admin_verify.php lists requests and the farmer dashboard reads status and reason; no assertion for the rejection reason |
+| `FR-PROF-009` The system shall not display exact private addresses on public listing pages | manual | listing.php renders barangay/municipality granularity only; no automated assertion |
+| `FR-PROF-010` Farmer evidence shall be checked offline or through an external process; the first release sh... | manual | the schema stores no identity documents; the first release relies on offline evidence |
+| `FR-PROF-011` The system shall store verification workflow metadata and history but shall not store copies ... | manual | no document copies are stored, only status, notes and timestamps |
+| `FR-PROF-012` Verification status shall be pending, approved, rejected, or revoked | manual | verification status enum is defined in database/schema.sql; no automated assertion |
+| `FR-PROF-013` Each verification submission shall create an immutable request record with its submission tim... | manual | farmer_verifications rows are inserted at registration; no automated assertion |
+| `FR-PROF-014` Each approval, rejection, or revocation shall create an immutable review event containing the... | automated | `panels` `tests/panels_test.ps1:175` — the audit log shows the approval just made |
+| `FR-PROF-015` A rejected or revoked farmer may update the profile and create a new verification request; pr... | gap | no path to submit a new verification request after rejection |
+| `FR-PROF-016` The farmer's current verification status shall be derived from the latest request and review ... | manual | dashboard.php derives status from the latest verification row; no automated assertion |
+| `FR-PROF-017` An administrator may revoke approval with a required reason; revocation shall follow the same... | gap | revocation with a required reason is not implemented |
+
+## Module REL
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `NFR-REL-001` Foreign keys and database constraints shall protect required relationships | automated | `http` `tests/http_test.ps1:598` — the database refuses a negative price<br>`http` `tests/http_test.ps1:600` — the database refuses a negative delivery fee<br>`http` `tests/http_test.ps1:602` — the database refuses a zero cart quantity |
+| `NFR-REL-002` Order confirmation and stock deduction shall run in one database transaction | automated | `http` `tests/http_test.ps1:500` — confirm deducts the ordered quantity (10 -> 8)<br>`http` `tests/http_test.ps1:501` — confirm records a sale_deduction that balan... |
+| `NFR-REL-003` The deployment shall support daily database backups with a maximum recovery point of 24 hours... | gap | no daily backup procedure and no documented restore test exist |
+| `NFR-REL-004` User-facing records shall use status changes or soft deletion instead of destructive deletion... | manual | orders and listings change status rather than being deleted; no assertion |
+| `NFR-REL-005` The application shall show a safe error message and preserve submitted values when a recovera... | automated | `http` `tests/http_test.ps1:175` — wrong confirm phrase surfaces an error<br>`http` `tests/http_test.ps1:413` — order_request leaks no PHP notice when the ...<br>`http` `tests/http_test.ps1:431` — create_listing wrote no listing for a bad p...<br>`http` `tests/http_test.ps1:362` — cart_add wrote no row for a non-numeric qua... |
+
+## Module REP
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `FR-REP-001` An administrator shall be able to generate a user registration report filtered by date and role | partial | `panels` `tests/panels_test.ps1:180` — reports page offers at least one report or ...<br>Also: the registration report exists; no assertion on date and role filters |
+| `FR-REP-002` An administrator shall be able to generate a listing report filtered by date, category, farme... | partial | `panels` `tests/panels_test.ps1:180` — reports page offers at least one report or ...<br>Also: the listing report exists; no assertion on its filters |
+| `FR-REP-003` An administrator shall be able to generate an order report filtered by date, status, farmer, ... | partial | `panels` `tests/panels_test.ps1:180` — reports page offers at least one report or ...<br>Also: the order report exists; no assertion on its filters |
+| `FR-REP-004` A farmer shall be able to view a summary of listing quantities and orders by status | manual | dashboard.php renders farmer summary tiles; no automated assertion |
+| `FR-REP-005` Reports shall display the applied filters and generation timestamp | manual | admin_reports.php echoes the applied filter and generation timestamp |
+| `FR-REP-006` The first release shall support printable HTML reports. PDF export is optional only if time r... | automated | `panels` `tests/panels_test.ps1:187,194` — the PDF export returns a real PDF<br>`panels` `tests/panels_test.ps1:188` — the PDF export is served as application/pdf<br>`panels` `tests/panels_test.ps1:189` — the PDF export is not empty<br>`panels` `tests/panels_test.ps1:191` — the PDF export is terminated<br>`pdf` `tests/pdf_test.php:68` — starts with %PDF-1.4<br>`pdf` `tests/pdf_test.php:69` — ends with %%EOF<br>`pdf` `tests/pdf_test.php:77` — /Count matches the number of page objects<br>`pdf` `tests/pdf_test.php:78` — /Kids lists one ref per page<br>`pdf` `tests/pdf_test.php:82` — Kid <br>`pdf` `tests/pdf_test.php:87` — one xref entry per object<br>`pdf` `tests/pdf_test.php:97` — found a content stream per page<br>`pdf` `tests/pdf_test.php:111` — 300 rows span multiple pages<br>`pdf` `tests/pdf_test.php:126,128` — page <br>`pdf` `tests/pdf_test.php:130` — no page overflows<br>`pdf` `tests/pdf_test.php:143` — every row appears in the export<br>`pdf` `tests/pdf_test.php:164` — empty export is still a PDF<br>`pdf` `tests/pdf_test.php:162` — empty export has one page |
+| `FR-REP-007` An administrator shall be able to generate a farmer-verification report filtered by submissio... | partial | `panels` `tests/panels_test.ps1:180` — reports page offers at least one report or ...<br>Also: the verification report exists; no assertion on submission-date filters |
+| `FR-REP-008` An administrator shall be able to generate a fulfillment-value report showing order counts, p... | partial | `panels` `tests/panels_test.ps1:180` — reports page offers at least one report or ...<br>Also: the fulfillment report exists; no assertion on its values |
+| `FR-REP-009` An administrator shall be able to generate a cancellation summary grouped and filtered by dat... | partial | `panels` `tests/panels_test.ps1:180` — reports page offers at least one report or ...<br>Also: the cancellation summary exists; no assertion on grouping or reason filters |
+
+## Module SEC
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `NFR-SEC-001` All SQL queries containing variable data shall use PDO prepared statements | manual | src/DB.php sets ATTR_EMULATE_PREPARES false and queries use bound parameters |
+| `NFR-SEC-002` All state-changing forms shall include CSRF protection | automated | `http` `tests/http_test.ps1:167` — invalid csrf token cannot change the name<br>`http` `tests/http_test.ps1:90` — login page renders and exposes csrf<br>`e2e` `tests/e2e/smoke.js:64` — login page renders and exposes csrf |
+| `NFR-SEC-003` All untrusted output shall be HTML-escaped by default | automated | `pdf` `tests/pdf_test.php:154` — parentheses survive escaping<br>`pdf` `tests/pdf_test.php:155` — backslashes survive escaping<br>`pdf` `tests/pdf_test.php:156` — unbalanced parens do not truncate the stream |
+| `NFR-SEC-004` Passwords shall use `password_hash()` and `password_verify()` | manual | password_hash in register.php and password_verify at public/login.php:40 |
+| `NFR-SEC-005` Production session cookies shall set HttpOnly, Secure, and SameSite=Lax | manual | src/bootstrap.php sets HttpOnly, SameSite=Lax and Secure in production |
+| `NFR-SEC-006` The session identifier shall be regenerated after login and privilege changes | automated | `http` `tests/http_test.ps1:269` — an expired remember-me token does not sign ...<br>`http` `tests/http_test.ps1:270` — an expired remember-me token is cleared fro...<br>`http` `tests/http_test.ps1:276` — an unexpired remember-me token does sign th...<br>Also: remember-me token lifetime is asserted; the regeneration call at public/login.php:46 is verified by inspection only |
+| `NFR-SEC-007` Authorization shall be enforced on the server for every protected action | automated | `panels` `tests/panels_test.ps1:148` — * is refused *<br>`http` `tests/http_test.ps1:210` — admin account page hides the name form<br>`http` `tests/http_test.ps1:145` — a logged-out search miss does not offer the...<br>`http` `tests/http_test.ps1:94` — account page is reachable while logged in |
+| `NFR-SEC-008` Login attempts shall enforce the five-attempt, 15-minute window and 15-minute block defined i... | automated | `http` `tests/http_test.ps1:339` — login is rate limited after 5 attempts<br>`http` `tests/http_test.ps1:593` — rate_limits exists after schema.sql + migra... |
+| `NFR-SEC-009` Uploaded images shall be checked by content type, extension, decoded image validity, and the ... | manual | finfo MIME check and the 5 MB limit at public/create_listing.php |
+| `NFR-SEC-010` Uploaded images shall be stored in a dedicated location where script execution is disabled; o... | manual | uploads are written to a dedicated non-executable directory |
+| `NFR-SEC-011` Production error pages shall not expose stack traces, SQL statements, credentials, or server ... | manual | public/500.php renders a safe message instead of a stack trace |
+| `NFR-SEC-012` Sensitive administrator actions and order status changes shall be auditable | automated | `panels` `tests/panels_test.ps1:175` — the audit log shows the approval just made |
+| `NFR-SEC-013` Any non-local production deployment shall use HTTPS for every application request and redirec... | manual | docs/nginx-hardening.conf redirects HTTP to HTTPS |
+| `NFR-SEC-014` Production responses shall set HSTS, Content-Security-Policy, X-Content-Type-Options, frame-e... | manual | security headers are emitted from src/bootstrap.php; no production-mode header assertion |
+| `NFR-SEC-015` Temporary passwords, reset events, retention holds, and administrative hold resolutions shall... | automated | `http` `tests/http_test.ps1:223` — forgot password issues a local reset link<br>`http` `tests/http_test.ps1:232` — reset link opens the form<br>`http` `tests/http_test.ps1:235` — reset completes successfully<br>`http` `tests/http_test.ps1:236` — all reset tokens are revoked after use<br>`http` `tests/http_test.ps1:246` — the new password logs in<br>`http` `tests/http_test.ps1:252` — the old password no longer works<br>`http` `tests/http_test.ps1:255` — the reset link is single use<br>`http` `tests/http_test.ps1:285` — an expired reset token is reported as such<br>`http` `tests/http_test.ps1:295` — posting the expired token is refused<br>`http` `tests/http_test.ps1:296` — posting the expired token leaves the passwo...<br>Also: the SRS has no functional requirement for password reset, so this suite is recorded against the closest security requirement; recommend adding one. Temporary passwords and holds still have no code path. |
+| `NFR-SEC-016` PHP strict session mode shall be enabled, and uninitialized client-supplied session identifie... | manual | session.use_strict_mode and use_only_cookies are set in src/bootstrap.php |
+| `NFR-SEC-017` Production HSTS shall use a max-age of at least 31,536,000 seconds; CSP shall restrict defaul... | manual | HSTS max-age and the CSP policy are defined in src/bootstrap.php; no header assertion |
+| `NFR-SEC-018` Temporary passwords and authentication secrets shall never be written to application logs or ... | manual | no log statement writes a password or token; verified by inspection, not by test |
+| `NFR-SEC-019` Audit before-and-after payloads shall use an allowlist of non-sensitive fields and shall not ... | manual | audit payload fields are enumerated in src/functions.php audit_log; no assertion on the allowlist |
+
+## Module SRCH
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `FR-SRCH-001` Visitors and authenticated users shall be able to browse active listings | automated | `http` `tests/http_test.ps1:117` — a search that matches nothing stays on the ...<br>`http` `tests/http_test.ps1:118` — a search that matches nothing never reaches... |
+| `FR-SRCH-002` Users shall be able to search by produce name or farmer or farm name | automated | `http` `tests/http_test.ps1:114` — search form targets browse.php, not the dir...<br>`http` `tests/http_test.ps1:115` — search form no longer targets the bare dire... |
+| `FR-SRCH-003` Users shall be able to filter by category, location, unit, availability date, and price range | partial | `http` `tests/http_test.ps1:119` — a search that matches nothing runs the filter<br>Also: the filter path executes; category, location, date and price-range combinations have no assertions |
+| `FR-SRCH-004` Users shall be able to sort by newest listing, lowest price, highest price, and nearest avail... | manual | browse.php emits ORDER BY for newest and price; no automated assertion |
+| `FR-SRCH-005` Search and filter results shall use pagination | manual | browse.php paginates with LIMIT; no automated assertion |
+| `FR-SRCH-006` Public results shall not reveal private contact details or exact addresses | manual | listing.php omits contact fields for public viewers; no automated assertion |
+
+## Module STAT
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `FR-STAT-001` A pickup order may follow `pending -> confirmed -> preparing -> ready_for_pickup -> completed` | gap | the pickup chain beyond confirmed is not exercised |
+| `FR-STAT-002` A local-delivery order may follow `pending -> delivery_fee_review -> confirmed -> preparing -... | gap | the delivery chain is not exercised |
+| `FR-STAT-003` A farmer may move a pending request to rejected and may withdraw a delivery quote by moving a... | partial | `http` `tests/http_test.ps1:520` — reject reaches the rejected state<br>Also: pending to rejected is proven; quote withdrawal is not |
+| `FR-STAT-004` A buyer may cancel a pending request or decline and cancel a request in delivery-fee review | gap | no buyer cancel path from pending or fee review |
+| `FR-STAT-005` A buyer or farmer may cancel a confirmed order before it enters preparing status; a reason is... | partial | `http` `tests/http_test.ps1:507` — cancelling a confirmed order restores the s...<br>Also: confirmed cancellation is proven; pending cancellation and the required reason are not |
+| `FR-STAT-006` Every status change shall record the previous status, new status, responsible actor (user or ... | manual | order_status_history rows record previous status, new status and actor; no automated assertion |
+| `FR-STAT-007` The system shall reject invalid status transitions | manual | order_action.php validates the transition map; no automated assertion for a rejected transition |
+| `FR-STAT-008` Cancelling a confirmed order before preparing shall restore its requested quantity to availab... | automated | `http` `tests/http_test.ps1:507` — cancelling a confirmed order restores the s...<br>`http` `tests/http_test.ps1:508` — cancel records a return adjustment that bal... |
+| `FR-STAT-009` After an order enters preparing, only an administrator may cancel it as part of dispute or su... | gap | no administrator cancellation path for in-progress orders |
+| `FR-STAT-010` Rejected, completed, and cancelled orders are terminal and shall not move to another status | gap | terminal-state enforcement is not exercised |
+| `FR-STAT-011` An administrative hold is separate from the primary order status; while held, no buyer or far... | gap | administrative hold is not implemented |
+| `FR-STAT-012` An administrator may release a held order without changing its primary status only after invo... | gap | administrative hold release is not implemented |
+| `FR-STAT-013` An administrator may cancel a held confirmed or in-progress order and must record whether sto... | gap | administrative cancellation of held orders is not implemented |
+| `FR-STAT-014` Rejection and cancellation shall record a controlled reason category: buyer changed mind, far... | gap | the reason category vocabulary is not asserted |
+| `FR-STAT-015` An administrator may cancel an abandoned pending request with no transition for seven days or... | gap | no abandoned-request cancellation path |
+
+## Module TEST
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `NFR-TEST-001` Acceptance testing shall cover the current stable releases of Chrome, Edge, and Firefox avail... | partial | `e2e` `tests/e2e/smoke.js:72` — login establishes a session<br>`e2e` `tests/e2e/smoke.js:153` — no console errors during the flow<br>Also: the browser suite runs in Chrome only; Edge and Firefox were not exercised |
+| `NFR-TEST-002` Responsive acceptance testing shall include 360-pixel mobile, 768-pixel tablet, and 1366-pixe... | gap | no 360, 768 and 1366 pixel acceptance run is recorded |
+| `NFR-TEST-003` The load test shall simulate 20 concurrent users performing a documented representative mix o... | gap | no load test simulates 20 concurrent users |
+| `NFR-TEST-004` Security tests shall cover horizontal and vertical authorization, CSRF, stored and reflected ... | partial | `http` `tests/http_test.ps1:167` — invalid csrf token cannot change the name<br>`panels` `tests/panels_test.ps1:148` — * is refused *<br>`pdf` `tests/pdf_test.php:154` — parentheses survive escaping<br>Also: CSRF and authorization are covered; no explicit XSS or SQL injection suite |
+| `NFR-TEST-005` Production-header tests shall verify HTTPS redirection, HSTS, Content-Security-Policy, X-Cont... | gap | no test asserts HTTPS redirection, HSTS, CSP or X-Content-Type-Options |
+
+## Module UX
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `NFR-UX-001` The interface shall be responsive from 320-pixel mobile screens through common desktop widths | partial | `http` `tests/http_test.ps1:106` — public header mobile drawer links to the ac...<br>Also: responsive CSS exists; there is no viewport regression suite |
+| `NFR-UX-002` Primary interactive controls shall be keyboard accessible | partial | `http` `tests/http_test.ps1:128` — the search input has a real label<br>Also: native controls are used; there is no dedicated keyboard suite |
+| `NFR-UX-003` Form fields shall have visible labels, validation messages, and clear recovery instructions | automated | `http` `tests/http_test.ps1:128` — the search input has a real label<br>`http` `tests/http_test.ps1:129` — the search label is not just visually hidde...<br>`e2e` `tests/e2e/smoke.js:119` — a rejected order quantity shows the buyer a...<br>`e2e` `tests/e2e/smoke.js:131` — the explanation is a visible alert, not hid... |
+| `NFR-UX-004` Text and interactive controls shall meet WCAG 2.1 AA contrast requirements | gap | no automated contrast verification exists |
+| `NFR-UX-005` Status shall not be communicated by color alone | partial | `http` `tests/http_test.ps1:120` — a search miss does not claim the market is ...<br>Also: status text accompanies colour throughout; no assertion proves it |
+| `NFR-UX-006` Navigation and terminology shall remain consistent across roles | automated | `http` `tests/http_test.ps1:98` — dashboard nav shows the preferences entry<br>`http` `tests/http_test.ps1:99` — dashboard nav shows the profile and securit...<br>`http` `tests/http_test.ps1:100` — the duplicate settings icon is gone<br>`http` `tests/http_test.ps1:101` — settings is still reachable from the dropdown<br>`http` `tests/http_test.ps1:105` — public header links to the account page<br>`http` `tests/http_test.ps1:109` — public header no longer hardcodes English n...<br>`http` `tests/http_test.ps1:130` — the search placeholder is localised, not ha...<br>`http` `tests/http_test.ps1:126` — no copy key leaks into the page as literal ...<br>`http` `tests/http_test.ps1:154` — the signed-in footer keeps the rest of the ...<br>`http` `tests/http_test.ps1:155` — a logged-out visitor is still offered the s...<br>`http` `tests/http_test.ps1:153` — a signed-in viewer is not offered the selle...<br>`panels` `tests/panels_test.ps1:105` — * sidebar shows '*'<br>`panels` `tests/panels_test.ps1:137` — farmer dashboard has an '*' section<br>`panels` `tests/panels_test.ps1:142` — buyer dashboard has an '*' section |
+| `NFR-UX-007` The system shall provide useful empty, success, warning, and error states | automated | `http` `tests/http_test.ps1:117` — a search that matches nothing stays on the ...<br>`http` `tests/http_test.ps1:120` — a search miss does not claim the market is ...<br>`http` `tests/http_test.ps1:121` — the empty state spans the product grid<br>`http` `tests/http_test.ps1:123` — the empty state applies a real size class<br>`http` `tests/http_test.ps1:124` — the empty state no longer inlines an invali...<br>`http` `tests/http_test.ps1:136` — a signed-in search miss does not offer log in<br>`http` `tests/http_test.ps1:137` — a signed-in search miss does not offer sign up<br>`http` `tests/http_test.ps1:138` — a signed-in search miss offers creating a l...<br>`http` `tests/http_test.ps1:143` — a logged-out search miss does offer log in<br>`http` `tests/http_test.ps1:144` — a logged-out search miss does offer sign up<br>`e2e` `tests/e2e/smoke.js:148` — cart page loads for the buyer<br>`pdf` `tests/pdf_test.php:163` — empty export says so<br>`http` `tests/http_test.ps1:175` — wrong confirm phrase surfaces an error |
+
+## Module VAL
+
+| Requirement | Disposition | Evidence |
+|---|---|---|
+| `FR-VAL-001` Validation failures shall reject the operation without partial database changes and shall ret... | automated | `http` `tests/http_test.ps1:431` — create_listing wrote no listing for a bad p...<br>`http` `tests/http_test.ps1:361` — cart_add refuses a non-numeric quantity<br>`http` `tests/http_test.ps1:374` — cart_add refuses trailing junk (12abc)<br>`http` `tests/http_test.ps1:362` — cart_add wrote no row for a non-numeric qua...<br>`http` `tests/http_test.ps1:368` — cart_add still accepts a valid quantity<br>`http` `tests/http_test.ps1:391` — order_request refuses a non-numeric quantity<br>`http` `tests/http_test.ps1:392` — order_request created no order<br>`http` `tests/http_test.ps1:412` — order_request created no order when the qua...<br>`http` `tests/http_test.ps1:183` — wrong current password leaves the account a...<br>`valid` `tests/validation.php:56` — letters only<br>`valid` `tests/validation.php:57` — trailing junk<br>`valid` `tests/validation.php:58` — leading junk<br>`valid` `tests/validation.php:59` — empty string<br>`valid` `tests/validation.php:60` — whitespace only<br>`valid` `tests/validation.php:61` — thousands separator<br>`valid` `tests/validation.php:62` — scientific overflow<br>`valid` `tests/validation.php:63` — scientific notation<br>`valid` `tests/validation.php:64` — hex literal<br>`valid` `tests/validation.php:65` — INF spelled out<br>`valid` `tests/validation.php:66` — NaN spelled out<br>`valid` `tests/validation.php:67` — null<br>`valid` `tests/validation.php:68` — boolean<br>`valid` `tests/validation.php:69` — array<br>`valid` `tests/validation.php:70` — object<br>`valid` `tests/validation.php:73` — below lower bound<br>`valid` `tests/validation.php:74` — above upper bound<br>`valid` `tests/validation.php:51` — lower bound is inclusive<br>`valid` `tests/validation.php:52` — upper bound is inclusive<br>`valid` `tests/validation.php:53` — negative within range<br>`valid` `tests/validation.php:75` — zero rejected when min > 0<br>`valid` `tests/validation.php:76` — zero accepted when min = 0<br>`valid` `tests/validation.php:83` — garbage stock is rejected |
+| `FR-VAL-002` Historical snapshots shall retain previously valid values even when current validation rules,... | automated | `http` `tests/http_test.ps1:308` — an UPDATE to another column leaves the rese...<br>`http` `tests/http_test.ps1:311` — the token is still expired after that UPDATE<br>`http` `tests/http_test.ps1:320` — reset.php still refuses a token that was up...<br>Also: the reset-expiry case proves a stored validity value is not rewritten by unrelated updates; listing snapshots have no equivalent assertion |
+| `FR-VAL-003` Monetary calculations shall use fixed-point decimal arithmetic and round to two decimal place... | automated | `valid` `tests/validation.php:44` — decimal string<br>`valid` `tests/validation.php:45` — leading decimal point<br>`valid` `tests/validation.php:46` — trailing decimal point<br>`valid` `tests/validation.php:47` — explicit plus sign<br>`valid` `tests/validation.php:48` — surrounding whitespace<br>`valid` `tests/validation.php:49` — native int<br>`valid` `tests/validation.php:50` — native float<br>`valid` `tests/validation.php:77` — negative rejected for money<br>`http` `tests/http_test.ps1:457` — set_fee accepts a fee within range<br>`http` `tests/http_test.ps1:606` — the database still accepts a legal price |
+| `FR-VAL-004` Email, category name, and unit name uniqueness checks shall be case-insensitive after normali... | gap | no case-insensitive uniqueness assertion for email, category or unit names |
+| `FR-VAL-005` Decoded listing images shall not exceed 20 megapixels or 6,000 pixels on either side, and gen... | gap | no megapixel or dimension check exists anywhere in the upload path |
+| `FR-VAL-006` Before accepting a request or delivery quote, the system shall reject any operation whose cal... | partial | `http` `tests/http_test.ps1:532` — confirm refuses when stock is insufficient ...<br>Also: stock is validated before confirmation; no assertion covers the delivery-fee path |
+
+## Assertion inventory
+
+Call sites are counted statically, one per source line. Suites that run an assertion inside a loop report a higher pass count at runtime than the static number here.
+
+| Suite | File | Distinct labels | Static call sites | Requirements reached |
+|---|---|---:|---:|---:|
+| http | `tests/http_test.ps1` | 108 | 108 | 49 |
+| panels | `tests/panels_test.ps1` | 14 | 15 | 18 |
+| e2e | `tests/e2e/smoke.js` | 11 | 11 | 8 |
+| valid | `tests/validation.php` | 36 | 36 | 6 |
+| pdf | `tests/pdf_test.php` | 17 | 18 | 4 |
+
