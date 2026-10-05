@@ -142,6 +142,23 @@ function makeListing(PDO $pdo, int $farmerId, array $data): int
 
     $listingId = (int) $pdo->lastInsertId();
 
+    // Open the stock ledger for this listing, so every quantity in the database
+    // is traceable to a starting row. tools/stock_ledger_backfill.php adds the
+    // same row for listings that predate the ledger.
+    $pdo->prepare(
+        'INSERT INTO stock_adjustments
+         (listing_id, adjustment_type, quantity_change, quantity_before, quantity_after,
+          reference_type, reference_id, notes, created_by)
+         VALUES
+         (:listing_id, \'initial\', :change, 0, :after, \'manual\', NULL, :notes, :created_by)'
+    )->execute([
+        'listing_id'  => $listingId,
+        'change'      => $data['available_quantity'],
+        'after'       => $data['available_quantity'],
+        'notes'       => 'Opening stock recorded at seed time.',
+        'created_by'  => $farmerId,
+    ]);
+
     // Listings without an image fall back to this real photo at render time,
     // so seed one row per listing to keep the marketplace from showing blanks.
     $image = $pdo->prepare(
@@ -179,6 +196,33 @@ function makeOrder(PDO $pdo, int $buyerId, int $farmerId, int $listingId, float 
         'status' => $status,
         'confirmed_at' => $status === 'completed' ? date('Y-m-d H:i:s') : null,
     ]);
+
+    $orderId = (int) $pdo->lastInsertId();
+
+    // A confirmed order consumes stock (FR-ORD-010, BR-009). Seeded orders that
+    // start out completed must move the ledger too, or a fresh database would
+    // disagree with the live one that tools/stock_ledger_backfill.php repairs.
+    if ($status === 'completed') {
+        $before = (float) $pdo->query('SELECT available_quantity FROM produce_listings WHERE id = ' . $listingId)->fetchColumn();
+        $after  = round($before - $qty, 4);
+        $pdo->prepare('UPDATE produce_listings SET available_quantity = :after WHERE id = :id')
+            ->execute(['after' => $after, 'id' => $listingId]);
+        $pdo->prepare(
+            'INSERT INTO stock_adjustments
+             (listing_id, adjustment_type, quantity_change, quantity_before, quantity_after,
+              reference_type, reference_id, notes, created_by)
+             VALUES
+             (:listing_id, \'sale_deduction\', :change, :before, :after, \'order\', :ref_id, :notes, :created_by)'
+        )->execute([
+            'listing_id' => $listingId,
+            'change'     => -$qty,
+            'before'     => $before,
+            'after'      => $after,
+            'ref_id'     => $orderId,
+            'notes'      => 'Seeded completed order ' . $orderId . '.',
+            'created_by' => $farmerId,
+        ]);
+    }
 }
 
 $pdo->beginTransaction();
