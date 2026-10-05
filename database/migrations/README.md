@@ -17,6 +17,7 @@ fresh rebuild only needs that one command.
 | `006_account_deletion.sql` | `users.anonymized_at`; adds `'anonymized'` to the `users.status` enum |
 | `007_password_reset_expiry.sql` | rewrites `password_resets.expires_at` as `DATETIME` |
 | `008_numeric_check_constraints.sql` | `CHECK` constraints on the money and quantity columns of `produce_listings`, `cart_items` and `orders` |
+| `009_rate_limits.sql` | `rate_limits` table - previously only in `database/animal_marketplace.sql`, which `db-reset.php` never loads |
 
 There is no `001`. Numbering starts at `002` because the base tables it would
 have followed are now folded into `schema.sql`.
@@ -36,8 +37,9 @@ whole set twice more:
 | `006_account_deletion.sql` | clean |
 | `007_password_reset_expiry.sql` | clean |
 | `008_numeric_check_constraints.sql` | clean |
+| `009_rate_limits.sql` | clean (`CREATE TABLE IF NOT EXISTS`) |
 
-Also verified by re-applying all seven to the live database, which already had
+Also verified by re-applying all eight to the live database, which already had
 them: every file exited 0 and the schema and row counts were unchanged.
 
 The unguarded forms do not survive a second run. `006` originally used a bare
