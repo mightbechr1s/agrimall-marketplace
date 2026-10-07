@@ -845,7 +845,7 @@ h1, h2, h3, h4, h5, h6,
 }
 :root[data-theme="dark"] .origin-badge {
   background: var(--primary);
-  color: var(--text);
+  color: #FFFFFF;
 }
 .hero-section .btn {
   height: 3.4rem;
@@ -1133,7 +1133,7 @@ h1, h2, h3, h4, h5, h6,
   border-color: var(--primary);
   color: var(--paper);
 }
-:root[data-theme="dark"] .filter-pill.is-active { color: var(--text); }
+:root[data-theme="dark"] .filter-pill.is-active { color: #FFFFFF; }
 
 /* ── Marketplace grid + cards — printed catalog ─────── */
 .grid {
@@ -2843,6 +2843,10 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
     font-size: 2rem;
   }
 }
+:root[data-theme="dark"] .trust-metric-num,
+:root[data-theme="dark"] .trust-metric-lbl {
+  color: #FFFFFF;
+}
 
 /* ── Story / farmer split section ────────────────────── */
 .story-figure {
@@ -3329,12 +3333,12 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   color: var(--text-soft);
 }
 :root[data-theme="dark"] .btn-outline {
-  color: var(--accent);
-  border-color: var(--accent);
+  color: var(--accent) !important;
+  border-color: var(--accent) !important;
 }
 :root[data-theme="dark"] .btn-outline:hover {
-  background-color: var(--accent);
-  color: var(--accent-ink);
+  background-color: var(--accent) !important;
+  color: var(--accent-ink) !important;
 }
 :root[data-theme="dark"] .btn-primary,
 :root[data-theme="dark"] .btn-primary-nav {
@@ -3413,8 +3417,16 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   color: var(--text);
 }
 :root[data-theme="dark"] .text-soft,
-:root[data-theme="dark"] .text-muted {
+:root[data-theme="dark"] .text-muted,
+:root[data-theme="dark"] .form-text {
   color: var(--text-soft);
+}
+:root[data-theme="dark"] #farmer-fields legend {
+  color: var(--success);
+}
+:root[data-theme="dark"] .skip-link {
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 :root[data-theme="dark"] .text-danger {
   color: var(--danger);
