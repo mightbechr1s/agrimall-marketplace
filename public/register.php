@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require __DIR__ . '/../src/bootstrap.php';
 require_once __DIR__ . '/../src/i18n.php';
 $copy = include __DIR__ . '/../src/i18n_copy.php';
@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = $l($copy['auth'], 'err_email_valid');
     }
-    if (strlen($password) < 8) {
+    if (strlen($password) < 8 || !preg_match('/[A-Z]/', $password) || !preg_match('/[0-9]/', $password)) {
         $errors[] = $l($copy['auth'], 'err_pass_min');
     }
     if ($password !== $passwordConfirm) {
