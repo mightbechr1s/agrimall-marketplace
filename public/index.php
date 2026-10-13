@@ -149,7 +149,7 @@ require __DIR__ . '/partials/header.php';
     <div class="container">
         <div class="text-center mb-4">
             <h2 class="section-title fw-bold mb-2"><?= t($copy['cta'], 'heading') ?></h2>
-            <p class="section-lead"><?= t($copy['cta'], 'intro') ?></p>
+            <p class="section-lead col-lg-8 mx-auto"><?= t($copy['cta'], 'intro') ?></p>
         </div>
         <div class="rail mt-4">
             <div class="rail-body">
