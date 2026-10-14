@@ -1,5 +1,4 @@
-# Browser E2E runner: prepares the throwaway test database, starts PHP, runs the
-# smoke spec, then restores config and stops the server.
+# Browser E2E runner: prepares throwaway test DB, starts PHP, runs smoke spec, restores config, stops server.
 $ErrorActionPreference = 'Stop'
 
 $repo  = Split-Path -Parent $PSScriptRoot
@@ -30,7 +29,7 @@ try {
   }
 
   $ids = & $php (Join-Path $repo 'tests\http_seed.php') 2>&1 | ConvertFrom-Json
-  # the seed leaves the fixture out of stock, so the page renders no order form
+  # Seed leaves fixture out of stock; page renders no order form.
   & $mysql -u root animal_marketplace_test -e "UPDATE produce_listings SET available_quantity=50.0000, minimum_order_qty=1.0000 WHERE id=$($ids.listing)" 2>&1 | Out-Null
 
   $srv = Start-Process -FilePath $php -ArgumentList '-S', "127.0.0.1:$port", '-t', 'public' `

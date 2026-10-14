@@ -1,36 +1,7 @@
--- =====================================================================
--- 008: Numeric CHECK constraints on money and quantity columns
--- =====================================================================
--- Every numeric write path used to validate quantity and price in PHP only,
--- by casting with (float) and comparing. A cast cannot reject anything:
--- (float)'abc' is 0.0, (float)'12abc' is 12.0, and (float)'1e999' is INF,
--- which satisfies every `> 0` test. The worst case was available_quantity,
--- because its check read `$availableQuantity < 0` -- and `null < 0` is false,
--- so unparseable input passed validation and was written out as NULL.
---
--- This migration moves the floor down into the database, so a bad value is
--- refused by MariaDB itself no matter which endpoint or script issued the
--- INSERT or UPDATE. src/functions.php::number_in() remains the first line of
--- defence and produces the user-facing error message; these constraints are
--- the backstop for anything that reaches SQL another way.
---
--- NULL means "not supplied", so the money columns only check the lower bound.
--- maximum_order_qty is genuinely nullable and stays that way.
---
--- Verified against the live database before writing this file: 46 rows
--- across produce_listings, cart_items and orders, 0 violations, so the
--- ALTERs below apply without a data-repair step.
---
--- One constraint per ALTER TABLE, and each guarded on information_schema so a
--- second run is a no-op and a partially-migrated database picks up only what
--- is missing. The no-op branch is `DO 0` rather than `SELECT 1`, because the
--- test harness reads any migration output as a failure.
---
--- The compact `ADD CONSTRAINT a CHECK (...), CONSTRAINT b CHECK (...)` form
--- is NOT usable here. MariaDB 10.4 accepts only one ADD clause per ALTER, and
--- the tuple spelling `ADD (CONSTRAINT a CHECK (...), ...)` is worse than a
--- syntax error: it parses cleanly and then silently drops every constraint,
--- which looks like a successful migration and leaves the table unprotected.
+-- 008: CHECK constraints on money/quantity columns, so MariaDB refuses bad values
+-- whatever endpoint wrote them. number_in() (src/functions.php) stays first-line and
+-- owns the user-facing message. MariaDB 10.4 takes one ADD clause per ALTER; the tuple
+-- form parses but silently drops every constraint. No-op branch is DO 0, not SELECT 1.
 USE `animal_marketplace`;
 
 -- ---- produce_listings: price must be positive ------------------------

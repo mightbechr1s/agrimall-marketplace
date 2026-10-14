@@ -1,6 +1,4 @@
--- AniMAL Database Schema
--- Based on SRS v0.3 Section 11 entities, targeting 3NF
--- MySQL 8.0+ compatible
+-- AniMAL database schema: SRS v0.3 Section 11 entities, 3NF, MySQL 8.0+.
 
 CREATE DATABASE IF NOT EXISTS `animal_marketplace`
   CHARACTER SET utf8mb4
@@ -8,9 +6,7 @@ CREATE DATABASE IF NOT EXISTS `animal_marketplace`
 
 USE `animal_marketplace`;
 
--- =====================================================================
 -- CORE USER & AUTHENTICATION
--- =====================================================================
 
 CREATE TABLE `users` (
   `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -39,9 +35,7 @@ CREATE TABLE `sessions` (
   CONSTRAINT `fk_sessions_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- =====================================================================
 -- FARMER & BUYER PROFILES
--- =====================================================================
 
 CREATE TABLE `farmer_profiles` (
   `user_id`              BIGINT UNSIGNED NOT NULL,
@@ -90,9 +84,7 @@ CREATE TABLE `buyer_profiles` (
   CONSTRAINT `fk_buyer_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- =====================================================================
 -- PRODUCE CATEGORIES & UNITS
--- =====================================================================
 
 CREATE TABLE `produce_categories` (
   `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -121,9 +113,7 @@ CREATE TABLE `quantity_units` (
   UNIQUE KEY `uk_unit_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- =====================================================================
 -- PRODUCE LISTINGS
--- =====================================================================
 
 CREATE TABLE `produce_listings` (
   `id`                  BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -168,9 +158,7 @@ CREATE TABLE `listing_images` (
   CONSTRAINT `fk_image_listing` FOREIGN KEY (`listing_id`) REFERENCES `produce_listings`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- =====================================================================
 -- STOCK ADJUSTMENTS (IMMUTABLE LEDGER)
--- =====================================================================
 
 CREATE TABLE `stock_adjustments` (
   `id`                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -192,9 +180,7 @@ CREATE TABLE `stock_adjustments` (
   CONSTRAINT `fk_stock_created_by` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- =====================================================================
 -- ORDERS & STATUS WORKFLOW
--- =====================================================================
 
 CREATE TABLE `orders` (
   `id`                      BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -253,9 +239,7 @@ CREATE TABLE `order_status_history` (
   CONSTRAINT `fk_status_changed_by` FOREIGN KEY (`changed_by`) REFERENCES `users`(`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- =====================================================================
 -- ADMIN TOOLS
--- =====================================================================
 
 CREATE TABLE `admin_order_holds` (
   `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -325,9 +309,7 @@ CREATE TABLE `admin_audit_log` (
   CONSTRAINT `fk_audit_admin` FOREIGN KEY (`admin_id`) REFERENCES `users`(`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- =====================================================================
 -- SEED DATA
--- =====================================================================
 
 INSERT INTO `produce_categories` (`name`, `slug`, `description`, `sort_order`) VALUES
 ('Vegetables', 'vegetables', 'Fresh vegetables and root crops', 1),
@@ -348,13 +330,11 @@ INSERT INTO `quantity_units` (`name`, `symbol`, `type`, `base_factor`, `step`) V
 ('Liter', 'L', 'volume', 1.0000, 0.01),
 ('Milliliter', 'mL', 'volume', 0.0010, 1.00);
 
--- Default admin user (password: admin123 - change in production!)
+-- Default admin user, password admin123 (change in production).
 INSERT INTO `users` (`email`, `password_hash`, `role`, `status`) VALUES
 ('admin@animal.local', '$2y$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.PZvO.S', 'admin', 'active');
 
--- =====================================================================
 -- VIEWS FOR COMMON QUERIES
--- =====================================================================
 
 CREATE OR REPLACE VIEW `v_active_listings` AS
 SELECT
@@ -403,9 +383,7 @@ JOIN `farmer_profiles` fp ON o.farmer_id = fp.user_id
 JOIN `produce_listings` pl ON o.listing_id = pl.id
 JOIN `quantity_units` qu ON pl.unit_id = qu.id;
 
--- =====================================================================
 -- CART (buyer)
--- =====================================================================
 
 CREATE TABLE IF NOT EXISTS `cart_items` (
   `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -422,9 +400,7 @@ CREATE TABLE IF NOT EXISTS `cart_items` (
   CONSTRAINT `fk_cart_listing` FOREIGN KEY (`listing_id`) REFERENCES `produce_listings`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- =====================================================================
 -- SAVED LISTINGS (buyer wishlist)
--- =====================================================================
 
 CREATE TABLE IF NOT EXISTS `saved_listings` (
   `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

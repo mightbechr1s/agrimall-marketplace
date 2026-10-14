@@ -1,9 +1,7 @@
 /**
- * Cart add without a full page reload.
- * Intercepts submits on form[data-ajax="true"] (the add-to-basket forms in
- * listing-card.php and listing.php), POSTs cart_add.php via fetch, and shows
- * inline button feedback. Falls back to a normal form submit if the server
- * answer is not JSON (e.g. login redirect).
+ * Cart add without a page reload: intercepts form[data-ajax="true"] (listing-card.php,
+ * listing.php), POSTs cart_add.php, shows inline feedback or falls back to a plain
+ * submit when the server answer is not JSON (e.g. login redirect).
  */
 (function () {
   'use strict';
@@ -27,6 +25,12 @@
       var el = badges[i];
       var n = parseInt(el.textContent.replace(/[^0-9]/g, ''), 10);
       el.textContent = (isNaN(n) ? 0 : n) + 1;
+      if (el.animate && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        el.animate(
+          [{ transform: 'scale(1)' }, { transform: 'scale(1.4)' }, { transform: 'scale(1)' }],
+          { duration: 320, easing: 'ease-out' }
+        );
+      }
     }
   }
 

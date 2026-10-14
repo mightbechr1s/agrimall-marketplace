@@ -1,7 +1,6 @@
 <?php
 /**
- * Custom 404 page - renders when router.php handles an unknown path.
- * Loads bootstrap for config, helpers, and DB (for any dynamic content if needed).
+ * Custom 404 page - rendered by router.php for unknown paths.
  */
 require __DIR__ . '/../src/bootstrap.php';
 require_once __DIR__ . '/../src/i18n.php';
@@ -13,10 +12,7 @@ $locale = locale_current();
 $l = function($dict, $key) use ($copy, $locale) {
     return $dict[$locale][$key] ?? $dict['en'][$key] ?? $key;
 };
-// The errors deck is keyed locale-first, so the nested 404 group has to be
-// resolved before it can be indexed. Reading the nested group directly returns
-// null, and every lookup below then falls back to hardcoded English in every
-// language, leaving the whole Tagalog 404 block dead.
+// errors deck is locale-first: indexing '404' before the locale returns null, dropping translations
 $notFound = $copy['errors'][$locale]['404'] ?? $copy['errors']['en']['404'] ?? [];
 ?>
 <?php require __DIR__ . '/partials/header.php'; ?>

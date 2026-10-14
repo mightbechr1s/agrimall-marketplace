@@ -4,7 +4,7 @@ const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)
 
 /* ── Cookie banner ────────────────────────────────────────── */
 function initCookieBanner() {
-  // key value lives in visitors' localStorage; changing it re-shows the banner
+  // renaming this key re-shows the banner to everyone
   const COOKIE_KEY = 'animCk';
   const cookieBanner = document.getElementById('cookie-banner');
   if (!cookieBanner) return;

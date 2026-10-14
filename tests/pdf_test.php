@@ -1,10 +1,5 @@
 <?php
-/** Checks the hand-built report PDF: structure, pagination, and escaping.
- *  No PDF library is vendored, so the bytes are the contract. Pagination only
- *  holds while a full page of lines clears the bottom margin; if the leading
- *  or chunk size changes, this fails instead of silently clipping the export.
- *  Run: php tests/pdf_test.php
- */
+/** Checks hand-built report PDF: structure, pagination, escaping. Run: php tests/pdf_test.php */
 declare(strict_types=1);
 
 $functionsPath = dirname(__DIR__) . '/src/functions.php';
@@ -30,9 +25,7 @@ $ok = function (string $label, bool $condition, string $detail = '') use (&$pass
     $fail[] = $detail === '' ? $label : sprintf('%-46s %s', $label, $detail);
 };
 
-// Pull every content stream out of the finished PDF, using the declared
-// /Length rather than a regex, so content containing "endstream" cannot
-// truncate the capture.
+// Pull content streams using /Length so "endstream" in content doesn't truncate capture.
 $streams = static function (string $pdf): array {
     $found = [];
     if (preg_match_all('/<< \/Length (\d+) >>\nstream\n/', $pdf, $m, PREG_OFFSET_CAPTURE)) {
@@ -45,7 +38,7 @@ $streams = static function (string $pdf): array {
     return $found;
 };
 
-// Text shown on a page, with PDF literal-string escaping undone.
+// Text on a page, with PDF literal-string escaping undone.
 $page_text = static function (string $content): array {
     $text = [];
     if (preg_match_all('/^\((.*)\) Tj$/m', $content, $m)) {
@@ -60,7 +53,7 @@ $page_text = static function (string $content): array {
     return $text;
 };
 
-// ---- structure of a small export -----------------------------------------
+// structure of a small export
 $small = build_report_pdf('Sales report', 'sales', ['From: 2026-01-01'], [
     ['order_number' => 'ORD-1', 'total' => '1250.00'],
 ], ['orders' => 1, 'revenue' => 1250.0]);
@@ -82,7 +75,7 @@ foreach ($kids as $kid) {
     $ok('Kid ' . $kid . ' resolves to a page object', str_contains($small, "\n$ref 0 obj\n<< /Type /Page "));
 }
 
-// ---- xref offsets point at the objects they claim ------------------------
+// xref offsets point at claimed objects
 preg_match_all('/^(\d{10}) 00000 n $/m', $small, $xrefMatches, PREG_SET_ORDER);
 $ok('one xref entry per object', count($xrefMatches) === 3 + 2 * $pageObjects, 'entries=' . count($xrefMatches));
 foreach ($xrefMatches as $i => $entry) {
@@ -92,7 +85,7 @@ foreach ($xrefMatches as $i => $entry) {
     $ok("xref entry $objectNumber points at its object", $at === "$objectNumber 0 obj", "found '$at' at $offset");
 }
 
-// ---- declared stream lengths match the bytes -----------------------------
+// declared stream lengths match bytes
 $smallStreams = $streams($small);
 $ok('found a content stream per page', count($smallStreams) === $pageObjects);
 foreach ($smallStreams as $i => $stream) {
@@ -100,7 +93,7 @@ foreach ($smallStreams as $i => $stream) {
         'declared=' . $stream['declared'] . ' actual=' . strlen($stream['body']));
 }
 
-// ---- pagination fits on the page -----------------------------------------
+// pagination fits on the page
 $rows = [];
 for ($i = 1; $i <= 300; $i++) {
     $rows[] = ['order_number' => sprintf('ORD-%04d', $i), 'buyer' => 'Buyer ' . $i, 'total' => number_format(125 + $i, 2)];
@@ -129,7 +122,7 @@ foreach ($bigStreams as $i => $stream) {
 }
 $ok('no page overflows', $bottoms !== [] && min($bottoms) > 40, 'lowest baseline=' . ($bottoms ? min($bottoms) : 'n/a'));
 
-// ---- no rows lost across the page breaks ---------------------------------
+// no rows lost across page breaks
 $seen = '';
 foreach ($bigStreams as $stream) {
     $seen .= implode("\n", $page_text($stream['body'])) . "\n";
@@ -142,7 +135,7 @@ for ($i = 1; $i <= 300; $i++) {
 }
 $ok('every row appears in the export', $missing === 0, "missing=$missing");
 
-// ---- escaping round-trips ------------------------------------------------
+// escaping round-trips
 $tricky = build_report_pdf('Sales report', 'sales', [], [
     ['note' => 'cancelled (duplicate) by (admin)'],
     ['note' => 'path C:\\temp\\x and (unbalanced'],
@@ -156,14 +149,14 @@ $ok('backslashes survive escaping', str_contains($trickyText, 'path C:\\temp\\x 
 $ok('unbalanced parens do not truncate the stream', str_contains($trickyText, '(No rows matched.)') === false
     && str_contains($trickyText, 'note=path C:\\temp\\x and (unbalanced'));
 
-// ---- empty export still produces a valid file ----------------------------
+// empty export still produces a valid file
 $empty = build_report_pdf('Cancellations', 'cancellations', ['none'], [], null);
 $emptyStreams = $streams($empty);
 $ok('empty export has one page', count($emptyStreams) === 1, 'pages=' . count($emptyStreams));
 $ok('empty export says so', str_contains(implode('', $page_text($emptyStreams[0]['body'])), '(No rows matched.)'));
 $ok('empty export is still a PDF', str_starts_with($empty, '%PDF-1.4') && str_ends_with($empty, '%%EOF'));
 
-// ---- report --------------------------------------------------------------
+// report
 foreach ($fail as $line) {
     echo "  FAIL  $line\n";
 }

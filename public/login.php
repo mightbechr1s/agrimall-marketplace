@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
 
-    // Rate limit: max 5 attempts per 15 minutes per IP + email (DB-backed)
+    // Rate limit: 5 attempts / 15 min per IP+email (DB-backed)
     $rlKey = 'login_' . md5($_SERVER['REMOTE_ADDR'] . ':' . strtolower(trim((string) ($_POST['email'] ?? ''))));
     if (rate_limit_check($rlKey)) {
         http_response_code(429);
@@ -47,9 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = (int) $user['id'];
             $_SESSION['role'] = $user['role'];
 
-            // Ticking the box issues a 30-day token; leaving it unticked revokes
-            // any token from a previous login, otherwise a stale cookie would
-            // keep re-authenticating against the user's explicit choice.
+            // Ticking issues a 30-day token; unticked revokes any previous token
+            // so a stale cookie can't re-authenticate against explicit choice.
             if (!empty($_POST['remember_me'])) {
                 remember_login((int) $user['id']);
             } else {

@@ -5,13 +5,8 @@
  * Usage (PHP 8.1+ CLI; XAMPP: C:\xampp\php\php.exe tools\db-reset.php):
  *   php tools/db-reset.php --yes
  *
- * Drops and recreates the `animal_marketplace` database, applies
- * database/schema.sql then every database/migrations/*.sql in order,
- * and finally runs database/seed.php (1 admin from schema.sql, 2 farmers,
- * 2 buyers, 6 realistic PH listings, 3 orders).
- *
- * Acceptance (#4): "tools/db-reset. DONE: fresh import under 2 min."
- * Local seed completes in a few seconds.
+ * Drops and recreates `animal_marketplace`, applies database/schema.sql then
+ * every database/migrations/*.sql in order, then runs database/seed.php.
  */
 declare(strict_types=1);
 
@@ -46,8 +41,7 @@ try {
     $pdo->exec('CREATE DATABASE `' . $db['name'] . '` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
     $pdo->exec('USE `' . $db['name'] . '`');
 
-    // schema.sql and migrations contain multiple statements per file.
-    // PDO::MYSQL_ATTR_MULTI_STATEMENTS is deprecated on PHP 8.5+.
+    // Each file has multiple statements; PDO::MYSQL_ATTR_MULTI_STATEMENTS is deprecated on PHP 8.5+.
     $multiAttr = defined('Pdo\\Mysql::ATTR_MULTI_STATEMENTS')
         ? \Pdo\Mysql::ATTR_MULTI_STATEMENTS
         : PDO::MYSQL_ATTR_MULTI_STATEMENTS;

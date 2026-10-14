@@ -1,13 +1,12 @@
 <?php
 /**
- * Custom 500 page - renders on server errors in production.
- * No bootstrap.php (to avoid cascading failures). Minimal, self-contained.
+ * Custom 500 page - self-contained, no bootstrap.php (avoids cascading failures).
  */
 
-// Reference code for support: short hash from time
+// Support reference code: short hash from time
 $refCode = substr(md5((string) microtime(true) . (string) random_bytes(4)), 0, 8);
 
-// Get error message from query string if passed by handler
+// Handler may pass a reference code in the query string
 $displayMessage = '';
 if (isset($_GET['ref']) && ctype_alnum($_GET['ref'])) {
     $refCode = htmlspecialchars($_GET['ref'], ENT_QUOTES, 'UTF-8');

@@ -1,13 +1,7 @@
 <?php
 /**
- * Loading Skeleton Partial
- *
- * Usage:
- *   include __DIR__ . '/partials/loading-skeleton.php';
- *   Variables:
- *     $type (string) — 'card'|'table-row'|'list-item'|'text'|'avatar' (default 'card')
- *     $count (int)   — number of skeletons to render (default 6)
- *     $class (string) — extra wrapper classes
+ * Loading Skeleton Partial — include __DIR__ . '/partials/loading-skeleton.php', set vars.
+ * $type: 'card'|'table-row'|'list-item'|'text'|'avatar' (default card); $count (default 6); $class.
  */
 $type = $type ?? 'card';
 $count = $count ?? 6;

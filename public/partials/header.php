@@ -9,9 +9,7 @@ $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https'
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 $baseUrl = rtrim($config['app']['base_url'] ?? '', '/');
-// Fall back to the origin actually serving this request. Without this, an empty
-// or stale base_url emits a canonical on the wrong host, and og/twitter images
-// become relative URLs, which crawlers reject.
+// Fallback: empty base_url would emit wrong-host canonical and relative og/twitter images (crawlers reject).
 if ($baseUrl === '') {
     $baseUrl = "{$protocol}://{$host}";
 }
@@ -69,8 +67,8 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
     <!-- Prevent dark-mode flash: apply theme class before first paint -->
     <?php
     $dbTheme = null;
-    $dbReduceMotion = false;
-    $dbLargerText = false;
+    $reduceMotion = false;
+    $largerText = false;
     if (current_user_id()) {
         try {
             $stmt = DB::pdo()->prepare('SELECT theme, reduce_motion, larger_text FROM user_preferences WHERE user_id = :id LIMIT 1');
@@ -79,81 +77,16 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
             if ($row && in_array($row['theme'] ?? null, ['system', 'light', 'dark'], true)) {
                 $dbTheme = $row['theme'];
             }
-            $dbReduceMotion = !empty($row['reduce_motion']);
-            $dbLargerText = !empty($row['larger_text']);
+            $reduceMotion = !empty($row['reduce_motion']);
+            $largerText = !empty($row['larger_text']);
         } catch (Throwable $e) {
             // fallback to default behavior below
         }
     }
+    $withSidebarState = false;
+    require __DIR__ . '/fouc-guard.php';
     ?>
-    <script>
-    (function () {
-      // ----- JS-available flag -----
-      // Set here, before any stylesheet is parsed, so CSS can gate its
-      // pre-animation hidden states on .js. If this never runs (JS disabled)
-      // or a deferred script fails, .js is absent and those elements stay
-      // visible instead of being stranded at opacity: 0.
-      document.documentElement.classList.add('js');
-
-      // ----- Theme (persistent: localStorage is the source of truth; the DB
-      // preference seeds it only when nothing is stored yet, so page actions
-      // never flip the user's choice back) -----
-      window.AniMAL = window.AniMAL || {};
-      window.AniMAL.userId = <?= json_encode(current_user_id() ?: null) ?>;
-      window.AniMAL.csrf = <?= json_encode(csrf_token()) ?>;
-      var pref = localStorage.getItem('animal_theme');
-      if (pref !== 'system' && pref !== 'light' && pref !== 'dark') {
-        pref = <?= json_encode($dbTheme) ?> || 'system';
-        localStorage.setItem('animal_theme', pref);
-      }
-      var resolved = pref === 'system'
-        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-        : pref;
-      document.documentElement.setAttribute('data-theme', resolved);
-
-      // ----- Animations are always on. No in-app switch; the only override is the
-      // OS-level prefers-reduced-motion media query in motion.css. -----
-
-      // ----- Reduce motion / larger text -----
-      // The stored preference is the source of truth. A cached localStorage copy
-      // used to win here, so a change saved on settings.php was ignored until
-      // the browser storage was cleared.
-      document.documentElement.toggleAttribute('data-reduce-motion', <?= $dbReduceMotion ? 'true' : 'false' ?>);
-      document.documentElement.toggleAttribute('data-larger-text', <?= $dbLargerText ? 'true' : 'false' ?>);
-    })();
-    </script>
-    <script>
-    (function () {
-      var themeBtn = document.querySelector('.theme-toggle');
-      if (themeBtn) {
-        themeBtn.addEventListener('click', function () {
-          var pref = localStorage.getItem('animal_theme');
-          if (pref !== 'system' && pref !== 'light' && pref !== 'dark') pref = 'system';
-          var next = pref === 'dark' ? 'light' : pref === 'light' ? 'system' : 'dark';
-          localStorage.setItem('animal_theme', next);
-          document.cookie = 'animal_theme=' + next + ';path=/;max-age=31536000;SameSite=Lax';
-          location.reload();
-        });
-        var updateThemeLabel = function () {
-          var pref = localStorage.getItem('animal_theme');
-          if (!pref) pref = 'system';
-          var resolved = pref === 'system'
-            ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-            : pref;
-          themeBtn.setAttribute('aria-label', resolved === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
-        };
-        updateThemeLabel();
-        var observer = new MutationObserver(updateThemeLabel);
-        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-      }
-
-    })();
-    </script>
-
-    <!-- Local styles. design-system.css owns the :root token definitions and
-         loads last, so it is the single source of truth. Do not add a second
-         token sheet here: the page pays a render-blocking request and the
-         duplicate definitions have no effect. -->
+    <!-- Local styles. design-system.css is the single token source; duplicate sheets are render-blocking no-ops. -->
     <link href="<?= e(asset('assets/css/styles.min.css')) ?>" rel="stylesheet" />
     <link href="<?= e(asset('assets/css/motion.min.css')) ?>" rel="stylesheet" />
     <!-- Self-hosted harvest typography (offline) -->
@@ -354,8 +287,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
 </header>
 
 <?php
-// rendered here so every redirect target shows it; flash_get() clears it,
-    // so a page with its own copy renders nothing
+// Flash rendered here so redirect targets show it; flash_get() clears on read.
     if ($flashSuccess = flash_get('success')): ?>
   <div class="container">
     <div class="alert alert-success alert-dismissible fade show" role="alert"><?= e($flashSuccess) ?></div>
@@ -391,27 +323,15 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
         <a href="index.php#faq" class="mobile-nav-link"><?= t($i18nCopy['nav'], 'faq') ?></a>
       <?php endif; ?>
     </nav>
+    <?php if (current_user_id()): ?>
     <div class="mobile-menu-utils" style="display:flex;gap:0.5rem;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:0.5rem;">
-      <?php if (current_user_id()): ?>
-        <a href="notifications.php" class="notif-pill" aria-label="Notifications" style="width:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--paper);border:1px solid var(--borders);color:var(--text);">
-          <?php $unreadCount = unread_notification_count((int) current_user_id()); ?>
-          <?php if ($unreadCount > 0): ?><span class="notif-count" style="position:absolute;top:0;right:0;background:var(--danger);color:#fff;font-size:0.6rem;padding:0.1rem 0.35rem;border-radius:999px;"><?= $unreadCount ?></span><?php endif; ?>
-          <i class="bi bi-bell" aria-hidden="true"></i>
-        </a>
-        <a href="cart.php" class="cart-pill" aria-label="Basket" style="width:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--paper);border:1px solid var(--borders);color:var(--text);">
-          <?php
-            $cartCount = 0;
-            if (current_user_role() === 'buyer') {
-              try { $cc = DB::pdo()->prepare('SELECT COUNT(*) FROM cart_items WHERE buyer_id = :id'); $cc->execute(['id'=>current_user_id()]); $cartCount = (int)$cc->fetchColumn(); } catch(Exception $e){}
-            }
-          ?>
-          <?php if ($cartCount > 0): ?><span class="cart-count" style="position:absolute;top:0;right:0;background:var(--danger);color:#fff;font-size:0.6rem;padding:0.1rem 0.35rem;border-radius:999px;"><?= $cartCount ?></span><?php endif; ?>
-          <i class="bi bi-basket" aria-hidden="true"></i>
-        </a>
-      <?php else: ?>
-        <a href="<?= e(login_url('cart.php')) ?>" class="cart-pill" aria-label="Basket (login to view)" style="width:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--paper);border:1px solid var(--borders);color:var(--text);"><i class="bi bi-basket" aria-hidden="true"></i></a>
-      <?php endif; ?>
+      <a href="notifications.php" class="notif-pill" aria-label="Notifications" style="width:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--paper);border:1px solid var(--borders);color:var(--text);">
+        <?php $unreadCount = unread_notification_count((int) current_user_id()); ?>
+        <?php if ($unreadCount > 0): ?><span class="notif-count" style="position:absolute;top:0;right:0;background:var(--danger);color:#fff;font-size:0.6rem;padding:0.1rem 0.35rem;border-radius:999px;"><?= $unreadCount ?></span><?php endif; ?>
+        <i class="bi bi-bell" aria-hidden="true"></i>
+      </a>
     </div>
+    <?php endif; ?>
     <div class="mobile-menu-actions">
       <?php if (current_user_id()): ?>
         <a href="settings.php" class="btn btn-outline"><i class="bi bi-gear" aria-hidden="true"></i> <?= t($i18nCopy['settings'], 'nav_settings') ?></a>

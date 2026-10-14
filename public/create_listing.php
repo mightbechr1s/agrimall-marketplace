@@ -207,8 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $listingId = (int) DB::pdo()->lastInsertId();
 
-              // Record the opening quantity so every later change has a
-              // known starting point (FR-LIST-029).
+              // Record opening quantity for stock history (FR-LIST-029).
               DB::pdo()->prepare(
                   'INSERT INTO stock_adjustments
                       (listing_id, adjustment_type, quantity_change, quantity_before, quantity_after, reference_type, reference_id, notes, created_by)

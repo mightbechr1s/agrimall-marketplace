@@ -2,13 +2,9 @@
 /**
  * Traceability matrix generator and validator.
  *
- * Reads docs/SRS.md as the requirement source of truth, reads
- * tests/traceability.json as the requirement -> evidence map, then verifies
- * that every piece of evidence actually exists in the named test suite before
- * emitting docs/traceability-matrix.md.
- *
- * A stale map is a worse map than no map, so an unknown suite or an assertion
- * label that is not present in the suite fails the build.
+ * Reads docs/SRS.md and tests/traceability.json, verifies every evidence label
+ * exists in its named suite, then writes docs/traceability-matrix.md. An unknown
+ * suite, assertion or requirement fails the build (a stale map is worse than none).
  *
  * Usage:
  *   php tools/gen_traceability.php --labels   list discovered assertion labels
@@ -26,9 +22,7 @@ const SUITES = [
     'pdf'    => ['path' => 'tests/pdf_test.php',    're' => ["/(?ms)\\\$ok\s*\(\s*'((?:[^']|'')*)'/"]],
 ];
 
-/** Dispositions other than "automated" must carry a short note in
- *  tests/traceability.json explaining what a reviewer can inspect instead, or
- *  why nothing is claimed. A status with no reason is not honest. */
+/** Non-automated dispositions must carry a note in tests/traceability.json saying what to inspect instead. */
 const NON_AUTOMATED = ['partial', 'manual', 'gap'];
 
 function read_file(string $rel): string
@@ -41,8 +35,7 @@ function read_file(string $rel): string
     return (string) file_get_contents($abs);
 }
 
-/** Collapse PowerShell interpolation so a loop-generated label still maps to a
- *  stable key: "$role sidebar shows '$label'" becomes "* sidebar shows '*'". */
+/** Collapses PowerShell interpolation so loop-generated labels map to a stable key. */
 function normalize_label(string $label): string
 {
     $label = preg_replace('/\$\([^)]*\)/', '*', $label);
@@ -117,7 +110,7 @@ if (in_array('--labels', $argv, true)) {
     exit(0);
 }
 
-// ---- validate the map -------------------------------------------------------
+// ---- validate the map ----
 $mapPath = REPO . '/tests/traceability.json';
 if (!is_readable($mapPath)) {
     fwrite(STDERR, "missing tests/traceability.json - build the map first\n");
@@ -182,7 +175,7 @@ if ($errors) {
     exit(1);
 }
 
-// ---- emit -------------------------------------------------------------------
+// ---- emit ----
 $byStatus = ['automated' => [], 'partial' => [], 'manual' => [], 'gap' => []];
 foreach ($map as $id => $entry) { $byStatus[$entry['status']][] = $id; }
 

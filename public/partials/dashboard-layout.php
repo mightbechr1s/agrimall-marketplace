@@ -1,7 +1,7 @@
 <?php
 /**
  * Dashboard sidebar layout — replaces landing header/footer for logged-in pages.
- * Expects $role, $activePage, $pageTitle already set by the including script.
+ * Expects $role, $activePage, $pageTitle set by including script.
  */
 $role = $role ?? (function_exists('current_user_role') ? current_user_role() : 'buyer');
 $activePage = $activePage ?? 'dashboard';
@@ -25,8 +25,7 @@ $sidebarMenus = [
         ['page' => 'saved',      'label' => 'Saved',       'icon' => 'bi-heart',          'href' => 'dashboard.php#saved'],
     ],
     'admin' => [
-        // No admin_users/admin_listings/admin_categories pages exist yet, so the
-        // menu only links to panels and pages that actually resolve.
+        // Admin pages not yet implemented; menu links only to existing panels/pages.
         ['page' => 'dashboard',  'label' => 'Dashboard',   'icon' => 'bi-grid-1x2-fill',  'href' => 'dashboard.php'],
         ['page' => 'orders',     'label' => 'Orders',      'icon' => 'bi-receipt-cutoff', 'href' => 'dashboard.php#orders'],
         ['page' => 'verifications','label' => 'Verifications','icon' => 'bi-patch-check-fill','href' => 'admin_verify.php'],
@@ -41,10 +40,7 @@ $roleLabels = ['farmer' => 'Farmer', 'buyer' => 'Buyer', 'admin' => 'Administrat
 $roleIcons  = ['farmer' => 'bi-tree-fill', 'buyer' => 'bi-cart3', 'admin' => 'bi-shield-check'];
 $roleColors = ['farmer' => 'role-farmer', 'buyer' => 'role-buyer', 'admin' => 'role-admin'];
 
-// Fetch user profile data.
-// Display name comes from the role's own profile, not the email local-part:
-// deriving it from the email showed "Qa.Buyer" instead of the real name.
-// Admins have no profile table, so they fall back to the email local-part.
+// Fetch user profile. Display name from role profile (not email local-part — showed "Qa.Buyer" before). Admins fall back to email.
 $userProfile = ['email' => 'User', 'role' => $role, 'status' => 'active', 'created_at' => '', 'last_login_at' => ''];
 $displayName = '';
 try {
@@ -107,40 +103,9 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
     } catch (Throwable $e) {
         $dbTheme = null;
     }
+    $withSidebarState = true;
+    require __DIR__ . '/fouc-guard.php';
     ?>
-    <!-- FOUC guard -->
-    <script>
-    (function () {
-      try {
-        // ----- JS-available flag -----
-        // Set here, before any stylesheet is parsed, so CSS can gate its
-        // pre-animation hidden states on .js. If this never runs (JS disabled)
-        // or a deferred script fails, .js is absent and those elements stay
-        // visible instead of being stranded at opacity: 0.
-        document.documentElement.classList.add('js');
-
-        // Persistent theme: localStorage is the source of truth; the DB
-        // preference seeds it only when nothing is stored yet. Must mirror
-        // header.php exactly so pages never disagree after an action.
-        window.AniMAL = window.AniMAL || {};
-        window.AniMAL.userId = <?= json_encode(current_user_id() ?: null) ?>;
-        window.AniMAL.csrf = <?= json_encode(csrf_token()) ?>;
-        var pref = localStorage.getItem('animal_theme');
-        if (pref !== 'system' && pref !== 'light' && pref !== 'dark') {
-          pref = <?= json_encode($dbTheme) ?> || 'system';
-          localStorage.setItem('animal_theme', pref);
-        }
-        var resolved = pref === 'system'
-          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-          : pref;
-        document.documentElement.setAttribute('data-theme', resolved);
-        // Animations are always on; only the OS prefers-reduced-motion query applies.
-        document.documentElement.toggleAttribute('data-reduce-motion', <?= $reduceMotion ? 'true' : 'false' ?>);
-        document.documentElement.toggleAttribute('data-larger-text', <?= $largerText ? 'true' : 'false' ?>);
-        document.documentElement.toggleAttribute('data-sidebar-collapsed', localStorage.getItem('sidebarCollapsed') === '1');
-      } catch (e) {}
-    })();
-    </script>
 
     <!-- Bootstrap 5.3.3 + Icons (local vendor copy — offline) -->
     <link href="assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet" />
@@ -243,8 +208,7 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
     </header>
 
     <?php
-      // mirrors partials/header.php; flash_get() clears the message, so whichever
-      // layout runs first renders it
+      // Mirrors header.php; flash_get() clears on read — first layout wins.
       if ($flashSuccess = flash_get('success')): ?>
       <div class="container px-3 pt-3">
         <div class="alert alert-success alert-dismissible fade show" role="alert"><?= e($flashSuccess) ?></div>

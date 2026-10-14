@@ -9,6 +9,7 @@ $pageTitle = t($copy['hero'], 'headline');
 require __DIR__ . '/partials/header.php';
 ?>
 
+<main id="main-content" class="flex-grow-1">
 <!-- Hero -->
 <section class="hero-section">
     <div class="container">
@@ -17,6 +18,25 @@ require __DIR__ . '/partials/header.php';
                 <p class="eyebrow-pill mb-3"><?= t($copy['hero'], 'eyebrow') ?></p>
                 <h1 class="hero-title editorial-serif"><?= preg_replace('/(24\s*hours|24\s*oras)/', '<span class="nowrap">$1</span>', e($heroCopy['headline'])) ?></h1>
                 <p class="hero-lead"><?= e($heroCopy['subhead']) ?></p>
+                <!-- Hero search is the primary CTA: a marketplace's conversion action -->
+                <form class="hero-search mt-4 mb-4" method="get" action="browse.php" role="search">
+                    <label class="visually-hidden" for="hero-search-q"><?= t($copy['search'], 'label') ?></label>
+                    <div class="hero-search__bar">
+                        <i class="bi bi-search hero-search__icon" aria-hidden="true"></i>
+                        <input id="hero-search-q" type="search" name="q" placeholder="<?= e(t($copy['search'], 'placeholder')) ?>" autocomplete="off">
+                        <button type="submit" class="hero-search__submit" aria-label="<?= e(t($copy['search'], 'label')) ?>">
+                            <span class="hero-search__submit-label"><?= t($copy['search'], 'label') ?></span>
+                            <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <div class="hero-search__popular">
+                        <span class="hero-search__hint"><?= t($copy['hero'], 'search_hint') ?></span>
+                        <a href="browse.php?q=rice">Rice</a>
+                        <a href="browse.php?q=calamansi">Calamansi</a>
+                        <a href="browse.php?q=papaya">Papaya</a>
+                        <a href="browse.php?q=okra">Okra</a>
+                    </div>
+                </form>
                 <div class="d-flex flex-column flex-sm-row gap-3 mb-4">
                     <a href="browse.php" class="btn btn-primary btn-lg px-4 py-3"><?= t($copy['hero'], 'cta_primary') ?></a>
                     <a href="#steps" class="btn btn-outline-primary btn-lg px-4 py-3"><?= t($copy['hero'], 'cta_secondary') ?></a>
@@ -165,5 +185,6 @@ require __DIR__ . '/partials/header.php';
         </div>
     </div>
 </section>
+</main>
 
 <?php require __DIR__ . '/partials/footer.php'; ?>

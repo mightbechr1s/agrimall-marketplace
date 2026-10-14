@@ -1,6 +1,5 @@
 <?php
-// Footer i18n is self-contained so this partial works on ANY page
-// without depending on a $copy or $l variable from the including script.
+// Footer i18n is self-contained; works on any page without $copy/$l from caller.
 $footerCopy = $copy['footer'] ?? [
     'en' => [
         'brand_tagline' => 'Philippine Agricultural Marketplace',
@@ -57,9 +56,7 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
       </div>
       <div>
 <h2><?= $f('heading_for_farmers') ?></h2>
-<?php /* register.php bounces an already-signed-in visitor straight to the
-         dashboard, so showing this to one is a link to nowhere. The seller
-         handbook below stays useful either way. */ ?>
+<?php /* register.php redirects signed-in users to dashboard; "Become a seller" would link nowhere. Seller handbook stays useful. */ ?>
 <?php if (!current_user_id()): ?><a href="register.php"><?= $f('link_become_a_seller') ?></a><?php endif; ?>
         <a href="index.php#faq"><?= $f('link_seller_handbook') ?></a>
         <a href="index.php#faq"><?= $f('link_verification') ?></a>

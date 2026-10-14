@@ -5,8 +5,7 @@
 }
 
 /* ── Flat containers — enforced by design-system.css ───────
-     Kept here only for any legacy markup that missed the selectors.
-*/
+   Kept for legacy markup that missed the selectors. */
 .card,
 .panel,
 .dash-panel,
@@ -32,8 +31,7 @@
 .btn-sell,
 .btn-logout,
 .btn-outline,
-.btn-outline-primary,
-.hero-search__submit {
+.btn-outline-primary {
   border-radius: 2px !important;
   display: inline-flex !important;
   align-items: center !important;
@@ -311,7 +309,6 @@ html[data-reduce-motion] *::after {
 
 /* ── Hero section enhancements ───────────────────────────────────── */
 .hero-overlay {
-  /* Slight elevation for floating elements */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   backdrop-filter: blur(8px) saturate(120%);
   -webkit-backdrop-filter: blur(8px) saturate(120%);
@@ -320,7 +317,6 @@ html[data-reduce-motion] *::after {
 }
 
 .price-pill {
-  /* Enhanced price pill */
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -329,7 +325,6 @@ html[data-reduce-motion] *::after {
 }
 
 .origin-badge {
-  /* Enhanced origin badge */
   font-size: 0.875rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -339,40 +334,34 @@ html[data-reduce-motion] *::after {
 
 /* ── Trust bar enhancements ─────────────────────────────────────── */
 .trust-bar-item {
-  /* Slight separation and enhancement */
   padding: 0.25rem 0;
 }
 
 .trust-bar-dot {
-  /* More prominent dot */
   width: 0.6rem;
   height: 0.6rem;
   box-shadow: 0 0 0 2px rgba(200, 90, 50, 0.2);
 }
 
 .trust-bar-item span {
-  /* Slightly better typography */
   font-size: 0.875rem;
   font-weight: 500;
 }
 
 /* ── Process steps enhancements ─────────────────────────────────── */
 .process-step-number {
-  /* More distinctive step numbers */
   font-size: 3.5rem;
   letter-spacing: -0.02em;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .process-step-title {
-  /* Better heading hierarchy */
   font-size: 1.25rem;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
 .process-step-description {
-  /* Improved readability */
   font-size: 0.95rem;
   line-height: 1.5;
   color: var(--text-soft);
@@ -380,60 +369,50 @@ html[data-reduce-motion] *::after {
 
 /* ── Listing card enhancements ──────────────────────────────────── */
 .card {
-  /* Subtle hover effect */
   transition: all 0.2s ease;
   border-width: 1px;
 }
 
 .card:hover {
-  /* Gentle lift on hover */
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   border-color: var(--primary);
 }
 
 .card .body {
-  /* Better spacing */
   padding: 1.25rem;
 }
 
 .card .badges-top {
-  /* Enhanced badge spacing */
   margin-bottom: 0.75rem;
 }
 
 .card .price {
-  /* Price emphasis */
   font-size: 1.25rem;
 }
 
 /* ── Button enhancements ────────────────────────────────────────── */
 .btn {
-  /* Enhanced button feel */
   transition: all 0.15s ease;
   font-weight: 600;
   letter-spacing: -0.005em;
 }
 
 .btn-primary {
-  /* Stronger primary button */
   border-width: 2px;
 }
 
 .btn-primary:hover {
-  /* Enhanced hover */
   transform: translateY(-1px);
   box-shadow: 0 2px 6px rgba(27, 59, 43, 0.2);
 }
 
 .btn-outline-primary {
-  /* Better outline button */
   border-width: 2px;
   font-weight: 600;
 }
 
 .btn-outline-primary:hover {
-  /* Enhanced hover */
   background-color: var(--primary);
   color: var(--paper);
   transform: translateY(-1px);
@@ -442,13 +421,11 @@ html[data-reduce-motion] *::after {
 
 /* ── Empty state enhancements ───────────────────────────────────── */
 .empty-state {
-  /* Better empty state */
   padding: 4rem 1.5rem;
   text-align: center;
 }
 
 .empty-state .empty-state-title {
-  /* Stronger title */
   font-size: 1.75rem;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -456,7 +433,6 @@ html[data-reduce-motion] *::after {
 }
 
 .empty-state .empty-state-description {
-  /* Better description */
   font-size: 1.1rem;
   color: var(--text-soft);
   max-width: 32rem;
@@ -466,7 +442,6 @@ html[data-reduce-motion] *::after {
 /* ── Form control enhancements ──────────────────────────────────── */
 .form-control,
 .form-select {
-  /* Better form fields */
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   padding: 0.75rem 1rem;
   font-size: 0.95rem;
@@ -474,14 +449,12 @@ html[data-reduce-motion] *::after {
 
 .form-control:focus,
 .form-select:focus {
-  /* Enhanced focus */
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(27, 59, 43, 0.1);
 }
 
 /* ── Navigation enhancements ────────────────────────────────────── */
 .nav-link {
-  /* Better nav links */
   transition: color 0.15s ease, padding 0.15s ease;
   font-weight: 500;
   padding: 0.5rem 0;
@@ -489,32 +462,27 @@ html[data-reduce-motion] *::after {
 
 .nav-link:hover,
 .nav-link:focus {
-  /* Enhanced hover */
   color: var(--primary);
   padding-left: 0.25rem;
   padding-right: 0.25rem;
 }
 
 .nav.is-scrolled {
-  /* Slight elevation when scrolled */
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 /* ── Footer enhancements ────────────────────────────────────────── */
 .footer {
-  /* Better footer */
   border-top: 1px solid var(--borders);
   padding-top: 2rem;
 }
 
 .footer-links a {
-  /* Better footer links */
   transition: color 0.15s ease;
   font-weight: 500;
 }
 
 .footer-links a:hover {
-  /* Enhanced hover */
   color: var(--primary);
 }
 

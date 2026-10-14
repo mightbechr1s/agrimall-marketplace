@@ -1,14 +1,7 @@
 /**
- * AniMAL Service Worker - network-first with offline fallback
- * Version: 3
- *
- * Strategy: always try the network first so updated HTML/CSS/JS is served
- * immediately, and fall back to the cache only when offline. Bump CACHE_NAME
- * whenever this file changes so old caches are purged on activate.
- *
- * Authenticated pages are never cached. Cache Storage is persistent and is not
- * cleared on logout, so caching a dashboard would hand the previous user's
- * orders and address to whoever opens the app next on the same device.
+ * AniMAL Service Worker: network-first with offline fallback.
+ * Bump CACHE_NAME whenever this file changes, or old caches stay on activate.
+ * Authenticated pages are never cached (Cache Storage survives logout).
  */
 
 const CACHE_NAME = 'animal-v4';

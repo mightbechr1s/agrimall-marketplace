@@ -42,7 +42,7 @@ $events = $stmt->fetchAll();
 
 $entities = $pdo->query('SELECT DISTINCT entity_type FROM admin_audit_log ORDER BY entity_type')->fetchAll(PDO::FETCH_COLUMN);
 
-// Prepare data for admin-table partial
+// Data for the admin-table partial
 $columns = [
     ['key' => 'created_at', 'label' => 'Timestamp', 'sortable' => true, 'class' => 'text-nowrap',
      'formatter' => function($r) { return date('Y-m-d H:i:s', strtotime($r['created_at'])); }],

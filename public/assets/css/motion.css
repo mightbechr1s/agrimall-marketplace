@@ -1,15 +1,6 @@
 /* ═══ AniMAL Motion System — 5 patterns, no decoration ═══
-   1. Reveal        — content enters viewport (opt-in only)
-   2. Hover         — button/card/link state change
-   3. Feedback      — press, focus, form validation
-   4. Overlay       — modal, drawer, mobile menu backdrop + panel
-   5. Toast         — ephemeral status message
-
-   Curves & durations from animate skill:
-   --ease-enter: cubic-bezier(0.16, 1, 0.3, 1)
-   --ease-exit:  cubic-bezier(0.43, 0.13, 0.23, 0.96)
-   Durations: micro 150ms, short 200ms, moderate 250ms, panel 300ms
-*/
+   Reveal, Hover, Feedback, Overlay, Toast.
+   Curves --ease-enter / --ease-exit; durations micro 100ms, short 180ms, moderate 240ms, panel 340ms. */
 
 :root {
   /* Curves */
@@ -37,11 +28,8 @@
    0. REDUCED MOTION — global kill switch
    Keeps opacity/color for critical state, drops transform
 ──────────────────────────────────────────────────────────── */
-/* Motion is always on: there is no in-app switch. The OS-level
-   prefers-reduced-motion query below is the only thing that turns it off.
-   html[data-animations] is kept as a manual escape hatch for debugging:
-   "on" overrides the OS reduce, "off" forces reduce. Nothing in the app
-   sets it any more. */
+/* The OS prefers-reduced-motion query is the only switch; html[data-animations]
+   is a manual debug escape hatch ("on" overrides the OS reduce, "off" forces reduce). */
 @media (prefers-reduced-motion: reduce) {
   :root:not([data-animations="on"]) *,
   :root:not([data-animations="on"]) *::before,
@@ -53,8 +41,7 @@
     scroll-behavior: auto !important;
   }
 
-  /* Force visible + no transform ONLY for content that is hidden purely by a
-     reveal animation; otherwise it can stay stuck at opacity:0. */
+  /* Force visible only for content hidden purely by a reveal, else it sticks at opacity:0. */
   :root:not([data-animations="on"]) [data-reveal],
   :root:not([data-animations="on"]) [data-reveal="stagger"] > *,
   :root:not([data-animations="on"]) .toast-item {
@@ -64,8 +51,7 @@
     transition: opacity var(--dur-fade-rm) ease !important;
   }
 
-  /* State-driven panels/overlays keep their own hidden/shown transform. Under
-     reduced motion they must snap instantly, NOT be forced visible. */
+  /* State-driven panels keep their own transform; under reduced motion they snap, not show. */
   :root:not([data-animations="on"]) .modal-backdrop,
   :root:not([data-animations="on"]) .modal-panel,
   :root:not([data-animations="on"]) .cookie-banner,
@@ -114,13 +100,8 @@
 /* ────────────────────────────────────────────────────────────
    1. REVEAL — opt-in fade + slide-up on scroll into view
    JS: IntersectionObserver adds .reveal-visible
-   No auto-play, no stagger-by-default
 
-   Both states are gated on .js, which header.php sets on <html> before
-   any stylesheet is parsed. Ungated, these rules apply even when JS never
-   runs, stranding content at opacity: 0 -- a blank login form for anyone
-   with JS disabled or a blocked deferred script. Gating both sides also
-   keeps them at equal specificity so source order breaks the tie.
+   Gated on .js (set by header.php), else content sticks at opacity: 0 with JS off.
 ──────────────────────────────────────────────────────────── */
 .js [data-reveal]:not([data-reveal="stagger"]) {
   opacity: 0;
@@ -218,8 +199,7 @@
 
 /* ────────────────────────────────────────────────────────────
    3. FEEDBACK — press, focus, form validation
-   Micro-duration. Press = scale(0.98) via :active (interruptible).
-   Focus = ring (design-system handles outline).
+   Press = scale(0.98) on :active; focus ring handled in design-system.css.
 ──────────────────────────────────────────────────────────── */
 @media (hover: hover) and (pointer: fine) {
   .btn:active,
@@ -360,8 +340,7 @@
 
 /* ────────────────────────────────────────────────────────────
    5. TOAST — ephemeral status
-   Enter: fade + slide up. Exit: fade + slide up (reverse).
-   JS toggles .toast-visible / .toast-exiting
+   Enter/exit fade + slide up; JS toggles .toast-visible / .toast-exiting.
 ──────────────────────────────────────────────────────────── */
 #toast-region {
   position: fixed; top: 24px; right: 24px;

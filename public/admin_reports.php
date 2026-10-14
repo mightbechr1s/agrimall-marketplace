@@ -4,7 +4,7 @@ require_role('admin');
 
 $pdo = DB::pdo();
 
-// Report type whitelist (FR-REP-001,002,003,007,008,009; FR-REP-004 is the farmer-side summary).
+// Report whitelist (FR-REP-001,002,003,007,008,009; FR-REP-004 is the farmer-side summary).
 $reports = [
     'registration'   => ['title' => 'Registration Report',    'ref' => 'FR-REP-001'],
     'listings'       => ['title' => 'Listing Report',         'ref' => 'FR-REP-002'],
@@ -36,7 +36,7 @@ function p($value): string
     return '₱' . number_format((float) $value, 2);
 }
 
-// Date range helper: adds >= :x and < :y(+1 day) for a column.
+// Adds >= :x and < :y+1day bound params for a column.
 function bind_date_range(array &$whereClauses, array &$params, string $column, ?string $from, ?string $to, string $prefix): void
 {
     if (is_valid_date($from)) {
@@ -54,7 +54,7 @@ $to = trim((string) ($_GET['to'] ?? ''));
 $diffFrom = trim((string) ($_GET['diff_from'] ?? ''));
 $diffTo = trim((string) ($_GET['diff_to'] ?? ''));
 
-// Dropdown source data (kept small; loaded even when empty result set).
+// Dropdown source data; loaded even when the result set is empty.
 $roles = ['farmer' => 'Farmer', 'buyer' => 'Buyer', 'admin' => 'Admin'];
 $categories = $pdo->query('SELECT id, name FROM produce_categories ORDER BY name')->fetchAll();
 $listingStatuses = ['draft', 'active', 'paused', 'sold_out', 'archived'];
@@ -81,7 +81,7 @@ $stages = $pdo->query(
      WHERE to_status = \'cancelled\' AND from_status IS NOT NULL ORDER BY from_status'
 )->fetchAll(PDO::FETCH_COLUMN);
 
-// ---- Filters ----------------------------------------------------------------
+// ---- Filters ----
 $filters = [];
 $rows = [];
 $totals = null;

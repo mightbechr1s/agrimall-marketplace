@@ -8,11 +8,8 @@ CREATE TABLE IF NOT EXISTS `password_resets` (
   `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id`    BIGINT UNSIGNED NOT NULL,
   `token`      VARCHAR(128)    NOT NULL,
-  -- DATETIME, not TIMESTAMP: this server runs
-  -- explicit_defaults_for_timestamp=0, which rewrites a bare TIMESTAMP column
-  -- into `DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`. On a reset
-  -- token that would let any UPDATE silently extend the expiry. See migration
-  -- 007, which repairs databases already built with the old definition.
+  -- DATETIME, not TIMESTAMP: explicit_defaults_for_timestamp=0 rewrites a bare TIMESTAMP to
+  -- include ON UPDATE CURRENT_TIMESTAMP, silently extending reset expiry; 007 repairs old DBs.
   `expires_at` DATETIME        NOT NULL,
   `created_at` TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -23,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `password_resets` (
     REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Add remember-me support to users (MySQL 8.0.13+ supports ADD COLUMN IF NOT EXISTS)
+-- Add remember-me support to users (idempotent, guarded on information_schema).
 SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = 'animal_marketplace' AND TABLE_NAME = 'users'
     AND COLUMN_NAME = 'remember_token');

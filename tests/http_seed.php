@@ -1,5 +1,5 @@
 <?php
-// Seed the throwaway test DB with known credentials for the HTTP end-to-end test.
+// Seed the throwaway test DB for HTTP end-to-end tests.
 declare(strict_types=1);
 
 $repo = dirname(__DIR__);

@@ -12,7 +12,7 @@ $isAsync = strcasecmp($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '', 'fetch') === 0;
 $return = is_safe_path((string) ($_POST['return_to'] ?? '')) ? (string) $_POST['return_to'] : 'browse.php';
 $loginUrl = login_url($return);
 
-// Error/success responder: JSON when called via fetch, flash+redirect otherwise.
+// Async responder: JSON for fetch, flash+redirect otherwise
 $respond = function (bool $ok, string $message, string $redirect) use ($isAsync): void {
     if ($isAsync) {
         header('Content-Type: application/json');

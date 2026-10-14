@@ -291,7 +291,7 @@ require __DIR__ . '/partials/header.php';
                     <?php endif; ?>
 
                     <?php if ($order['delivery_method'] === 'pickup' && $order['status'] === 'ready_for_pickup'): ?>
-                        <!-- Buyer completes pickup orders, not farmer -->
+                        <!-- Pickup: buyer completes, not farmer -->
                     <?php endif; ?>
 
                     <?php if (in_array($order['status'], ['confirmed', 'preparing'])): ?>
@@ -337,7 +337,7 @@ require __DIR__ . '/partials/header.php';
                     <?php endif; ?>
 
                     <?php if ($order['delivery_method'] === 'farmer_delivery' && $order['status'] === 'out_for_delivery'): ?>
-                        <!-- Farmer completes delivery orders -->
+                        <!-- Delivery: farmer completes -->
                     <?php endif; ?>
 
                 <?php elseif ($role === 'admin'): ?>

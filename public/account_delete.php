@@ -2,11 +2,10 @@
 /**
  * Self-service account erasure.
  *
- * This performs anonymization rather than a physical delete. The schema makes
- * a physical delete impossible for any account that has traded or acted as an
- * administrator (orders.buyer_id / orders.farmer_id and five admin FKs are all
- * ON DELETE RESTRICT), and BR-013, BR-034 and NFR-REL-004 forbid it anyway.
- * See account_anonymize() in src/functions.php for the field-level policy.
+ * Performs anonymization, not physical delete. Schema prevents physical
+ * delete for accounts with orders/admin FKs (ON DELETE RESTRICT).
+ * BR-013, BR-034, NFR-REL-004 forbid physical delete.
+ * See account_anonymize() in src/functions.php.
  */
 require __DIR__ . '/../src/bootstrap.php';
 require_once __DIR__ . '/../src/i18n.php';
@@ -31,9 +30,8 @@ if (!$user) {
 $error = null;
 $done = false;
 
-// Preconditions shown on load and re-checked on submit. Recomputing them on
-// submit matters: an admin can place a hold between the form being rendered
-// and it being posted.
+// Preconditions: recomputed on submit since admin can place hold
+// between render and post.
 $holdActive = user_has_active_retention_hold($userId);
 $openOrders = user_nonterminal_order_count($userId);
 $isAdmin = ($role === 'admin');
@@ -43,9 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$done) {
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
 
     if ($isAdmin) {
-        // Deliberately not reachable by submitting the form: the block is
-        // rendered instead of a working form, but re-checked server-side so a
-        // crafted POST cannot bypass it.
+        // Deliberately unreachable by form submit: block rendered
+        // instead of form, but re-checked server-side so crafted POST
+        // cannot bypass.
         $error = $l($del, 'blocked_admin_title');
     } elseif ($holdActive) {
         $error = $l($del, 'blocked_hold');
@@ -59,8 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$done) {
         $typed = trim((string) ($_POST['confirm_phrase'] ?? ''));
 
         if (!password_verify((string) ($_POST['current_password'] ?? ''), $hash)) {
-            // Same message as a wrong confirmation word would give, so the
-            // password is never confirmed by a distinguishable response.
+            // Same message as wrong confirmation word; password never
+            // confirmed by distinguishable response.
             $error = $l($del, 'invalid_current_password');
         } elseif ($typed === '' || strcasecmp($typed, $confirmPhrase) !== 0) {
             $error = $l($del, 'err_confirm_mismatch');
@@ -69,8 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$done) {
                 account_anonymize($userId);
                 remember_revoke($userId);
 
-                // The account is gone, so end the session before rendering
-                // anything. Any page reached from here must be public.
+                // Account anonymized; end session before rendering.
+                // Any page reached from here must be public.
                 $_SESSION = [];
                 if (ini_get('session.use_cookies')) {
                     $params = session_get_cookie_params();
@@ -88,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$done) {
 
                 $done = true;
             } catch (RuntimeException $e) {
-                // Never claim success on a failed commit.
+                // Never claim success on failed commit.
                 $error = $l($del, 'blocked_hold');
                 error_log('account deletion failed: ' . $e->getMessage());
             }

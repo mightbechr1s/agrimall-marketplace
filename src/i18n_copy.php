@@ -29,12 +29,8 @@ return [
     ],
 
     /*
-     * The only search box in the product is on browse.php, so its copy lives
-     * in a block named for that page. A whole search trio was originally
-     * written into the hero block for a search field on the landing page that
-     * never got built, which left three keys nothing could reference. The
-     * label matters beyond looks: it is what gives the input an accessible
-     * name, because a placeholder is not one.
+     * Search copy for browse.php, the only search box in the product.
+     * The label gives the input its accessible name; a placeholder is not one.
      */
     'search' => [
         'en' => [

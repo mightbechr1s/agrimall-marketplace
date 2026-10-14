@@ -1,22 +1,9 @@
 <?php
 /**
- * Admin Table Partial — Enhanced with sorting, pagination, sticky header
- *
- * Usage:
- *   include __DIR__ . '/partials/admin-table.php';
- *   Requires variables:
- *     $columns (array)     — column definitions:
- *       ['key' => 'col_key', 'label' => 'Label', 'sortable' => true, 'formatter' => callable, 'class' => 'text-nowrap']
- *     $data (array)        — rows (each row is array with keys matching column keys)
- *     $sortable (bool)     — enable column sorting (default true)
- *     $paginated (bool)    — enable pagination (default true)
- *     $perPage (int)       — items per page (default 25)
- *     $filters (array)     — current filter GET params to preserve in pagination/sort links
- *     $emptyMessage (string) — empty state message
- *     $tableId (string)    — unique ID for the table
- *     $stickyHeader (bool) — make header sticky (default true)
- *     $rowClick (string)   — JS click handler for rows
- *     $actions (callable)  — function($row) returning action HTML for last column
+ * Admin table with sorting, pagination and sticky header.
+ * Requires $columns (key/label/sortable/formatter/class) and $data; optional
+ * $sortable, $paginated, $perPage, $filters, $emptyMessage, $tableId,
+ * $stickyHeader, $rowClick, $actions.
  */
 $sortable = $sortable ?? true;
 $paginated = $paginated ?? true;
@@ -28,7 +15,7 @@ $stickyHeader = $stickyHeader ?? true;
 $rowClick = $rowClick ?? '';
 $actions = $actions ?? null;
 
-// Build query string for links (preserving filters)
+// Query string for links, preserving filters
 $qs = http_build_query($filters);
 $qsPrefix = $qs ? $qs . '&' : '';
 
@@ -45,7 +32,7 @@ $page = $paginated ? max(1, min((int)($_GET['page'] ?? 1), $totalPages)) : 1;
 $offset = ($page - 1) * $perPage;
 $pageData = $paginated ? array_slice($data, $offset, $perPage) : $data;
 
-// Sort data if sortable
+// Sort if sortable
 if ($isValidSort && $sortable) {
     usort($pageData, function ($a, $b) use ($sortCol, $sortDir) {
         $av = $a[$sortCol] ?? '';
@@ -55,7 +42,6 @@ if ($isValidSort && $sortable) {
     });
 }
 
-// Build sort link
 function sortLink(string $col, string $label, string $currentSort, string $currentDir, string $qsPrefix, array $columns): string
 {
     $sortable = isset($columns[$col]) && ($columns[$col]['sortable'] ?? false);

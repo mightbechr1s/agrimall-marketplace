@@ -1,9 +1,6 @@
 /**
- * Save / unsave listing without a full page reload.
- * Intercepts submits on form[data-save-ajax="true"] (the bookmark button on
- * listing cards and the Save for Later button on the listing page), POSTs
- * saved_toggle.php via fetch, and flips the bookmark button in place. Falls
- * back to a normal form submit if the server answer is not JSON.
+ * Save/unsave without a page reload: POSTs saved_toggle.php via fetch for
+ * form[data-save-ajax="true"], flipping the bookmark; falls back to submit.
  */
 (function () {
   'use strict';

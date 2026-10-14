@@ -84,10 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ]);
         // Persist the locale to session + cookie.
         locale_switch($localeInput);
-        // Redirect rather than re-render. locale_current() resolves the locale into a
-        // per-request static at line 5, before this POST runs, so painting this
-        // response would still show the old language and the user would have to save
-        // a second time for it to stick.
+        // Redirect, not re-render: locale_current() cached at line 5
+        // before POST runs, so response would show old language.
         flash_set('settings_saved', $localeInput);
         redirect_to('settings.php');
     } catch (Exception $e) {
@@ -170,8 +168,8 @@ require __DIR__ . '/partials/header.php';
     </div>
 </main>
 <script>
-  // Sync theme select with the effective theme (data-theme attribute).
-  // This is the single source of truth for what the user sees.
+  // Sync theme select with effective theme (data-theme attr).
+  // Single source of truth for what user sees.
   (function () {
     var sel = document.getElementById('theme');
     if (!sel) return;
@@ -183,15 +181,15 @@ require __DIR__ . '/partials/header.php';
     }
     // Initial sync
     updateSelect();
-    // Observe theme changes (from toggle, FOUC guard, etc.)
+    // Observe theme changes (toggle, FOUC guard, etc.)
     var observer = new MutationObserver(updateSelect);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   })();
 </script>
 <?php if ($success): ?>
 <script>
-  // Settings were saved server-side; keep the client preference in sync so the
-  // FOUC guard (which already ran) never reverts this choice on the next page.
+  // Settings saved server-side; sync client pref so FOUC guard
+  // doesn't revert choice on next page.
   (function () {
     var pref = <?= json_encode($prefs['theme']) ?>;
     localStorage.setItem('animal_theme', pref);

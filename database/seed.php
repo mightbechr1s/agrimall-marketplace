@@ -142,9 +142,7 @@ function makeListing(PDO $pdo, int $farmerId, array $data): int
 
     $listingId = (int) $pdo->lastInsertId();
 
-    // Open the stock ledger for this listing, so every quantity in the database
-    // is traceable to a starting row. tools/stock_ledger_backfill.php adds the
-    // same row for listings that predate the ledger.
+    // Opening stock ledger row; tools/stock_ledger_backfill.php adds the same row for older listings.
     $pdo->prepare(
         'INSERT INTO stock_adjustments
          (listing_id, adjustment_type, quantity_change, quantity_before, quantity_after,
@@ -159,8 +157,7 @@ function makeListing(PDO $pdo, int $farmerId, array $data): int
         'created_by'  => $farmerId,
     ]);
 
-    // Listings without an image fall back to this real photo at render time,
-    // so seed one row per listing to keep the marketplace from showing blanks.
+    // Seed one image row per listing: listings with no image fall back to this photo at render time.
     $image = $pdo->prepare(
         'INSERT INTO listing_images (listing_id, image_path, is_primary, sort_order)
          VALUES (:listing_id, :image_path, 1, 0)'
@@ -199,9 +196,7 @@ function makeOrder(PDO $pdo, int $buyerId, int $farmerId, int $listingId, float 
 
     $orderId = (int) $pdo->lastInsertId();
 
-    // A confirmed order consumes stock (FR-ORD-010, BR-009). Seeded orders that
-    // start out completed must move the ledger too, or a fresh database would
-    // disagree with the live one that tools/stock_ledger_backfill.php repairs.
+    // Completed orders must deduct stock (FR-ORD-010, BR-009); tools/stock_ledger_backfill.php repairs drift.
     if ($status === 'completed') {
         $before = (float) $pdo->query('SELECT available_quantity FROM produce_listings WHERE id = ' . $listingId)->fetchColumn();
         $after  = round($before - $qty, 4);

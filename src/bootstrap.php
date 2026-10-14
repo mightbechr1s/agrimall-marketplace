@@ -20,7 +20,6 @@ if (!empty($config['app']['error_logging'])) {
     }
 
     if (isset($errorConfig['error_log']) && !empty($errorConfig['error_log'])) {
-        // Ensure log directory exists
         $logDir = dirname($errorConfig['error_log']);
         if (!is_dir($logDir)) {
             mkdir($logDir, 0755, true);
@@ -29,7 +28,6 @@ if (!empty($config['app']['error_logging'])) {
     }
 }
 
-// Set error reporting level based on environment
 $isProduction = ($config['app']['env'] ?? 'development') === 'production';
 
 if ($isProduction) {
@@ -42,7 +40,7 @@ if ($isProduction) {
 
 // ---- Exception handler (production -> 500.php; dev -> default)  ----
 set_exception_handler(function (Throwable $e) use ($config, $isProduction): void {
-    // Always log full error + stack (daily-rotated log file)
+    // Always log full error + stack to a daily-rotated file.
     $logPath = $config['app']['error_logging']['error_log'] ?? __DIR__ . '/../logs/error.log';
     $logDir = dirname($logPath);
     if (!is_dir($logDir)) {
@@ -62,7 +60,7 @@ set_exception_handler(function (Throwable $e) use ($config, $isProduction): void
     );
     error_log($msg, 3, $dailyLog);
 
-    // Prune rotated logs older than 14 days (once per request is fine; cheap).
+    // Prune rotated logs older than 14 days.
     $cutoff = time() - 14 * 86400;
     foreach (glob($logDir . DIRECTORY_SEPARATOR . 'errors-*.log') ?: [] as $f) {
         if (filemtime($f) < $cutoff) {
@@ -71,25 +69,22 @@ set_exception_handler(function (Throwable $e) use ($config, $isProduction): void
     }
 
     if ($isProduction) {
-        // Render clean 500 page
         if (!headers_sent()) {
             http_response_code(500);
             header('Content-Type: text/html; charset=UTF-8');
         }
         $ref = substr(md5((string) microtime(true) . (string) random_bytes(4)), 0, 8);
-        // Try to include 500.php with ref; if it fails, output minimal HTML
+        // Include 500.php with $ref; fall back to minimal HTML if it is missing.
         $fiveHundred = __DIR__ . '/../public/500.php';
         if (is_file($fiveHundred)) {
-            // Use output buffering to capture any output from 500.php
             ob_start();
             require $fiveHundred;
             exit;
         }
-        // Fallback minimal response
         echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>500 Server Error</title></head><body style="font-family:system-ui;padding:2rem;text-align:center"><h1>Server Error</h1><p>Reference: <code>' . $ref . '</code></p></body></html>';
         exit;
     }
-    // Development: let PHP's default handler display the error (already configured via display_errors=1)
+    // Dev: PHP's default handler displays the error (display_errors=1).
 });
 
 // ---- Error handler (catches E_ERROR, E_WARNING, etc.)  ----
@@ -117,7 +112,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// ---- Security headers (default best-practice; loosened only behind HTTPS)  ----
+// ---- Security headers  ----
 if (!headers_sent()) {
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: DENY');
@@ -132,8 +127,7 @@ if (!headers_sent()) {
     if ($isProduction && isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
         header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
     }
-    // Don't cache HTML pages: rendered output varies by login state, so a
-    // heuristically cached copy would show stale navigation after login/logout.
+    // Don't cache HTML: output varies by login state, so a cached copy shows stale nav.
     header('Cache-Control: no-store, private, must-revalidate');
     header('Pragma: no-cache');
 
@@ -150,8 +144,7 @@ try {
     DB::init($config['db']);
 } catch (Throwable $e) {
     error_log('DB init failed: ' . $e->getMessage());
-    // DB unavailable — pages using DB::pdo() will get RuntimeException
-    // Pages that don't need DB will still work
+    // DB unavailable: DB::pdo() throws; pages that don't need DB still work.
 }
 
 // Resume a remembered session before any page reads the current user.

@@ -49,9 +49,7 @@ try {
             if (!in_array($oldStatus, ['pending', 'delivery_fee_review'], true)) {
                 throw new RuntimeException('Order cannot be confirmed from status: ' . $oldStatus);
             }
-            // The listing is re-read here, locked, because a pending order can
-            // outlive its produce: confirmation must still be refused if the
-            // expiry date passed while the order was waiting (FR-LIST-033).
+            // Re-read and lock the listing: pending orders can outlive expiry (FR-LIST-033).
             $listingStmt = $pdo->prepare('SELECT * FROM produce_listings WHERE id = :id FOR UPDATE');
             $listingStmt->execute(['id' => (int) $order['listing_id']]);
             $listing = $listingStmt->fetch();
@@ -73,10 +71,8 @@ try {
             $ts = date('Y-m-d H:i:s');
             $pdo->prepare('UPDATE orders SET status = :status, confirmed_at = :ts WHERE id = :id')
                 ->execute(['status' => $newStatus, 'ts' => $ts, 'id' => $orderId]);
-            // Stock is deducted only now, on confirmation, inside this
-            // transaction (FR-ORD-010, BR-009). A pending or
-            // delivery-fee-review request reserves nothing (BR-008), so a
-            // request that is never confirmed never moves stock.
+            // Stock deducted only here, on confirmation (FR-ORD-010, BR-009).
+            // Pending / delivery_fee_review reserves nothing (BR-008).
             stock_apply($pdo, (int) $order['listing_id'], -(float) $order['quantity'],
                 'sale_deduction', $orderId, $userId,
                 'Order ' . ($order['order_number']) . ' confirmed.');
@@ -114,10 +110,8 @@ try {
             $ts = date('Y-m-d H:i:s');
             $pdo->prepare('UPDATE orders SET status = :status, rejection_reason = :reason, rejected_at = :ts WHERE id = :id')
                 ->execute(['status' => $newStatus, 'reason' => $reason ?: 'No reason provided.', 'ts' => $ts, 'id' => $orderId]);
-            // No stock change on rejection: a reject can only happen from
-            // pending or delivery_fee_review, and neither has deducted stock
-            // (FR-ORD-008, FR-ORD-023, BR-008). Restoring here would credit
-            // back quantity that was never taken.
+            // No stock change on rejection: reject only happens from pending or
+            // delivery_fee_review, which never deducted stock (FR-ORD-008, FR-ORD-023, BR-008).
             $logReason = 'Order rejected by farmer: ' . ($reason ?: 'No reason provided.');
             break;
 

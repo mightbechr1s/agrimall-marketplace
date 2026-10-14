@@ -1,16 +1,8 @@
 <?php
 /**
- * Error State Partial
- *
- * Usage:
- *   include __DIR__ . '/partials/error-state.php';
- *   Variables:
- *     $message (string) — Error message (required)
- *     $title (string)  — Error title (default 'Something went wrong')
- *     $code (int)      — HTTP status code (optional)
- *     $retry (array)   — ['label' => 'Retry', 'action' => 'reload'|'back'|'url', 'url' => '...']
- *     $dismissible (bool) — Allow dismiss (default true)
- *     $class (string) — Extra wrapper classes
+ * Error State Partial — include __DIR__ . '/partials/error-state.php', set vars.
+ * Required: $message; optional: $title, $code, $retry, $dismissible, $class.
+ * $retry: ['label' => ..., 'action' => 'reload'|'back'|'url', 'url' => ...].
  */
 $message = $message ?? 'An unexpected error occurred.';
 $title = $title ?? 'Something went wrong';

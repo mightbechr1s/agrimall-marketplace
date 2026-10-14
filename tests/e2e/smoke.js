@@ -1,6 +1,4 @@
-// Browser smoke test for the quantity-rejection message.
-// Run via `npm run test:e2e`, which prepares the test database and starts the
-// server. Not runnable on its own.
+// Browser smoke test for quantity-rejection message. Run via `npm run test:e2e` (prepares test DB, starts server). Not runnable alone.
 const puppeteer = require('puppeteer-core');
 
 const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
@@ -23,7 +21,7 @@ function ok(label, cond, detail) {
   }
 }
 
-// Favicon and devtools noise is not a product defect; anything else is.
+// Favicon/devtools noise is not a product defect; anything else is.
 function isRealError(text) {
   return !/favicon/i.test(text);
 }
@@ -79,7 +77,7 @@ function isRealError(text) {
     ok('listing is orderable in the seeded fixture', !!stillAvailable);
 
     console.log('\n--- rejected quantity is explained, not silent ---');
-    // type rather than assign: an inline script copies the visible input on 'input'
+    // Type rather than assign: inline script copies visible input on 'input'.
     await page.click('#quantity', { clickCount: 3 });
     await page.keyboard.press('Backspace');
     await page.type('#quantity', 'abc');
@@ -94,12 +92,12 @@ function isRealError(text) {
       `hidden field still held the default '${synced}'`
     );
 
-    // opt out of client-side validation so the request reaches the server
+    // Opt out of client-side validation so request reaches server.
     await page.evaluate(() => {
       document.querySelector('form[action="/order_request.php"]').noValidate = true;
     });
     await page.click('form[action="/order_request.php"] button[type="submit"]');
-    // no catch: a swallowed navigation would assert against stale content
+    // No catch: swallowed navigation would assert against stale content.
     await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 15000 });
     ok(
       'the order failure lands on the listing page',
@@ -112,7 +110,7 @@ function isRealError(text) {
       })
       .then(() => true)
       .catch(() => false);
-    // print the page text; a wrong redirect target is otherwise invisible
+    // Print page text; wrong redirect target is otherwise invisible.
     const landed = (await bodyText()).replace(/\s+/g, ' ').trim().slice(0, 220);
     const alertCount = await page.evaluate(() => document.querySelectorAll('.alert').length);
     ok(
@@ -134,7 +132,7 @@ function isRealError(text) {
     );
 
     console.log('\n--- the cart stayed empty ---');
-    // the field is back to its minimum after load; retype the garbage first
+    // Field resets to minimum after load; retype garbage first.
     await page.click('#quantity', { clickCount: 3 });
     await page.keyboard.press('Backspace');
     await page.type('#quantity', 'abc');

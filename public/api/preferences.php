@@ -1,8 +1,7 @@
 <?php
 declare(strict_types=1);
 /**
- * POST /api/preferences.php — persist UI preferences to the user's account.
- * Currently supports `theme` ('system' | 'light' | 'dark').
+ * POST /api/preferences.php - saves theme preference ('system'|'light'|'dark').
  * Requires an authenticated session and a valid CSRF token.
  */
 

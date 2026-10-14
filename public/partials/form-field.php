@@ -1,29 +1,9 @@
 <?php
 /**
- * Form Field Partial
- *
- * Usage:
- *   include __DIR__ . '/partials/form-field.php';
- *   Requires variables (all optional unless noted):
- *     $label (string, required) — label text
- *     $name (string, required)  — input name/id
- *     $type (string)            — 'text'|'email'|'password'|'number'|'tel'|'url'|'textarea'|'select'|'file'|'radio'|'checkbox'
- *     $value (mixed)            — current value (for text/select)
- *     $options (array)          — for select: ['value' => 'Label'] or radio/checkbox groups
- *     $placeholder (string)
- *     $required (bool)
- *     $disabled (bool)
- *     $readonly (bool)
- *     $error (string)           — validation error message
- *     $help (string)            — help text below input
- *     $attrs (array)            — extra HTML attributes
- *     $before (string)          — HTML before input (e.g., input group prepend)
- *     $after (string)           — HTML after input (e.g., input group append)
- *     $inline (bool)            — render label + input inline (for checkbox/radio)
- *     $labelClass (string)      — extra classes for label
- *     $inputClass (string)      — extra classes for input
- *     $wrapperClass (string)    — extra classes for wrapper
- *     $id (string)              — override id (default = $name)
+ * Form Field Partial — renders a labeled input with validation/error/help.
+ * Required: $label, $name. Optional: $type, $value, $options, $placeholder,
+ * $required, $disabled, $readonly, $error, $help, $attrs, $before, $after,
+ * $inline, $labelClass, $inputClass, $wrapperClass, $id.
  */
 $type = $type ?? 'text';
 $label = $label ?? '';
@@ -56,8 +36,7 @@ foreach ($attrs as $k => $v) {
 
 $wrapperClasses = ['form-group'];
 if ($hasError) $wrapperClasses[] = 'has-error';
-// No 'form-check' here for $inline: the inline branch already renders an inner
-// .form-check, and Bootstrap's padding-left would compound.
+// No 'form-check' wrapper for $inline: inline branch renders its own; Bootstrap padding would compound.
 if ($wrapperClass) $wrapperClasses[] = $wrapperClass;
 $wrapperClassStr = implode(' ', $wrapperClasses);
 

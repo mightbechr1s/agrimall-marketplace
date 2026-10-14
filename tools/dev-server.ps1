@@ -3,14 +3,13 @@
     Starts (or stops) the local AniMAL stack: MariaDB and the PHP dev server.
 
 .DESCRIPTION
-    Exists because the PHP dev server must be launched WITH public\router.php:
+    The PHP dev server must be launched WITH public\router.php:
 
         php -S host:port -t public public/router.php
 
-    Launching it with only "-t public" silently bypasses router.php AND
-    ignores public\uploads\.htaccess, which re-opens remote code execution
-    through uploaded files. Everything in this script is idempotent, so it is
-    safe to re-run when only one of the two services is down.
+    Launching with only "-t public" silently bypasses router.php and ignores
+    public\uploads\.htaccess, re-opening remote code execution through uploaded
+    files. Every step is idempotent, so it is safe to re-run.
 
 .PARAMETER Port
     Port for the PHP dev server. Default 8000.
@@ -20,10 +19,6 @@
 
 .PARAMETER Stop
     Stop both services instead of starting them.
-
-.EXAMPLE
-    powershell -ExecutionPolicy Bypass -File tools\dev-server.ps1
-    powershell -ExecutionPolicy Bypass -File tools\dev-server.ps1 -Stop
 #>
 
 [CmdletBinding()]
@@ -45,9 +40,8 @@ $MySqlExe    = Join-Path $MySqlDir 'bin\mysqld.exe'
 $MySqlAdmin  = Join-Path $MySqlDir 'bin\mysqladmin.exe'
 
 function Test-TcpPort([int]$TcpPort, [string]$TcpHost = '127.0.0.1', [int]$TimeoutMs = 1000) {
-    # Pure .NET probe: native clients such as mysqladmin write to stderr when
-    # the server is down, which PowerShell turns into noisy (and, under
-    # $ErrorActionPreference='Stop', potentially terminating) errors.
+    # Pure .NET probe: native clients like mysqladmin write to stderr when the
+    # server is down, which $ErrorActionPreference='Stop' turns into terminating errors.
     $client = New-Object System.Net.Sockets.TcpClient
     try {
         $async = $client.BeginConnect($TcpHost, $TcpPort, $null, $null)
@@ -97,8 +91,7 @@ if (Test-MySqlAlive) {
     Write-Host 'MariaDB      : already running' -ForegroundColor DarkGray
 } else {
     Write-Host 'MariaDB      : starting...' -ForegroundColor Cyan
-    # No --datadir override on purpose: it must be picked up from mysql\my.ini,
-    # so that a broken or missing config fails loudly instead of being masked.
+    # No --datadir override on purpose: it must come from mysql\my.ini, so a broken config fails loudly.
     Start-Process -FilePath $MySqlExe -WorkingDirectory $MySqlDir -WindowStyle Hidden
 
     $ready = $false

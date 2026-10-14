@@ -1,19 +1,8 @@
 <?php
 /**
- * Empty State Partial
- *
- * Usage: set the variables below, then include this file. They are read with
- * ?? so the caller's values win and nothing needs unsetting afterwards.
- *
- *   $icon        (string) - SVG markup or icon class (default: database)
- *   $title       (string) - Title text (required)
- *   $description (string) - Description text
- *   $action      (array)  - single button: ['label' => '...', 'href' => '...', 'class' => 'btn-primary']
- *   $actions     (array)  - several buttons: [['label' => ..., 'href' => ..., 'class' => ...], ...]
- *                          Takes precedence over $action. Use this when the
- *                          buttons differ by auth state or other condition.
- *   $size        (string) - 'sm'|'md'|'lg' (default md)
- *   $class       (string) - Extra wrapper classes
+ * Empty State Partial — set vars below, then include.
+ * Required: $title; optional: $icon, $description, $action, $actions, $size, $class.
+ * Read with ?? so caller values win and nothing needs unsetting.
  */
 $icon = $icon ?? '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon"><path d="M2 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H1.5a.5.5 0 0 1 0-1H2v-1h-.5a.5.5 0 0 1 0-1H2v-1h-.5a.5.5 0 0 1 0-1H2v-1h-.5a.5.5 0 0 1 0-1H2V6h-.5a.5.5 0 0 1 0-1H2v-1h-.5a.5.5 0 0 1 0-1H2V4h-.5a.5.5 0 0 1 0-1H2V2h-.5a.5.5 0 0 1 0-1H2zm9.853-1.354a.5.5 0 0 1 .354-.853H14a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H8.5a.5.5 0 0 1 0-1H14a1 1 0 0 0 1-1V4H8.5a.5.5 0 0 1 0-1H15V2a.5.5 0 0 0-1-1H10.5v2.5a.5.5 0 0 1-1 0V2a.5.5 0 0 1 .146-.354l.207-.207z"/>';
 $title = $title ?? 'No records found';

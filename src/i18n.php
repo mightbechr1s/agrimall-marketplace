@@ -1,7 +1,6 @@
 <?php
-// i18n helper: English/Filipino locale resolution for public-facing copy.
-// Locale is chosen via ?lang=tl|en, persisted to session when logged in,
-// otherwise remembered via cookie. Default: en.
+// i18n helper: English/Filipino locale resolution.
+// Chosen via ?lang=tl|en, then session, then cookie. Default: en.
 declare(strict_types=1);
 
 if (!function_exists('locale_current')) {
@@ -13,7 +12,7 @@ if (!function_exists('locale_current')) {
             return $locale;
         }
 
-        $locale = 'en'; // default
+        $locale = 'en';
         $lang = $_GET['lang'] ?? '';
 
         if ($lang === 'tl' || $lang === 'fil') {
@@ -47,7 +46,7 @@ if (!function_exists('locale_current')) {
             }
         }
 
-        // Persist to cookie when language comes from query param
+        // Persist a query-param choice to the cookie.
         if (isset($_GET['lang'])) {
             locale_switch($locale);
         }
@@ -57,25 +56,38 @@ if (!function_exists('locale_current')) {
 }
 
 if (!function_exists('locale_switch')) {
-    /** Persist a locale choice. */
+    /** Persist a locale choice to the session, cookie, and (when logged in) the account. */
     function locale_switch(string $lang): void
     {
         $lang = $lang === 'tl' ? 'tl' : 'en';
         $_SESSION['lang'] = $lang;
-        setcookie('animal_lang', $lang, [
-            'expires'  => time() + 60 * 60 * 24 * 365,
-            'path'     => '/',
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
+        // May run mid-render, so only set the cookie while headers are open.
+        if (!headers_sent()) {
+            setcookie('animal_lang', $lang, [
+                'expires'  => time() + 60 * 60 * 24 * 365,
+                'path'     => '/',
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+        }
+        // user_preferences.locale outranks session/cookie, so persist it here too.
+        if (function_exists('current_user_id') && current_user_id() && class_exists('DB')) {
+            try {
+                DB::pdo()->prepare(
+                    'INSERT INTO user_preferences (user_id, locale, updated_at)
+                     VALUES (:id, :locale, NOW())
+                     ON DUPLICATE KEY UPDATE locale = VALUES(locale), updated_at = NOW()'
+                )->execute(['id' => current_user_id(), 'locale' => $lang]);
+            } catch (Throwable $e) {
+                error_log('Locale persist failed: ' . $e->getMessage());
+            }
+        }
     }
 }
 
 if (!function_exists('locale_url')) {
-    /**
-     * Return a URL to the same request with the locale switched to $lang,
-     * preserving other query parameters.
-     */
+    /** URL to the same request with the locale switched to $lang, preserving
+     *  other query parameters. */
     function locale_url(string $lang, bool $keepQuery = true): string
     {
         $lang = $lang === 'tl' ? 'tl' : 'en';
@@ -84,7 +96,6 @@ if (!function_exists('locale_url')) {
         if ($keepQuery) {
             $query['lang'] = $lang;
         } elseif (!$keepQuery) {
-            // drop all other params, keep only lang
             $query = ['lang' => $lang];
         }
 
@@ -94,11 +105,8 @@ if (!function_exists('locale_url')) {
 }
 
 if (!function_exists('t')) {
-    /**
-     * Translate a key from the active dictionary.
-     * Expects the copy deck structure: section = [ 'en' => [...], 'tl' => [...] ].
-     * Fallback chain: [lang] -> 'en' -> raw key.
-     */
+    /** Translate a key from the active dictionary (section = [lang => [key => text]]).
+     *  Fallback chain: [lang] -> 'en' -> raw key. */
     function t(array $dict, string $key): string
     {
         $lang = locale_current();

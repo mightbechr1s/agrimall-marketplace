@@ -1,14 +1,8 @@
 <?php
 /**
- * Listing Card Partial
- *
- * Usage:
- *   include __DIR__ . '/partials/listing-card.php';
- *   Requires variables:
- *     $listing (array) — listing row with keys: id, title, description, price, unit, category,
- *                        farmer_name, farmer_slug, image_path, is_fresh, is_saved, qty_available
- *     $mode (string)   — 'grid' | 'horizontal' | 'farmer' | 'featured'
- *     $showActions (bool) — show add-to-basket/save buttons (default true for buyers)
+ * Listing Card Partial — renders a product card for grid/horizontal/featured modes.
+ * Required: $listing (array with id, title, price, unit, category, farmer_name, farmer_slug, image_path, is_fresh, is_saved, qty_available).
+ * Optional: $mode ('grid'|'horizontal'|'farmer'|'featured'), $showActions (bool, default true for buyers).
  */
 $mode = $mode ?? 'grid';
 $showActions = $showActions ?? true;
@@ -18,8 +12,7 @@ $unit = $listing['unit'] ?? 'kg';
 $imageUrl = asset($listing['image_path'] ?: fallback_produce_image());
 $listingUrl = "listing.php?id=" . (int) $listing['id'];
 $farmerUrl = $listing['farmer_slug'] ? "profile.php?u=" . urlencode($listing['farmer_slug']) : 'browse.php';
-// Relative, no leading slash: is_safe_path() rejects absolute paths, so a raw
-// REQUEST_URI would silently fall back to the dashboard.
+// Relative path (no leading slash): is_safe_path() rejects absolute; raw REQUEST_URI would fall back to dashboard.
 $returnPath = ltrim((string) ($_SERVER['REQUEST_URI'] ?? ''), '/') ?: 'browse.php';
 
 $freshClass = $isFresh ? 'badge-fresh' : ($listing['is_stale'] ?? false ? 'badge-stale' : 'badge-normal');
@@ -37,7 +30,7 @@ if ($mode === 'featured') $cardClasses .= ' feature-card';
     <?php if ($mode === 'featured'): ?>
       <img src="<?= e($imageUrl) ?>" alt="" loading="eager" width="600" height="450" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null;this.src='assets/images/products/market.jpg'">
     <?php else: ?>
-      <img src="<?= e($imageUrl) ?>" alt="<?= e($listing['title'] ?? 'Produce') ?>" loading="lazy" width="400" height="300" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null;this.src='assets/images/products/market.jpg'">
+      <img src="<?= e($imageUrl) ?>" alt="<?= e($listing['title'] ?? 'Produce') ?>" loading="lazy" width="400" height="400" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null;this.src='assets/images/products/market.jpg'">
     <?php endif; ?>
     <?php if ($mode === 'featured' && !empty($listing['origin'])): ?>
       <span class="origin-badge"><?= e($listing['origin']) ?></span>

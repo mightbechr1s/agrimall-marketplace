@@ -7,7 +7,7 @@ $userId = current_user_id();
 $pageTitle = 'Dashboard';
 $activePage = 'dashboard';
 
-// ── Helpers ──────────────────────────────────────────────────
+// Helpers
 function status_badge(string $status): string
 {
     $map = [
@@ -32,7 +32,7 @@ $fmtQty = function ($value, $symbol): string {
     return rtrim(rtrim(number_format((float) $value, 4), '0'), '.') . ' ' . e($symbol);
 };
 
-// ── Data per role ────────────────────────────────────────────
+// Data per role
 $stats = [];
 $orders = [];
 $farmerListings = [];
@@ -89,7 +89,7 @@ if ($role === 'admin') {
     $pendingOrders = $pdo->prepare('SELECT COUNT(*) FROM v_order_summary WHERE farmer_id = :id AND status IN (\'pending\',\'confirmed\',\'preparing\')');
     $pendingOrders->execute(['id' => $userId]);
 
-    // Calculate total earnings and volume sold
+    // Total earnings and volume sold
     $earningsStmt = $pdo->prepare('SELECT COALESCE(SUM(o.unit_price * o.quantity + o.delivery_fee), 0) FROM orders o JOIN v_order_summary vos ON o.id = vos.id WHERE vos.farmer_id = :id AND vos.status NOT IN (\'cancelled\',\'rejected\')');
     $earningsStmt->execute(['id' => $userId]);
     $totalEarnings = money((float) $earningsStmt->fetchColumn());
@@ -186,7 +186,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
 ?>
 
 <?php if ($role === 'admin'): ?>
-    <!-- ═══ ADMIN DASHBOARD ═══ -->
+    <!-- Admin Dashboard -->
     <div class="dash-section-header">
         <h1>Platform Overview</h1>
         <p>Monitor AniMAL marketplace activity across all users and listings.</p>
@@ -211,7 +211,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <?php endforeach; ?>
     </div>
 
-    <!-- Admin: Recent Orders -->
+    <!-- Recent Orders -->
     <div class="dash-panel" id="orders">
         <div class="dash-panel-header">
             <h2>Recent Orders</h2>
@@ -235,7 +235,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <tbody>
                     <?php foreach ($orders as $order): ?>
                         <?php
-                        // Truncate order ID to 8-character hex tag
+                        // Truncate order ID to 8-char hex tag
                         $orderId = strtoupper(substr(md5($order['id']), 0, 8));
                         ?>
                         <tr class="order-row clickable-row"
@@ -279,7 +279,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <?php endif; ?>
     </div>
 
-    <!-- Admin: Farmer Verifications + Audit Activity -->
+    <!-- Farmer Verifications + Audit Activity -->
     <div class="row g-4">
         <div class="col-lg-6">
             <div class="dash-panel">
@@ -361,7 +361,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
     </div>
 
 <?php elseif ($role === 'farmer'): ?>
-    <!-- ═══ FARMER DASHBOARD ═══ -->
+    <!-- Farmer Dashboard -->
     <div class="dash-section-header">
         <h1>Farm Dashboard</h1>
         <p>Manage your harvest, track orders, grow your reach.</p>
@@ -387,7 +387,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <?php endforeach; ?>
     </div>
 
-    <!-- Farmer: My Listings -->
+    <!-- My Listings -->
     <div class="dash-panel" id="listings">
         <div class="dash-panel-header">
             <h2>My Listings</h2>
@@ -429,7 +429,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <?php endif; ?>
     </div>
 
-    <!-- Farmer: Orders -->
+    <!-- Orders -->
     <div class="dash-panel" id="orders">
         <div class="dash-panel-header">
             <h2>Orders</h2>
@@ -453,7 +453,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <tbody>
                     <?php foreach ($orders as $order): ?>
                         <?php
-                        // Truncate order ID to 8-character hex tag
+                        // Truncate order ID to 8-char hex tag
                         $orderId = strtoupper(substr(md5($order['id']), 0, 8));
                         ?>
                         <tr class="order-row clickable-row"
@@ -499,7 +499,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <?php endif; ?>
     </div>
 
-    <!-- Farmer: Analytics (listings & orders summary) -->
+    <!-- Analytics: listings & orders summary -->
     <?php
         $listingFlowOrder = ['active', 'paused', 'draft', 'sold_out', 'archived'];
         $orderFlowOrder = ['pending', 'delivery_fee_review', 'confirmed', 'preparing', 'ready_for_pickup', 'out_for_delivery', 'completed', 'rejected', 'cancelled'];
@@ -595,7 +595,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
     </div>
 
 <?php else: ?>
-    <!-- ═══ BUYER DASHBOARD ═══ -->
+    <!-- Buyer Dashboard -->
     <div class="dash-section-header">
         <h1>My Orders</h1>
         <p>Track your orders, discover fresh produce from verified farms.</p>
@@ -614,7 +614,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                             </div>
                             <div class="stat-label"><?= e($label) ?></div>
                             <div class="stat-trend text-success small"><?= $data['trend'] ?> this week</div>
-                            <!-- Mini inline SVG sparkline -->
+                            <!-- SVG sparkline -->
                             <div class="stat-sparkline mt-2">
                                 <svg width="60" height="20" viewBox="0 0 60 20" xmlns="http://www.w3.org/2000/svg">
                                     <path fill="none" stroke="currentColor" stroke-width="1.5"
@@ -628,7 +628,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <?php endforeach; ?>
     </div>
 
-    <!-- Buyer: Orders -->
+    <!-- Order History -->
     <div class="dash-panel" id="orders">
         <div class="dash-panel-header">
             <h2>Order History</h2>
@@ -652,7 +652,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <tbody>
                     <?php foreach ($orders as $order): ?>
                         <?php
-                        // Truncate order ID to 8-character hex tag
+                        // Truncate order ID to 8-char hex tag
                         $orderId = strtoupper(substr(md5($order['id']), 0, 8));
                         ?>
                         <tr class="order-row clickable-row"
@@ -697,12 +697,12 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <?php endif; ?>
     </div>
 
-    <!-- Buyer: Quick Browse -->
+    <!-- Quick Browse -->
     <div class="dash-panel">
         <div class="dash-panel-header"><h2>Discover</h2></div>
         <div class="horizontal-carousel overflow-hidden">
             <div class="carousel-slide d-flex gap-3" id="discoverCarousel">
-                <!-- Carousel items would be populated by JavaScript -->
+                <!-- Carousel: JS-populated -->
                 <div class="carousel-item flex-shrink-0">
                     <div class="card h-100 ">
                         <div class="card-body p-3">
@@ -757,7 +757,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
         </div>
     </div>
 
-    <!-- Buyer: Saved Listings -->
+    <!-- Saved Listings -->
     <div class="dash-panel mt-4" id="saved">
         <div class="dash-panel-header">
             <h2>Saved Listings</h2>
@@ -825,11 +825,11 @@ require __DIR__ . '/partials/dashboard-layout.php';
     <h5 id="drawer-label">Order Details</h5>
   </div>
   <div class="drawer-body">
-    <!-- Content loaded via JS -->
+    <!-- Content: JS-loaded -->
   </div>
 </div>
 <script>
-// Order drawer functionality
+// Order drawer
 document.addEventListener('DOMContentLoaded', function () {
   const drawer = document.getElementById('drawer');
   const overlay = document.getElementById('drawer-overlay');
@@ -845,7 +845,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const deliveryMethod = data.deliveryMethod || '';
     const orderId = data.orderId;
 
-    // Build farmer action buttons based on status
+    // Build farmer action buttons by status
     let farmerActions = '';
     if (ROLE === 'farmer') {
       const csrf = drawer.dataset.csrf;
@@ -899,7 +899,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
 
-    // Populate drawer content
+    // Populate drawer
     drawer.querySelector('.drawer-body').innerHTML = `
       <div class="drawer-section">
         <h6 class="drawer-section-title">Order Info</h6>
@@ -963,9 +963,9 @@ document.addEventListener('DOMContentLoaded', function () {
     requestAnimationFrame(() => drawerTrigger?.focus());
   };
 
-  // Delegated click handler for order rows
+  // Delegated click for order rows
   document.addEventListener('click', function (e) {
-    // Don't open drawer when clicking the View link or action buttons
+    // Ignore clicks on links/buttons/forms
     if (e.target.closest('a') || e.target.closest('button') || e.target.closest('form')) return;
     const orderRow = e.target.closest('.order-row.clickable-row');
     if (orderRow) {
@@ -974,7 +974,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // Close drawer events
+  // Close drawer on overlay/btn-close/Escape
   overlay.addEventListener('click', closeDrawer);
   drawer.querySelector('.btn-close').addEventListener('click', closeDrawer);
   document.addEventListener('keydown', function (e) {

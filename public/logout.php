@@ -1,9 +1,8 @@
 <?php
 require __DIR__ . '/../src/bootstrap.php';
 
-// Revoke remember-me before the session is destroyed. current_user_id() can be
-// null here (session already expired) while the remember cookie still resolves
-// to a live row, so revoke by cookie as well as by user id.
+// Revoke remember-me before session destroy. current_user_id() may be null
+// (session expired) while remember cookie still resolves; revoke by both.
 try {
     remember_revoke(current_user_id());
 } catch (Throwable $e) {

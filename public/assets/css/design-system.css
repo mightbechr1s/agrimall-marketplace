@@ -1,9 +1,7 @@
 /* ═══ AniMAL Design System — v3 Harvest Editorial ═════════
-   Warm paper · deep forest · harvest gold · Frank-esque serif
-   Fraunces display (bundled, offline) + Source Sans body
-   Soft rounded cards, layered depth, printed-photo hero.
-   Loaded LAST in header.php and dashboard-layout.php so these
-   overrides beat styles.min.css / motion.min.css. */
+   Warm paper, forest green, harvest gold; Fraunces display (bundled, offline) + Source Sans body.
+   Loaded LAST in header.php and dashboard-layout.php so these overrides beat
+   styles.min.css / motion.min.css. */
 
 /* ── Tokens ─────────────────────────────────────────── */
 :root {
@@ -18,6 +16,10 @@
   --gold-deep: #B45309;
   --gold-ink: #231F20;
   --gold-tint: rgba(217, 119, 6, 0.14);
+  /* Gold as TEXT on light surfaces: 4.68:1 on cream vs 2.97:1 for #D97706. */
+  --gold-text: #B45309;
+  /* Gold as TEXT on the dark forest footer: 6.5:1, vs 4.26:1 for #D97706. */
+  --gold-bright: #E09F3E;
   --text: #231F20;
   --text-soft: #6E6355;
   --borders: #E7DFCE;
@@ -25,17 +27,13 @@
   --success: #2E7D32;
   --focus-ring: #B45309;
 
-  /* Soft alert fills + the --ok alias. These were referenced inline by
-     forgot.php, create_listing.php and account_delete.php but never defined,
-     so those alerts rendered with a transparent background. Declared once here
-     and built from --danger / --success with color-mix(), so they follow the
-     dark-theme overrides of those two tokens without a second declaration. */
+  /* Soft alert fills + the --ok alias, used by forgot.php, create_listing.php
+     and account_delete.php. Built from --danger/--success so dark theme follows. */
   --ok: var(--success);
   --ok-soft: color-mix(in srgb, var(--success) 14%, transparent);
   --danger-soft: color-mix(in srgb, var(--danger) 14%, transparent);
 
-  /* Right-hand auth pane background. Pales the page slightly darker than
-     --paper so the white auth card reads as elevated against it. */
+  /* Auth pane background: slightly darker than --paper so the card reads elevated. */
   --bg-primary: #FDFBF7;
 
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
@@ -75,6 +73,8 @@
   --gold-deep: #F0B257;
   --gold-ink: #10150F;
   --gold-tint: rgba(224, 159, 62, 0.16);
+  --gold-text: var(--gold);
+  --gold-bright: var(--gold);
   --text: #EDE8DE;
   --text-soft: #A2B3A5;
   --borders: rgba(255, 255, 255, 0.08);
@@ -85,13 +85,8 @@
   /* Matches the dark canvas so the split-screen form edge is seamless. */
   --bg-primary: #121A15;
 
-  /* Dark-mode ink + surface tokens.
-     These were referenced by the dark overrides below but never defined, so
-     every `var()` using them was invalid at computed-value time and the
-     declaration was silently dropped. Values mirror light-mode intent:
-     --accent === --gold and --danger/--success are light in dark mode, so
-     text on them needs the dark ink (--gold-ink) and the active sidebar
-     needs the amber tint. */
+  /* Dark-mode ink + surface tokens: --accent === --gold, and --danger/--success
+     are light in dark mode, so text on them needs the dark ink (--gold-ink). */
   --accent-ink: var(--gold-ink);
   --success-ink: var(--gold-ink);
   --danger-ink: var(--gold-ink);
@@ -405,7 +400,7 @@ h1, h2, h3, h4, h5, h6,
 .stat-trend {
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--gold-text);
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
@@ -418,7 +413,7 @@ h1, h2, h3, h4, h5, h6,
   max-width: 9rem;
   height: 2rem;
   margin-top: 0.5rem;
-  color: var(--gold);
+  color: var(--gold-text);
 }
 
 /* ── Operational priority queue ────────────────────── */
@@ -470,7 +465,7 @@ h1, h2, h3, h4, h5, h6,
   gap: 0.35rem;
   border-radius: var(--radius-pill) !important;
   background: var(--gold-tint) !important;
-  color: var(--accent) !important;
+  color: var(--gold-text) !important;
   font-weight: 600 !important;
 }
 .badge-location {
@@ -564,7 +559,7 @@ h1, h2, h3, h4, h5, h6,
   cursor: pointer;
 }
 .drawer-header .btn-close:hover {
-  color: var(--accent);
+  color: var(--gold-text);
 }
 .drawer-title {
   font-size: 1.3rem;
@@ -587,7 +582,7 @@ h1, h2, h3, h4, h5, h6,
   font-size: 1rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-  color: var(--accent);
+  color: var(--gold-text);
   border-bottom: 1px solid var(--borders);
   padding-bottom: 0.25rem;
 }
@@ -619,10 +614,8 @@ h1, h2, h3, h4, h5, h6,
   text-align: center;
   padding: 3rem 1rem;
 }
-/* Size modifiers. The partial used to interpolate these into an inline
-   style="padding: …", which is not valid CSS, so the size option silently
-   did nothing. These are real classes, and md matches the previous hardcoded
-   browse.php value so adopting the partial changes no rendered spacing. */
+/* Size modifiers. md matches the hardcoded browse.php padding, so switching to
+   these classes changes no rendered spacing. */
 .empty-state--sm {
   padding: 1.5rem 1rem;
 }
@@ -635,7 +628,7 @@ h1, h2, h3, h4, h5, h6,
 .empty-state .empty-state-icon {
   width: 4rem;
   height: 4rem;
-  color: var(--gold);
+  color: var(--gold-text);
   stroke-width: 1;
   margin-bottom: 1.5rem;
   display: inline-block;
@@ -673,7 +666,7 @@ h1, h2, h3, h4, h5, h6,
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--gold-text);
   margin-bottom: 0.5rem;
 }
 .section-head h2 {
@@ -712,7 +705,7 @@ h1, h2, h3, h4, h5, h6,
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--gold-text);
   margin-bottom: 1rem;
 }
 .eyebrow-pill::before {
@@ -911,7 +904,7 @@ h1, h2, h3, h4, h5, h6,
   font-size: 3.2rem;
   font-weight: 520;
   line-height: 1;
-  color: var(--gold);
+  color: var(--gold-text);
   margin-bottom: 0.75rem;
 }
 .process-step-number::after {
@@ -980,7 +973,7 @@ h1, h2, h3, h4, h5, h6,
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--gold-text);
 }
 .story-stats {
   font-family: var(--font-display);
@@ -1013,7 +1006,7 @@ h1, h2, h3, h4, h5, h6,
   padding: 1.2rem 0.25rem;
 }
 .faq-section .accordion-button:not(.collapsed) {
-  color: var(--accent);
+  color: var(--gold-text);
   background: transparent;
 }
 .faq-section .accordion-button::after {
@@ -1027,7 +1020,7 @@ h1, h2, h3, h4, h5, h6,
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--gold);
+  color: var(--gold-text);
   border: 1px solid var(--borders);
   border-radius: 50%;
   font-weight: 400;
@@ -1058,7 +1051,7 @@ h1, h2, h3, h4, h5, h6,
   color: var(--text-soft);
 }
 .cta-section .eyebrow-pill {
-  color: var(--gold);
+  color: var(--gold-text);
   background: color-mix(in srgb, var(--gold) 16%, transparent);
   border-color: color-mix(in srgb, var(--gold) 40%, transparent);
 }
@@ -1107,6 +1100,90 @@ h1, h2, h3, h4, h5, h6,
   border-color: var(--gold);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 30%, transparent);
 }
+
+/* ── Hero search (landing page) ─────────────── */
+.hero-search {
+  max-width: 34rem;
+}
+.hero-search__bar {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--borders);
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+  box-shadow: 0 1px 2px rgba(66, 48, 28, 0.07), 0 14px 32px -12px rgba(66, 48, 28, 0.22);
+  overflow: hidden;
+  transition: border-color var(--dur-base) var(--ease-decel), box-shadow var(--dur-base) var(--ease-decel);
+}
+.hero-search__bar:focus-within {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 25%, transparent);
+}
+.hero-search__icon {
+  color: var(--text-soft);
+  font-size: 1rem;
+  padding-left: 1.25rem;
+  flex-shrink: 0;
+}
+.hero-search__bar input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 0.85rem 0.75rem;
+  font-size: 1rem;
+  outline: none;
+}
+.hero-search__submit {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--gold-ink);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.7rem 1.4rem;
+  margin: 0.4rem;
+  cursor: pointer;
+  transition: background-color var(--hover-speed) ease;
+}
+.hero-search__submit:hover,
+.hero-search__submit:focus-visible {
+  background: var(--gold-deep);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.hero-search__popular {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  margin-top: 0.85rem;
+}
+.hero-search__hint {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.hero-search__popular a {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in srgb, var(--text-soft) 45%, transparent);
+  transition: color var(--hover-speed) ease;
+}
+.hero-search__popular a:hover {
+  color: var(--gold-text);
+}
+@media (max-width: 575px) {
+  .hero-search__submit .hero-search__submit-label { display: none; }
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;
@@ -1126,7 +1203,7 @@ h1, h2, h3, h4, h5, h6,
 }
 .filter-pill:hover {
   border-color: var(--gold);
-  color: var(--accent);
+  color: var(--gold-text);
 }
 .filter-pill.is-active {
   background: var(--primary);
@@ -1155,7 +1232,8 @@ h1, h2, h3, h4, h5, h6,
   box-shadow: var(--shadow-card-hover);
 }
 .card .thumb {
-  aspect-ratio: 4 / 3;
+  /* 1:1 matches the 800×800 source photos → zero crop for most listings */
+  aspect-ratio: 1 / 1;
   position: relative;
   overflow: hidden;
   background: var(--canvas-deep);
@@ -1209,7 +1287,7 @@ h1, h2, h3, h4, h5, h6,
 }
 .badge-fresh {
   background: var(--gold-tint) !important;
-  color: var(--accent) !important;
+  color: var(--gold-text) !important;
 }
 .badge-normal {
   background: var(--canvas) !important;
@@ -1231,7 +1309,7 @@ h1, h2, h3, h4, h5, h6,
   font-optical-sizing: auto;
   font-size: 1.3rem;
   font-weight: 620;
-  color: var(--accent);
+  color: var(--gold-text);
   margin-bottom: 0.5rem;
   display: inline-flex;
   align-items: baseline;
@@ -1355,7 +1433,7 @@ h1, h2, h3, h4, h5, h6,
   font-family: var(--font-display);
   font-size: 1.8rem;
   font-weight: 620;
-  color: var(--accent);
+  color: var(--gold-text);
 }
 .feature-card .price small {
   font-family: var(--font-body);
@@ -1415,7 +1493,7 @@ h1, h2, h3, h4, h5, h6,
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: var(--gold-bright);
   margin-bottom: 0.75rem;
 }
 .footer .cols a {
@@ -1425,7 +1503,7 @@ h1, h2, h3, h4, h5, h6,
   line-height: 1.5;
 }
 .footer .cols a:hover {
-  color: var(--gold);
+  color: var(--gold-bright);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -1504,7 +1582,7 @@ h1, h2, h3, h4, h5, h6,
 .stat-sparkline {
   display: block;
   margin-top: 0.4rem;
-  color: var(--gold);
+  color: var(--gold-text);
 }
 .stat-sparkline svg { display: block; }
 
@@ -1540,7 +1618,7 @@ h1, h2, h3, h4, h5, h6,
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--gold-text);
   background: var(--canvas-deep);
   padding: 0.7rem 1rem;
   border-bottom: 1px solid var(--borders);
@@ -1718,7 +1796,7 @@ h1, h2, h3, h4, h5, h6,
 }
 .dash-empty i {
   font-size: 2.5rem;
-  color: var(--gold);
+  color: var(--gold-text);
   display: block;
   margin-bottom: 1rem;
 }
@@ -1764,7 +1842,7 @@ h1, h2, h3, h4, h5, h6,
   border-bottom: 2px solid transparent;
 }
 .nav-links a:hover {
-  color: var(--accent);
+  color: var(--gold-text);
   border-bottom-color: var(--gold);
 }
 
@@ -1785,8 +1863,21 @@ h1, h2, h3, h4, h5, h6,
   width: 1.05rem;
   height: 2.5px;
   background: var(--text);
+  transition: transform var(--dur-short) var(--ease-standard), opacity var(--dur-short) var(--ease-standard);
 }
 .hamburger:hover { border-color: var(--gold); }
+/* Bars morph to X while the drawer is open (is-open toggled by motion.js);
+   offset = 0.3rem gap + 2.5px bar, collapsing the outer bars onto the middle. */
+.hamburger.is-open .hamburger-line:nth-child(1) { transform: translateY(calc(0.3rem + 2.5px)) rotate(45deg); }
+.hamburger.is-open .hamburger-line:nth-child(2) { opacity: 0; }
+.hamburger.is-open .hamburger-line:nth-child(3) { transform: translateY(calc(-0.3rem - 2.5px)) rotate(-45deg); }
+/* Tactile press on the round icon buttons (mirrors .btn:active). */
+.hamburger, .sidebar-toggle, .theme-toggle, .cart-pill, .notif-pill {
+  transition: transform var(--dur-micro) var(--ease-standard);
+}
+.hamburger:active, .sidebar-toggle:active, .theme-toggle:active, .cart-pill:active, .notif-pill:active {
+  transform: scale(0.9);
+}
 
 .nav-cta {
   display: flex;
@@ -1797,6 +1888,7 @@ h1, h2, h3, h4, h5, h6,
 .nav-cta > :last-child { margin-left: 0; }
 
 .theme-toggle {
+  position: relative;
   width: 2.4rem;
   height: 2.4rem;
   display: flex;
@@ -1807,7 +1899,7 @@ h1, h2, h3, h4, h5, h6,
   border-radius: 50%;
   color: var(--text);
 }
-.theme-toggle:hover { color: var(--accent); }
+.theme-toggle:hover { color: var(--gold-text); }
 
 .nav-links a {
   display: inline-flex;
@@ -1819,6 +1911,19 @@ h1, h2, h3, h4, h5, h6,
 .icon-sun { display: none; }
 :root[data-theme="dark"] .icon-moon { display: none; }
 :root[data-theme="dark"] .icon-sun { display: inline; }
+/* Theme toggle: both icons stacked in the button, crossfading/rotating on switch. */
+.theme-toggle .icon-moon,
+.theme-toggle .icon-sun {
+  display: block !important;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transition: opacity var(--dur-short) var(--ease-standard), transform var(--dur-short) var(--ease-standard);
+}
+.theme-toggle .icon-moon { opacity: 1; transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+.theme-toggle .icon-sun { opacity: 0; transform: translate(-50%, -50%) rotate(-90deg) scale(0.4); }
+:root[data-theme="dark"] .theme-toggle .icon-moon { opacity: 0; transform: translate(-50%, -50%) rotate(90deg) scale(0.4); }
+:root[data-theme="dark"] .theme-toggle .icon-sun { opacity: 1; transform: translate(-50%, -50%) rotate(0deg) scale(1); }
 
 .locale-toggle {
   display: flex;
@@ -1834,7 +1939,7 @@ h1, h2, h3, h4, h5, h6,
   text-decoration: none;
 }
 .locale-label.active {
-  color: var(--accent);
+  color: var(--gold-text);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -1858,7 +1963,7 @@ h1, h2, h3, h4, h5, h6,
   padding: 0.25rem 0;
   border-bottom: 2px solid transparent;
 }
-.nav-text-link:hover { color: var(--accent); border-bottom-color: var(--gold); }
+.nav-text-link:hover { color: var(--gold-text); border-bottom-color: var(--gold); }
 .locale-btn {
   display: inline-flex;
   align-items: center;
@@ -1868,12 +1973,12 @@ h1, h2, h3, h4, h5, h6,
   color: var(--text);
   font-size: 1rem;
 }
-.locale-btn:hover { color: var(--accent); }
+.locale-btn:hover { color: var(--gold-text); }
 .locale-btn.dropdown-toggle::after { display: none; }
 .locale-caret { font-size: 0.7rem; color: var(--text-soft); }
-.locale-tick { color: var(--accent); margin-left: 0.4rem; font-weight: 700; }
+.locale-tick { color: var(--gold-text); margin-left: 0.4rem; font-weight: 700; }
 .nav-cta .dropdown-toggle:not(.profile-btn) { border: 0; background: transparent; padding: 0.25rem 0.2rem; cursor: pointer; }
-.nav-cta .dropdown-toggle:not(.profile-btn):hover { background: transparent; color: var(--accent); }
+.nav-cta .dropdown-toggle:not(.profile-btn):hover { background: transparent; color: var(--gold-text); }
 .nav-cta .profile-btn.dropdown-toggle { background: var(--paper); border: 1px solid var(--borders); padding: 0.3rem 0.75rem 0.3rem 0.35rem; }
 .nav-cta .profile-btn.dropdown-toggle:hover { background: var(--paper); border-color: var(--gold); }
 .nav-cta .dropdown-toggle .avatar { transition: transform var(--hover-speed) ease; }
@@ -1929,7 +2034,7 @@ h1, h2, h3, h4, h5, h6,
   white-space: nowrap;
 }
 .cart-pill:hover,
-.notif-pill:hover { color: var(--accent); }
+.notif-pill:hover { color: var(--gold-text); }
 .cart-count,
 .notif-count {
   background: var(--gold);
@@ -1950,7 +2055,8 @@ h1, h2, h3, h4, h5, h6,
   flex-direction: column;
   height: 100%;
   overflow-y: auto;
-  padding: 1.5rem 1.25rem 2rem;
+  /* Top padding clears the sticky header (z 1020 > drawer 1001). */
+  padding: 5rem 1.25rem 2rem;
 }
 .mobile-nav {
   display: flex;
@@ -1959,15 +2065,25 @@ h1, h2, h3, h4, h5, h6,
 }
 .mobile-nav-link {
   display: block;
-  padding: 0.85rem 0.25rem;
+  padding: 0.85rem 0;
   border-bottom: 1px solid var(--borders);
   color: var(--text);
   text-decoration: none;
   font-family: var(--font-display);
   font-size: 1.2rem;
   font-weight: 550;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity var(--dur-short) var(--ease-enter), transform var(--dur-short) var(--ease-enter), color var(--hover-speed) ease;
 }
-.mobile-nav-link:hover { color: var(--accent); }
+.mobile-nav-link:hover { color: var(--gold-text); }
+/* Links ease in one after another as the drawer opens. */
+.mobile-menu.is-open .mobile-nav-link { opacity: 1; transform: none; }
+.mobile-menu.is-open .mobile-nav-link:nth-child(1) { transition-delay: 40ms; }
+.mobile-menu.is-open .mobile-nav-link:nth-child(2) { transition-delay: 80ms; }
+.mobile-menu.is-open .mobile-nav-link:nth-child(3) { transition-delay: 120ms; }
+.mobile-menu.is-open .mobile-nav-link:nth-child(4) { transition-delay: 160ms; }
+.mobile-menu.is-open .mobile-nav-link:nth-child(5) { transition-delay: 200ms; }
 .mobile-menu-actions {
   display: flex;
   flex-direction: column;
@@ -1985,32 +2101,25 @@ h1, h2, h3, h4, h5, h6,
 .mobile-menu-locale .locale-label { text-decoration: none; }
 
 /* ═══ Auth pages — 50/50 split screen ═══════════════════════
-   Two equal columns, one row, both pinned to row 1.
-
-   grid-row MUST be pinned alongside grid-column. A definite column with an
-   auto row lets the auto-placement cursor advance, which put the banner in
-   row 1 and the form in row 2 — a 2x2 grid with two empty quadrants. */
+   grid-row must be pinned with grid-column, or auto-placement makes a 2x2 grid. */
 .auth-wrap {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 100%;
   height: 100vh;
-  /* 100vw is safe here specifically because the document never scrolls: the
-     tall register form scrolls inside .auth-right, so there is no document
-     scrollbar to inflate 100vw past the visible width. */
+  /* 100vw is safe: the document never scrolls (the form scrolls inside
+     .auth-right), so no scrollbar inflates 100vw past the visible width. */
   width: 100vw;
   overflow: hidden;
   margin: 0;
   padding: 0;
 }
-/* Visual banner leads on the left, form sits right. Column order follows
-   reading direction, so this flips under [dir="rtl"]. */
+/* Banner left, form right; column order flips under [dir="rtl"]. */
 .auth-right {
   grid-column: 2;
   grid-row: 1;
   display: flex;
-  /* flex-start + auto margin on the card, not align-items: center. Centering a
-     flex item that overflows clips its top edge and makes it unscrollable. */
+  /* flex-start + auto margin, not center: centering an overflowing item clips its top. */
   align-items: flex-start;
   justify-content: center;
   height: 100vh;
@@ -2019,8 +2128,7 @@ h1, h2, h3, h4, h5, h6,
   background-color: var(--bg-primary);
 }
 
-/* Visual banner: hero photo with a bottom-weighted tint so the overlaid
-   headline and metrics stay legible regardless of what the photo shows. */
+/* Banner: hero photo with a bottom-weighted tint so the overlaid text stays legible. */
 .auth-left {
   grid-column: 1;
   grid-row: 1;
@@ -2092,8 +2200,7 @@ h1, h2, h3, h4, h5, h6,
 .auth-card .form-select,
 .auth-card .input-group-text {
   min-height: 2.9rem;
-  /* Eases the gold focus border + ring (see :focus rules above) instead of
-     snapping, which reads as a flash on the amber surface. */
+  /* Eases the gold focus border + ring instead of snapping, which reads as a flash. */
   transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
 }
 .auth-footer {
@@ -2106,13 +2213,13 @@ h1, h2, h3, h4, h5, h6,
   text-underline-offset: 3px;
   font-weight: 500;
 }
-.auth-footer a:hover { color: var(--accent); }
+.auth-footer a:hover { color: var(--gold-text); }
 .auth-card a {
   color: var(--primary);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.auth-card a:hover { color: var(--accent); }
+.auth-card a:hover { color: var(--gold-text); }
 
 .auth-card .form-group { margin-bottom: 1.25rem; }
 .auth-card .form-label { margin-bottom: 0.4rem; font-weight: 600; }
@@ -2139,7 +2246,7 @@ h1, h2, h3, h4, h5, h6,
   border-color: var(--gold);
   box-shadow: 0 0 0 3px var(--gold-tint);
 }
-.role-icon { font-size: 1.5rem; color: var(--accent); }
+.role-icon { font-size: 1.5rem; color: var(--gold-text); }
 .role-text { font-weight: 600; font-size: 0.9rem; }
 
 /* Farmer fields grid */
@@ -2147,7 +2254,7 @@ h1, h2, h3, h4, h5, h6,
 .farm-grid .span-2 { grid-column: span 2; }
 .farm-grid > div { margin-bottom: 0; }
 .farm-grid .form-group { margin-bottom: 0; }
-.farm-note { margin-top: 1rem; padding: 0.75rem 1rem; background: var(--gold-tint); border-radius: var(--radius-sm); font-size: 0.85rem; color: var(--accent); line-height: 1.5; }
+.farm-note { margin-top: 1rem; padding: 0.75rem 1rem; background: var(--gold-tint); border-radius: var(--radius-sm); font-size: 0.85rem; color: var(--gold-text); line-height: 1.5; }
 
 /* Auth row (password + confirm) */
 .auth-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -2166,7 +2273,7 @@ h1, h2, h3, h4, h5, h6,
 
 /* Secondary link: "Forgot password?" should not compete with "Create one" */
 .auth-link-muted { color: var(--text-soft) !important; }
-.auth-link-muted:hover { color: var(--accent) !important; }
+.auth-link-muted:hover { color: var(--gold-text) !important; }
 
 /* Remember-me sits under the password field, quieter than the field labels */
 .auth-card .remember-me,
@@ -2205,8 +2312,7 @@ h1, h2, h3, h4, h5, h6,
   cursor: pointer;
   font-weight: 600;
   font-size: 0.875rem;
-  /* Property-targeted rather than `all`: border, background and shadow are the
-     only things a role toggle changes, so animating the rest is pure churn. */
+  /* Property-targeted, not `all`: a role toggle only changes border/background/shadow. */
   transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
 }
 .role-option:hover {
@@ -2444,11 +2550,9 @@ h1, h2, h3, h4, h5, h6,
    white-space: nowrap;
    overflow: hidden;
    text-overflow: ellipsis;
-   /* min-width: 0 lets this shrink inside the flex side group instead of
-      forcing the whole bar wider than the viewport. */
+   /* min-width: 0 lets this shrink in the flex group instead of widening the bar. */
    min-width: 0;
-   /* No auto margin: the title must sit hard against the left edge, not centre
-      itself inside the side group. */
+   /* No auto margin: the title sits hard against the left edge of the side group. */
    margin: 0;
    padding: 0 1rem 0 0;
  }
@@ -2497,10 +2601,15 @@ h1, h2, h3, h4, h5, h6,
   transition: transform var(--dur-moderate) var(--ease-decel),
               opacity var(--dur-moderate) var(--ease-decel);
 }
-html[data-drawer-open] .sidebar-toggle-lines { transform: rotate(90deg); }
+/* Three lines morph into an X while the drawer/sidebar is open, matching the header burger. */
+html[data-drawer-open] .sidebar-toggle-lines span:nth-child(1) { transform: translateY(calc(0.3rem + 2px)) rotate(45deg); }
+html[data-drawer-open] .sidebar-toggle-lines span:nth-child(2) { opacity: 0; }
+html[data-drawer-open] .sidebar-toggle-lines span:nth-child(3) { transform: translateY(calc(-0.3rem - 2px)) rotate(-45deg); }
 @media (min-width: 992px) {
-  /* Desktop: the open (expanded) sidebar gets the close mark; folded keeps the burger */
-html:not([data-sidebar-collapsed]) .sidebar-toggle-lines { transform: rotate(90deg); }
+  /* Desktop: the open (expanded) sidebar gets the X mark; folded keeps the burger */
+  html:not([data-sidebar-collapsed]) .sidebar-toggle-lines span:nth-child(1) { transform: translateY(calc(0.3rem + 2px)) rotate(45deg); }
+  html:not([data-sidebar-collapsed]) .sidebar-toggle-lines span:nth-child(2) { opacity: 0; }
+  html:not([data-sidebar-collapsed]) .sidebar-toggle-lines span:nth-child(3) { transform: translateY(calc(-0.3rem - 2px)) rotate(-45deg); }
 }
 @media (prefers-reduced-motion: reduce) {
   .sidebar, .sidebar-main, .sidebar-toggle-lines, .sidebar-toggle-lines span { transition: none; }
@@ -2521,7 +2630,7 @@ html:not([data-sidebar-collapsed]) .sidebar-toggle-lines { transform: rotate(90d
 }
 .sidebar-icon-btn:hover {
   border-color: var(--gold);
-  color: var(--accent);
+  color: var(--gold-text);
 }
 .profile-dd { position: relative; }
 .profile-btn {
@@ -2585,16 +2694,15 @@ html:not([data-sidebar-collapsed]) .sidebar-toggle-lines { transform: rotate(90d
 /* ═══ Responsive — nav / auth / sidebar ═════════════ */
 @media (max-width: 991.98px) {
   .nav-links { display: none; }
-  .hamburger { display: flex; }
+  /* Hamburger leads the bar (order:-1), not mid-bar; nav-cta keeps its right auto margin. */
+  .hamburger { display: flex; order: -1; margin-left: 0; }
   .nav-cta .nav-sell-btn { display: none !important; }
   .nav-cta > .nav-text-link { display: none; }
   .nav-cta .locale-dd { display: none; }
-  /* NOTE: the cart pill is intentionally NOT hidden here. The mobile drawer has
-     no cart link, so hiding it would strand buyers with no way to reach the cart.
-     The 375px overflow from the utility cluster is tracked separately. */
+  /* Cart pill is deliberately not hidden here: the mobile drawer has no cart
+     link, so hiding it would strand buyers with no way to reach the cart. */
 
-  /* Split screen holds down to 768px; only tighten the panes here so the form
-     stays comfortable inside a ~50vw column. */
+  /* Split screen holds to 768px; only tighten the panes so the form fits ~50vw. */
   .auth-left { padding: 32px; }
   .auth-right { padding: 24px; }
   .auth-card { padding: 1.75rem; }
@@ -2604,12 +2712,10 @@ html:not([data-sidebar-collapsed]) .sidebar-toggle-lines { transform: rotate(90d
 }
 
 @media (max-width: 768px) {
-  /* Below this the two columns would leave the card unusably narrow, so the
-     banner steps aside and the form goes full width. */
+  /* Below this the columns leave the card too narrow, so the form goes full width. */
   .auth-wrap { grid-template-columns: 1fr; }
   .auth-left { display: none; }
-  /* Reset the column pin: with only one explicit column, grid-column: 2 would
-     spawn an implicit auto-width second column and shrink the form. */
+  /* Reset the column pin: grid-column: 2 would spawn an implicit auto-width second column. */
   .auth-right { grid-column: 1; padding: 24px 16px; }
   .auth-card { padding: 1.6rem; }
 }
@@ -2804,7 +2910,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 /* Required marker */
 .form-label.required::after {
   content: " *";
-  color: var(--accent);
+  color: var(--gold-text);
 }
 
 /* ── Trust / USP metric bar ──────────────────────────── */
@@ -2824,7 +2930,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   font-size: 2.6rem;
   font-weight: 600;
   line-height: 1;
-  color: var(--gold);
+  color: var(--gold-text);
 }
 .trust-metric-lbl {
   font-size: 0.82rem;
@@ -2860,7 +2966,8 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 .story-figure-img {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  /* seedlings.jpg is 800×533 (3:2) → native ratio, no crop */
+  aspect-ratio: 3 / 2;
   object-fit: cover;
   border-radius: calc(var(--radius-card) - 0.4rem);
 }
@@ -2874,9 +2981,8 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   }
 }
 
-/* .row.g-5 applies -1.5rem side margins, which are wider than the container
-   padding and push the row 8px past the viewport. Zeroing the row margin keeps
-   the 3rem gutter (it comes from the column padding) without the bleed. */
+/* .row.g-5 margins (-1.5rem) exceed the container padding and bleed 8px past the
+   viewport; zeroing them keeps the 3rem gutter without the bleed. */
 .story-section .row.g-5 {
   margin-left: 0;
   margin-right: 0;
@@ -3119,8 +3225,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   background-color: #1B2620 !important;
   border-color: rgba(255, 255, 255, 0.16) !important;
 }
-/* Must follow the block above: it matches .form-control:focus on specificity
-   (0,3,0) and would otherwise win on source order, erasing the focus ring. */
+/* Must follow the block above: equal specificity (0,3,0), so source order decides. */
 :root[data-theme="dark"] .form-control:focus,
 :root[data-theme="dark"] .form-select:focus,
 :root[data-theme="dark"] .input-group-text:focus {
@@ -3311,7 +3416,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   background-color: var(--canvas);
 }
 :root[data-theme="dark"] a {
-  color: var(--accent);
+  color: var(--gold-text);
 }
 :root[data-theme="dark"] a:hover {
   color: var(--accent-hover);
@@ -3333,7 +3438,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   color: var(--text-soft);
 }
 :root[data-theme="dark"] .btn-outline {
-  color: var(--accent) !important;
+  color: var(--gold-text) !important;
   border-color: var(--accent) !important;
 }
 :root[data-theme="dark"] .btn-outline:hover {
@@ -3351,7 +3456,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 }
 :root[data-theme="dark"] .btn-outline-primary {
   border-color: var(--accent) !important;
-  color: var(--accent) !important;
+  color: var(--gold-text) !important;
   background: var(--paper) !important;
 }
 :root[data-theme="dark"] .btn-outline-primary:hover {
@@ -3366,7 +3471,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 }
 :root[data-theme="dark"] .btn-outline-secondary:hover {
   border-color: var(--accent) !important;
-  color: var(--accent) !important;
+  color: var(--gold-text) !important;
   background: var(--canvas) !important;
 }
 :root[data-theme="dark"] .card,
@@ -3382,7 +3487,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 :root[data-theme="dark"] .sidebar-link:hover,
 :root[data-theme="dark"] .sidebar-link.is-active {
   background-color: var(--sidebar-active-bg);
-  color: var(--accent);
+  color: var(--gold-text);
 }
 :root[data-theme="dark"] .nav-utils .cart-pill,
 :root[data-theme="dark"] .nav-utils .notif-pill {
@@ -3492,39 +3597,31 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
    /* Page title/breadcrumb pins left, utility icons + profile pill pin right. */
    justify-content: space-between;
    gap: 12px;
-   /* nowrap: wrapping pushed the profile pill onto a second row and made it
-      collide with the title. The title truncates via ellipsis instead. */
+   /* nowrap: wrapping pushed the profile pill to row 2, colliding with the title. */
     flex-wrap: nowrap;
-    /* 56px + 6px vertical padding leaves the 2.75rem (44px) buttons a real
-       margin top and bottom. The previous `padding: 0 16px` cancelled the 0.6rem
-       from the base rule, so the buttons filled the bar edge to edge. */
+    /* 56px min-height + 6px padding gives the 2.75rem (44px) buttons real top/bottom margin. */
     min-height: 56px;
     padding: 6px 16px;
   }
  .nav-utils > * {
    flex-shrink: 0;
  }
- /* The public nav cluster is right-aligned and width-constrained, so it must not
-    carry the sidebar bar's 16px inline padding. Only .sidebar-topbar is a
-    full-width bar that needs it. */
+ /* Public nav cluster is width-constrained; only .sidebar-topbar needs the 16px padding. */
  .nav-utils {
    padding: 0;
  }
- /* .sidebar-topbar's children must NOT be pinned to flex-shrink: 0 here.
-    .sidebar-topbar-side carries `flex: 1 1 auto` and min-width: 0 so the page
-    title can shrink and ellipsise; that was being cancelled, which pushed the
-    profile pill off-bar on phones. Only the utility group is unshrinkable, and
-    it sets `flex: 0 0 auto` on itself. */
+ /* Sidebar-topbar children must not be flex-shrink: 0 here; only the utility
+    group is unshrinkable, and it sets flex: 0 0 auto itself. */
 
 
-/* Profile menu wrapper — card styling comes from the shared .profile-btn rules above */
+/* Profile menu wrapper — card styling comes from the shared .profile-btn rules. */
 .profile-menu {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-/* Icon buttons uniform size — 2.75rem satisfies the .theme-toggle min-height tap target above */
+/* Icon buttons uniform: 2.75rem meets the .theme-toggle min-height tap target above */
 .nav-utils .theme-toggle,
 .nav-utils .locale-btn,
 .nav-utils .notif-pill,
@@ -3547,10 +3644,8 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   transition: background 0.15s, border-color 0.15s;
 }
 
-/* Topbar button borders read as too thin against the taller bar, so give the
-   logged-in bar's own controls a slightly heavier stroke than the public nav.
-   2px, not 1.5px: Chromium snaps fractional border widths down to whole device
-   pixels, so 1.5px renders identically to 1px. */
+/* Topbar controls get a heavier stroke than the public nav. 2px, not 1.5px:
+   Chromium snaps fractional border widths down to whole device pixels. */
 .sidebar-topbar .theme-toggle,
 .sidebar-topbar .locale-btn,
 .sidebar-topbar .notif-pill,
@@ -3559,7 +3654,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   border-width: 2px;
 }
 
-/* Profile button – shared card style (see .profile-btn above); nothing to override here */
+/* Profile button: shared card style from .profile-btn above. */
 
 /* Icon hover */
 .nav-utils .theme-toggle:hover,
@@ -3610,10 +3705,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 }
 
 /* ---- Order Participants panel  ----
-   Was a bare Bootstrap .row/.col-md-6 pair. Long buyer or farm names pushed
-   the second column off the panel because .row used flex-wrap and the columns
-   had no min-width: 0. Now a two-column grid with an explicit gap, and names
-   break inside their own column instead of overflowing it. */
+   Two-column grid with explicit gap; min-width: 0 breaks long names inside their column. */
 .participants-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3653,10 +3745,8 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 }
 
 /* ---- Cart table  ----
-   This app themes via [data-theme], NOT Bootstrap's [data-bs-theme], so
-   Bootstrap's own dark table tokens never engaged and .table/.table-hover
-   kept their light-grey row + hover backgrounds on a dark page. Override the
-   table custom properties directly. Token-driven so light mode stays correct. */
+   App themes via [data-theme], not Bootstrap's [data-bs-theme], so override the
+   --bs-table-* custom properties directly; token-driven, light mode stays correct. */
 .cart-table {
   --bs-table-bg: transparent;
   --bs-table-color: var(--text);
@@ -3701,7 +3791,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 }
 .cart-table .text-muted { color: var(--text-soft) !important; }
 .cart-table a { color: var(--text); }
-.cart-table a:hover, .cart-table a:focus-visible { color: var(--gold); }
+.cart-table a:hover, .cart-table a:focus-visible { color: var(--gold-text); }
 
 /* Product thumbnail in the cart */
 .cart-thumb {
@@ -3727,32 +3817,28 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   box-shadow: 0 0 0 0.2rem var(--gold-tint);
 }
 
-/* Update button.
-   The app-wide `:root[data-theme="dark"] .btn-outline-primary` rule uses
-   !important at specificity (0,2,0), so a plain .cart-qty-update selector
-   loses. Match that specificity, stay scoped to the cart, and keep the
-   important flags so the button does not fall back to a flat light-grey
-   outline on the charcoal surface. */
+/* Update button: matches the (0,2,0) !important specificity of the app-wide
+   dark .btn-outline-primary rule so it does not fall back to a flat light-grey outline. */
 .cart-qty-update {
   background: transparent;
-  color: var(--gold);
+  color: var(--gold-text);
   border: 1px solid color-mix(in srgb, var(--gold) 55%, var(--borders));
 }
 :root[data-theme="dark"] .cart-qty-update {
   background: transparent !important;
-  color: var(--gold) !important;
+  color: var(--gold-text) !important;
   border-color: color-mix(in srgb, var(--gold) 55%, var(--borders)) !important;
 }
 :root[data-theme="dark"] .cart-qty-update:hover,
 :root[data-theme="dark"] .cart-qty-update:focus-visible {
   background: var(--gold-tint) !important;
-  color: var(--gold) !important;
+  color: var(--gold-text) !important;
   border-color: var(--gold) !important;
 }
 .cart-qty-update:hover,
 .cart-qty-update:focus-visible {
   background: var(--gold-tint);
-  color: var(--gold);
+  color: var(--gold-text);
   border-color: var(--gold);
 }
 
@@ -3769,19 +3855,14 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   background: color-mix(in srgb, var(--danger) 18%, transparent);
 }
 
-/* ===================================================================
-   Account deletion
-   =================================================================== */
+/* ── Account deletion ─────────────────────────────────── */
 
-/* Delete-account copy runs longer than a login form does, so the auth card
-   gets more room and stops wrapping labels onto two lines. */
+/* Wider auth card for the longer delete-account copy so labels stay on one line. */
 .auth-card--wide {
   max-width: 560px;
 }
 
-/* What-is-kept / what-is-removed briefing above the confirmation form.
-   Deliberately not a Bootstrap alert: this is reference information the user
-   has to read before acting, not a transient state message. */
+/* What-is-kept / what-is-removed briefing; deliberately not a .alert (reference, not transient). */
 .danger-panel {
   border: 1px solid color-mix(in srgb, var(--danger) 34%, var(--borders));
   border-left: 3px solid var(--danger);
@@ -3828,8 +3909,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   line-height: 1.55;
 }
 
-/* The local-only password reset link. Monospaced and wrapping so a long token
-   never overflows the card on a narrow screen. */
+/* Local-only password reset link, monospaced and wrapping so a long token never overflows. */
 .auth-card-local-link {
   border: 1px dashed color-mix(in srgb, var(--gold) 50%, var(--borders));
   border-radius: var(--radius-sm);
@@ -3844,7 +3924,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--gold);
+  color: var(--gold-text);
   margin: 0 0 6px;
   display: flex;
   align-items: center;
@@ -3881,12 +3961,9 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   margin-top: 4px;
 }
 
-/* ===================================================================
-   Account settings additions
-   =================================================================== */
+/* ── Account settings additions ───────────────────────── */
 
-/* Explanatory line above the name inputs, matching the muted scale used for
-   fieldset legends so the form does not read as three stacked labels. */
+/* Explanatory line above the name inputs, matching the muted scale of fieldset legends. */
 .account-hint {
   font-size: 0.85rem;
   color: var(--text-soft);
@@ -3894,8 +3971,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   max-width: 56ch;
 }
 
-/* Danger zone on the account page. Quieter than the delete page's full
-   briefing panel: this one only has to warn and hand off to account_delete.php. */
+/* Quieter than the delete page's briefing panel; only has to warn and hand off to account_delete.php. */
 .account-danger {
   border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--borders));
   border-left: 3px solid var(--danger);
@@ -3931,4 +4007,76 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 .account-danger .btn-danger:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+/* ----- Legal pages (cookies / privacy / terms) -----
+   One shared copy for all three pages. */
+.legal-container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+@media (min-width: 768px) {
+  .legal-container {
+    padding: 3rem;
+  }
+}
+.sticky-sidebar {
+  position: sticky;
+  top: 6rem;
+  align-self: start;
+}
+.legal-body h2[id] {
+  scroll-margin-top: 6rem;
+}
+.toc-link {
+  display: block;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-left: 2px solid transparent;
+  padding-left: 0.75rem;
+  margin-left: -0.75rem;
+}
+.toc-link:hover {
+  color: var(--text);
+}
+.toc-link.is-active {
+  color: var(--text);
+  font-weight: 600;
+  border-left-color: var(--accent);
+}
+.legal-divider {
+  border: 0;
+  border-top: 1px solid var(--borders);
+  margin: 2rem 0;
+  opacity: 0.5;
+}
+.legal-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1rem 0;
+}
+.legal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.legal-table th,
+.legal-table td {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--borders);
+  vertical-align: top;
+}
+.legal-table th {
+  font-weight: 600;
+  color: var(--text);
+}
+@media (min-width: 768px) {
+  .sticky-sidebar {
+    padding-left: 1.5rem;
+    border-left: 1px solid var(--borders);
+  }
 }

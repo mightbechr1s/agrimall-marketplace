@@ -75,10 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             audit_log('account_password_changed', 'user', $userId);
         }
     } elseif ($action === 'name') {
-        // Admins have no profile table, so there is no name for them to change.
-        // Every name edit re-checks the current password, matching the email
-        // and password branches: a hijacked session must not be enough to
-        // repoint someone's public identity.
+        // Name change requires current password: hijacked session
+        // must not be enough to repoint public identity.
         if (!password_verify((string) ($_POST['current_password'] ?? ''), $hash)) {
             $error = $l($copy['account'], 'invalid_current_password');
         } elseif ($role === 'farmer') {
@@ -143,9 +141,8 @@ $profileStatus = $statusLabels[$user['status']] ?? ucfirst((string) $user['statu
 $memberSince = $user['created_at'] ? date('M Y', strtotime($user['created_at'])) : '—';
 $lastLogin = $user['last_login_at'] ? date('M j, g:i A', strtotime($user['last_login_at'])) : 'Never';
 
-// Prefill for the name form. Read after the POST block so a successful update
-// shows the new value instead of re-submitting the old one. Admins have
-// neither profile table, so they keep the empty defaults and no form is shown.
+// Prefill for name form: read after POST so successful update
+// shows new value. Admins have no profile table.
 $nameValues = ['full_name' => '', 'farm_name' => '', 'contact_person' => ''];
 if ($role === 'farmer') {
     $nStmt = DB::pdo()->prepare('SELECT farm_name, contact_person FROM farmer_profiles WHERE user_id = :id');

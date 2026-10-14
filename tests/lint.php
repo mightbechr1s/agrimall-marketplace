@@ -1,13 +1,5 @@
 <?php
-/**
- * Lints every project PHP file, not a hand-picked handful.
- *
- * The npm script used to name five files explicitly, so a syntax error in any
- * of the other ~55 files would reach the running app unnoticed. This walks the
- * source trees instead, so the file list cannot drift out of date.
- *
- * Run: php tests/lint.php
- */
+/** Lints all project PHP files. Run: php tests/lint.php */
 declare(strict_types=1);
 
 $repo   = dirname(__DIR__);

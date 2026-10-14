@@ -1,6 +1,5 @@
--- AniMAL Migration 003: Per-user preferences (settings page storage)
--- Run after schema.sql and 002 against `animal_marketplace`
--- Additive only: creates one table, touches no existing data.
+-- AniMAL Migration 003: per-user preferences (settings page storage).
+-- Run after 002 against `animal_marketplace`; additive, touches no existing data.
 
 USE `animal_marketplace`;
 

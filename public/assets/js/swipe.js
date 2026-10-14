@@ -1,5 +1,4 @@
-/* Swipe gestures for product cards — reveals contextual actions.
-   Desktop: hidden (no touch). Mobile only. touch-action: pan-y keeps scroll. */
+/* Product-card swipe gestures: reveal contextual actions on touch; CSS keeps pan-y. */
 (function () {
   'use strict';
 

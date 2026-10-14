@@ -12,7 +12,7 @@ $l = function($dict, $key) use ($copy, $locale) {
 $q = $_GET['q'] ?? '';
 $page = max(1, (int)($_GET['page'] ?? 1));
 
-// Category label formatter (was inline, restored after cleanup)
+// Category label formatter
 function formatCatLabel($catName) {
     $slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $catName), '-'));
     $labels = [
@@ -92,9 +92,7 @@ require __DIR__ . '/partials/header.php';
       <?php
       $listings = [];
       $total = 0;
-      // A database failure and a marketplace with nothing in it are different
-      // states and must not share a flag: the old $useDb conflated them, so an
-      // outage rendered as "nothing for sale yet" and looked like normal stock.
+      // A DB outage and an empty marketplace are different states; do not share one flag.
       $listingsFailed = false;
       try {
         $offset = ($page - 1) * 12;
@@ -163,7 +161,7 @@ require __DIR__ . '/partials/header.php';
               $imagePath = $item['primary_image'] ?: $fallbackPath;
             ?>
             <div class="thumb" style="background: var(--canvas);">
-              <img src="<?= e(asset($imagePath)) ?>" onerror="this.onerror=null;this.src='<?= e(asset($fallbackPath)) ?>'" alt="<?php echo e($item['name']); ?>" loading="lazy">
+              <img src="<?= e(asset($imagePath)) ?>" onerror="this.onerror=null;this.src='<?= e(asset($fallbackPath)) ?>'" alt="<?php echo e($item['name']); ?>" loading="lazy" width="400" height="400">
             </div>
             <div class="body">
               <div class="badges-top">

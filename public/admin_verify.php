@@ -25,7 +25,7 @@ function v_badge(string $status): string
     return '<span class="dash-badge dash-badge--' . $variant . '">' . e($status) . '</span>';
 }
 
-// ── Decide a pending application ─────────────────────────────
+// Decide a pending application
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
 
@@ -90,13 +90,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect_to('admin_verify.php?status=pending');
 }
 
-// ── Filters ──────────────────────────────────────────────────
+// Filters
 $filter = $_GET['status'] ?? 'pending';
 if (!in_array($filter, ['pending', 'approved', 'rejected', 'all'], true)) {
     $filter = 'pending';
 }
 
-// ── Farmer applications ──────────────────────────────────────
+// Farmer applications
 $sql = 'SELECT u.id AS user_id, u.email, u.status AS user_status, u.created_at AS registered_at,
                fp.farm_name, fp.contact_person, fp.contact_phone, fp.contact_email,
                fp.barangay, fp.municipality_city, fp.province,

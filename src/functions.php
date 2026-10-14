@@ -3,9 +3,8 @@
 declare(strict_types=1);
 
 /**
- * Server-side character limits for user-submitted fields, kept in sync
- * with the VARCHAR/TEXT columns in database/schema.sql. Password caps at
- * 72 so bcrypt (PASSWORD_DEFAULT) never silently truncates.
+ * Server-side field limits, in sync with the VARCHAR/TEXT columns in
+ * database/schema.sql. Password caps at 72 so bcrypt never silently truncates.
  */
 const FIELD_LIMITS = [
     'email' => 255,
@@ -34,19 +33,12 @@ const MAX_DELIVERY_FEE = 1000000;
 /** Upper sanity bound for any submitted quantity, in PHP. */
 const MAX_QUANTITY = 1000000;
 
-/**
- * Ceiling for a listing's available quantity (FR-LIST-032).
- *
- * A restore may not push available_quantity past this value, so a listing
- * cannot be inflated past the point the farmer could legitimately offer.
- */
+/** Ceiling for a listing's available_quantity (FR-LIST-032); a restore cannot push past it. */
 const MAX_STOCK_QTY = 999999.99;
 
 /**
- * Bounded numeric reader for untrusted input.
- *
- * Returns null unless $raw is a plain decimal inside [$min, $max]; a bare
- * (float) cast would pass '12abc' as 12 and '1e999' as INF.
+ * Bounded numeric reader for untrusted input. Returns null unless $raw is a
+ * plain decimal inside [$min, $max]; a bare (float) cast would pass '12abc'.
  */
 function number_in($raw, float $min, float $max): ?float
 {
@@ -156,10 +148,8 @@ function current_user_role(): ?string
 }
 
 // ---- Remember me  ----
-// Backed by users.remember_token / remember_expires (migration 002). Only the
-// SHA-256 hash of the token is persisted, so a database leak cannot be replayed
-// as a login. Lookup is by that hash, which is an index hit and doubles as the
-// constant-time-equivalent verification.
+// users.remember_token / remember_expires (migration 002); only the SHA-256
+// hash is stored, so a database leak cannot be replayed as a login.
 
 /** Cookie attributes shared by the issue and revoke paths. */
 function remember_cookie_args(int $expires): array
@@ -192,10 +182,8 @@ function remember_login(int $userId, int $days = 30): void
     setcookie('animal_remember', $raw, remember_cookie_args($expires));
 }
 
-/**
- * Revoke remember-me: clear the cookie plus the stored token, both for an
- * explicit $userId and for whichever row the cookie's token points at.
- */
+/** Revoke remember-me: clear the cookie plus the stored token, both for an
+ *  explicit $userId and for whichever row the cookie's token points at. */
 function remember_revoke(?int $userId = null): void
 {
     $pdo = DB::pdo();
@@ -219,11 +207,9 @@ function remember_revoke(?int $userId = null): void
 /**
  * Resume a session from the remember-me cookie when no PHP session is active.
  *
- * ponytail: one remembered device per user (users.remember_token is a single
- * slot, so a second remember-login invalidates the first) and the token is not
- * rotated on use, which means no selector-based reuse detection. A dedicated
- * remember_tokens table with selector/validator pairs is the upgrade if
- * multi-device or theft detection ever becomes a requirement.
+ * ponytail: one remembered device per user (users.remember_token is one slot)
+ * and no rotation on use, so no reuse detection. Upgrade to a remember_tokens
+ * table with selector/validator pairs for multi-device or theft detection.
  */
 function remember_resume(): void
 {
@@ -244,8 +230,7 @@ function remember_resume(): void
     $stmt->execute(['t' => hash('sha256', $raw)]);
     $row = $stmt->fetch();
 
-    // Expired or non-active rows are revoked rather than left to re-query the
-    // database on every future request.
+    // Expired/non-active rows are revoked, not left to re-query on every request.
     if (!$row || $row['status'] !== 'active') {
         remember_revoke();
         return;
@@ -293,10 +278,8 @@ function login_url(string $return = ''): string
     return $url;
 }
 
-/**
- * Cache-busting URL for a file under public/.
- * Uses the file mtime so versions never drift out of sync with the asset.
- */
+/** Cache-busting URL for a file under public/. Uses the file mtime so versions
+ *  never drift out of sync with the asset. */
 function asset(string $path): string
 {
     $relative = ltrim($path, '/');
@@ -316,10 +299,8 @@ function qty_str($value): string
     return rtrim(rtrim(number_format((float) $value, 4), '0'), '.');
 }
 
-/**
- * DB-backed rate limiter (replaces session-based counter that resets on new session).
- * Returns true if request should be blocked (too many attempts).
- */
+/** DB-backed rate limiter (replaces a session counter that reset per session).
+ *  Returns true when the request should be blocked. */
 function rate_limit_check(string $key, int $maxAttempts = 5, int $windowSeconds = 900): bool
 {
     $pdo = DB::pdo();
@@ -369,18 +350,9 @@ function order_ref(): string
 }
 
 /**
- * Real produce photograph used when a listing has no image of its own.
- *
- * Every card surface must render a photograph. The old fallbacks were a flat
- * colour swatch (assets/images/listings/mangoes.svg, captioned "Carabao
- * Mangoes" regardless of the product) and a file that did not exist at all
- * (assets/images/placeholder-produce.svg), which produced grey boxes and broken
- * image icons. Listing images live in listing_images.image_path; this is only
- * the last resort.
- *
- * Returns a bare relative path, NOT an asset() URL: callers assign it to
- * image_path and then run it through asset() themselves. Returning a URL here
- * produced a doubled version query ("photo.jpg?v=1&v=1").
+ * Last-resort photo for a listing with no image of its own; listing images
+ * live in listing_images.image_path. Returns a bare relative path, not an
+ * asset() URL: callers run asset() themselves.
  */
 function fallback_produce_image(): string
 {
@@ -388,25 +360,16 @@ function fallback_produce_image(): string
 }
 
 /**
- * Has this listing passed its expiry date?
+ * Whether a listing has passed its expiry date (FR-LIST-033). A null
+ * expiry_date means "no shelf life declared", not expired. Expiry withholds the
+ * listing from sale but never changes available_quantity (FR-LIST-034).
  *
- * A null expiry_date means the farmer never set one, which the SRS treats as
- * "no shelf life declared" rather than "expired". An expiry_date is the last
- * day the produce may be sold, so the listing is expired only once today is
- * strictly later (FR-LIST-033).
- *
- * Expiry withholds a listing from sale; it never changes available_quantity,
- * because the stock still exists (FR-LIST-034).
- *
- * Accepts either shape because PDO::fetch() returns stdClass while some
- * callers pass a decoded array.
- *
- * @param array|object $listing Any row carrying an expiry_date field.
+ * @param array|object $listing Row with an expiry_date field; PDO::fetch()
+ *   returns stdClass, some callers pass an array.
  */
 function listing_is_expired($listing, ?string $today = null): bool
 {
-    // Null coalescing on array offsets would still warn or fatal against a
-    // stdClass, so read the field per shape.
+    // Null-coalescing offsets would warn on a stdClass, so read the field per shape.
     $date = is_array($listing)
         ? (string) ($listing['expiry_date'] ?? '')
         : (string) ($listing->expiry_date ?? '');
@@ -425,16 +388,9 @@ function listing_is_expired($listing, ?string $today = null): bool
 }
 
 /**
- * Apply a signed change to a listing's available quantity and record it.
- *
- * Every change to available_quantity must leave an immutable stock_adjustments
- * row (FR-LIST-029/030), so the update and the audit row are written together
- * or not at all. The listing row is locked first so two concurrent
- * confirmations cannot both read the same "before" value and lose one
- * quantity (NFR-REL-002).
- *
- * $delta is signed: negative to deduct, positive to restore. Throws when the
- * result would fall below zero (insufficient stock, FR-ORD-025) or rise above
+ * Apply a signed $delta to a listing's available_quantity and record it.
+ * FR-LIST-029/030: the update and its stock_adjustments row ship together; the
+ * row is locked first (NFR-REL-002). Throws below zero (FR-ORD-025) or above
  * MAX_STOCK_QTY (FR-LIST-032).
  */
 function stock_apply(PDO $pdo, int $listingId, float $delta, string $type, ?int $orderId, int $actorId, ?string $notes = null): void
@@ -493,8 +449,7 @@ function order_log_status(PDO $pdo, int $orderId, ?string $from, string $to, int
         'reason'          => $reason,
     ]);
 
-    // Notify the other parties, never the actor. Uses the same connection, so a
-    // rolled-back status change drops its notifications too.
+    // Notify the other parties, never the actor; same connection, so a rollback drops it too.
     try {
         $lookup = $pdo->prepare('SELECT id, order_number, buyer_id, farmer_id FROM orders WHERE id = :id');
         $lookup->execute(['id' => $orderId]);
@@ -571,10 +526,8 @@ function notify_prefs(int $userId): array
     return $prefs;
 }
 
-/**
- * Deliver a notification to one user, honouring their settings page choices.
- * Never throws: a notification must not roll back the action that caused it.
- */
+/** Deliver a notification honouring the user's settings choices. Never throws:
+ *  a notification must not roll back the action that caused it. */
 function notify_user(PDO $pdo, int $userId, string $category, string $title, ?string $body = null, ?string $link = null): void
 {
     if ($userId <= 0) {
@@ -638,23 +591,14 @@ function unread_notification_count(int $userId): int
     }
 }
 
-// =====================================================================
-// Account security events and account erasure
-// =====================================================================
+// ===== Account security events and account erasure =====
 
 /**
  * Append a security-relevant event to logs/security.log.
  *
- * admin_audit_log is deliberately not used here: audit_log() is a no-op
- * unless the current actor is an administrator, and admin_audit_log.admin_id
- * is ON DELETE RESTRICT, so it is the wrong home for events raised by
- * ordinary users acting on their own account (password reset, name change,
- * account erasure).
- *
- * Never pass raw personal values in $context. Record which fields changed and
- * the stable user id; the authoritative values stay in the users/profile
- * tables where retention and anonymization controls can reach them
- * (NFR-PRIV-010).
+ * Not admin_audit_log (it no-ops for non-admins; its admin_id is ON DELETE
+ * RESTRICT). Keep raw personal values out of $context; log changed fields and
+ * the user id (NFR-PRIV-010).
  */
 function security_event_log(string $event, array $context = []): void
 {
@@ -674,17 +618,13 @@ function security_event_log(string $event, array $context = []): void
         ], JSON_UNESCAPED_SLASHES);
         error_log((string) $line . PHP_EOL, 3, (string) ($config['app']['security_log'] ?? (__DIR__ . '/../logs/security.log')));
     } catch (Throwable $e) {
-        // Never let logging break the request.
+        // Logging must not break the request.
     }
 }
 
-/**
- * Whether password reset links may be surfaced in the page body.
- *
- * This is a local-only delivery channel with no mail transport behind it, so
- * it is refused outright in production: on a real deployment the same page
- * would otherwise print a live reset token to whoever submitted the form.
- */
+/** Whether password reset links may be surfaced in the page body. Refused in
+ *  production, where the page would otherwise print a live reset token to the
+ *  submitter. */
 function local_reset_links_enabled(): bool
 {
     global $config;
@@ -695,12 +635,10 @@ function local_reset_links_enabled(): bool
 }
 
 /**
- * Deliver a password reset link over the local-only channel.
- *
- * There is no mailer in this project, so the raw token has to reach the
- * operator somehow. It is appended to logs/security.log for out-of-band
- * retrieval and, when local_reset_links_enabled() allows it, returned so the
- * caller can show it. Returns null when the link must not be displayed.
+ * Deliver a password reset link over the local-only channel: there is no
+ * mailer, so the raw token goes to logs/security.log and, when
+ * local_reset_links_enabled() allows, is returned for display. Null when the
+ * link must not be shown.
  */
 function password_reset_deliver_local(int $userId, string $rawToken): ?string
 {
@@ -721,22 +659,16 @@ function password_reset_deliver_local(int $userId, string $rawToken): ?string
     return local_reset_links_enabled() ? $link : null;
 }
 
-/**
- * Drop outstanding password reset tokens for a user.
- *
- * Issuing a new token must invalidate the previous ones, otherwise every
- * earlier "reset my password" mail stays usable until it expires on its own.
- */
+/** Drop a user's outstanding password reset tokens, so issuing a new one
+ *  invalidates every earlier "reset my password" link. */
 function password_resets_revoke(int $userId): void
 {
     DB::pdo()->prepare('DELETE FROM password_resets WHERE user_id = :id')
         ->execute(['id' => $userId]);
 }
 
-/**
- * True when an administrator has placed an unreleased retention hold on the
- * user (FR-ADM-019, BR-034). An active hold outranks an erasure request.
- */
+/** True when an unreleased retention hold exists on the user (FR-ADM-019,
+ *  BR-034). An active hold outranks an erasure request. */
 function user_has_active_retention_hold(int $userId): bool
 {
     $stmt = DB::pdo()->prepare(
@@ -757,15 +689,9 @@ const NONTERMINAL_ORDER_STATUSES = [
     'out_for_delivery',
 ];
 
-/**
- * Count a user's orders that have not reached a terminal state, on either the
- * buying or the selling side.
- *
- * FR-ADM-019 conditions anonymization on having no nonterminal orders. An
- * order still in flight names a counterparty who still needs to reach this
- * person, and cancelling or completing it on their behalf would be a
- * substantive decision made without consent.
- */
+/** Count a user's nonterminal orders, buying or selling (FR-ADM-019 gates
+ *  anonymization on this: an in-flight order names a counterparty who still
+ *  needs to reach the person). */
 function user_nonterminal_order_count(int $userId): int
 {
     $in  = implode(',', array_fill(0, count(NONTERMINAL_ORDER_STATUSES), '?'));
@@ -781,20 +707,11 @@ function user_nonterminal_order_count(int $userId): int
 /**
  * Irreversibly anonymize an account (NFR-PRIV-006, NFR-PRIV-009).
  *
- * The users row and its primary key survive as the stable internal subject
- * reference that orders, listings and audit records point at; identifying
- * values are overwritten rather than the row being dropped. Profile rows are
- * scrubbed in place and never removed, because orders.buyer_id and
- * orders.farmer_id are ON DELETE RESTRICT through them and a physical delete
- * would fail for any account that has ever traded.
- *
- * Listings belonging to the user are archived rather than deleted
- * (NFR-REL-004); order quantities, prices, statuses and dates are preserved
- * while the free-text and exact-location fields that can carry personal data
- * are cleared.
- *
- * Throws RuntimeException if the transaction cannot be committed, so the
- * caller can refuse rather than report a deletion that did not happen.
+ * The users row survives as the stable subject reference; profile rows are
+ * scrubbed in place, not deleted (orders.*_id are ON DELETE RESTRICT through
+ * them). Listings are archived (NFR-REL-004); order numbers, prices, statuses
+ * and dates survive, free-text and location fields are cleared. Throws
+ * RuntimeException if the transaction cannot be committed.
  */
 function account_anonymize(int $userId): array
 {
@@ -803,9 +720,8 @@ function account_anonymize(int $userId): array
 
     $pdo->beginTransaction();
     try {
-        // 1. Neutralise the account itself. A random hash replaces the real
-        //    one so the row can never authenticate again, and the tombstone
-        //    address is unique per id so the email constraint still holds.
+        // 1. Neutralise the account: random hash so it can never authenticate,
+        //    tombstone email unique per id so the constraint still holds.
         $pdo->prepare(
             "UPDATE users
                 SET email = :email,
@@ -822,10 +738,7 @@ function account_anonymize(int $userId): array
         ]);
 
         // 2. Farmer identity fields. The row stays so listings and orders keep
-        //    resolving to a real farmer_profiles key. barangay, municipality_city,
-        //    province, region and farm_name, contact_person, address and
-        //    valid_id_number are all NOT NULL, so those become placeholders
-        //    rather than NULL; only genuinely nullable columns are cleared.
+        //    resolving; NOT NULL columns become placeholders, nullable ones are cleared.
         $pdo->prepare(
             "UPDATE farmer_profiles
                 SET farm_name = :farm_name,
@@ -874,9 +787,8 @@ function account_anonymize(int $userId): array
             'id'        => $userId,
         ]);
 
-        // 4. Exact fulfillment locations and user-authored free text on
-        //    historical orders (NFR-PRIV-009). Statuses, quantities, prices
-        //    and dates are the non-identifying record that must survive.
+        // 4. Exact locations and user-authored text on historical orders
+        //    (NFR-PRIV-009); statuses, quantities, prices and dates survive.
         $orders = $pdo->prepare(
             'UPDATE orders
                 SET delivery_address = NULL,
@@ -897,9 +809,8 @@ function account_anonymize(int $userId): array
         $listings->execute([$userId]);
         $summary['listings_archived'] = $listings->rowCount();
 
-        // 6. Session and notification state cannot outlive the account. These
-        //    only cascade on a physical user delete, which is not what happens
-        //    here, so they are cleared explicitly.
+        // 6. Session and notification state cannot outlive the account; it only
+        //    cascades on a physical delete, so clear it explicitly.
         $tables = [
             'cart_items'         => 'buyer_id',
             'saved_listings'     => 'user_id',

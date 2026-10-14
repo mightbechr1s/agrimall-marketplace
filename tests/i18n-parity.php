@@ -1,13 +1,5 @@
 <?php
-/**
- * Guards that every copy block has the same keys in English and Tagalog.
- *
- * A key present in one language and missing in the other is the failure mode
- * that slips through review: the page still renders, but one language silently
- * falls back to English (or to a raw key) in production.
- *
- * Run: php tests/i18n-parity.php
- */
+/** Guards that every copy block has identical keys in English and Tagalog. Run: php tests/i18n-parity.php */
 declare(strict_types=1);
 
 $copyPath = dirname(__DIR__) . '/src/i18n_copy.php';
@@ -56,16 +48,8 @@ if ($blocks === 0) {
     exit(2);
 }
 
-// ---------------------------------------------------------------------------
-// Second check: every copy path a page asks for has to actually exist.
-//
-// Parity alone does not catch a wrong path. Because the deck is keyed
-// locale-first ($copy['errors']['en'][...]), a page that writes
-// $copy['errors']['unavailable'] gets null, and the usual `?? $key` fallback
-// then prints the bare word "title" or "message" as page copy. That renders a
-// plausible page and fails every key-parity assertion, because the deck itself
-// is perfectly consistent.
-// ---------------------------------------------------------------------------
+// Second check: every referenced copy path must exist. Parity alone misses wrong paths
+// because locale-first deck returns null for bad keys, which falls back to raw key text.
 $missing  = [];
 $checked  = 0;
 $isLocale = static fn(string $k): bool => $k === 'en' || $k === 'tl';
@@ -84,10 +68,9 @@ foreach (['public', 'src'] as $dir) {
     }
 }
 
-// The safe idiom: $l($copy['block'], 'key').
+// Safe idiom: $l($copy['block'], 'key').
 $callPattern = '/\$l\(\s*\$copy\[\s*\'([a-z0-9_]+)\'\s*\]\s*,\s*\'([a-z0-9_.]+)\'/i';
-// The trap: two literal hops on a locale-first deck, where the second hop is
-// not itself a locale.
+// Trap: two literal hops on locale-first deck where second hop is not a locale.
 $pathPattern = '/\$copy\[\s*\'([a-z0-9_]+)\'\s*\]\s*\[\s*\'([a-z0-9_]+)\'\s*\]/i';
 
 foreach ($php as $file) {

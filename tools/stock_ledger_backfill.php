@@ -1,24 +1,13 @@
 <?php
 /**
- * Reconcile the stock ledger for data created before stock_adjustments existed.
+ * Reconciles the stock ledger for data created before stock_adjustments existed:
+ * missing `initial` rows, and confirmed orders that never deducted stock
+ * (FR-ORD-010, BR-009, BR-008). Confirmed-then-cancelled orders net to zero (BR-036).
+ * Safe to re-run; each write is guarded by the absence of the row it would create.
  *
  * Usage (PHP 8.1+ CLI; XAMPP: C:\xampp\php\php.exe tools\stock_ledger_backfill.php):
  *   php tools/stock_ledger_backfill.php            # report only, changes nothing
  *   php tools/stock_ledger_backfill.php --apply    # write the missing rows
- *
- * Two defects are corrected here, and both are historical, not ongoing:
- *
- *   1. Listings inserted before the ledger existed have no `initial` row, so
- *      their quantity has no recorded origin.
- *   2. Orders confirmed before FR-ORD-010 was implemented never deducted stock,
- *      so those listings are overstated by the confirmed quantity (BR-009).
- *
- * A confirmed-then-cancelled order nets to zero: it gets a `sale_deduction` and
- * a matching `return`, so the trail is complete and the quantity is unchanged.
- * An order that was never confirmed reserves nothing and is left alone (BR-008).
- *
- * Safe to run repeatedly. Every write is guarded by the absence of the row it
- * would create, so a second run reports no work and changes nothing.
  */
 declare(strict_types=1);
 
@@ -39,8 +28,7 @@ $options = [
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
 ];
 
-// A confirmed order that later reached a restorable status had its stock
-// returned (BR-036), so the pair of rows nets to zero.
+// Restored orders had stock returned (BR-036), so the sale/return pair nets to zero.
 const RESTORED_STATUSES = ['cancelled'];
 
 try {
@@ -58,12 +46,8 @@ function fmt_qty(float $v): string
     return rtrim(rtrim(number_format($v, 4, '.', ''), '0'), '.') ?: '0';
 }
 
-/**
- * Record the origin of stock that is already on hand. This writes a ledger row
- * only: the quantity in produce_listings is already correct, so adding the
- * opening amount again would double it. quantity_change equals the balance so
- * that SUM(quantity_change) per listing equals available_quantity.
- */
+/** Writes an `initial` ledger row only; the listing quantity is already correct, so
+ *  re-adding it would double the stock. quantity_change equals the balance. */
 function ledger_open(PDO $pdo, int $listingId, float $qty, int $actorId, string $notes): void
 {
     $pdo->prepare(
@@ -81,10 +65,7 @@ function ledger_open(PDO $pdo, int $listingId, float $qty, int $actorId, string 
     ]);
 }
 
-/**
- * Apply a real change to stock and record it, keeping the before/after chain
- * intact. Used for deductions and returns, where the quantity must move.
- */
+/** Applies a real stock change and records it, keeping the before/after chain intact. */
 function ledger(PDO $pdo, int $listingId, float $delta, string $type, ?int $orderId, int $actorId, string $notes): void
 {
     $stmt = $pdo->prepare('SELECT available_quantity FROM produce_listings WHERE id = :id FOR UPDATE');

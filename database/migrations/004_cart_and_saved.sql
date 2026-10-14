@@ -1,6 +1,5 @@
--- AniMAL Migration 004: Cart and Saved Listings
--- Run after 003 against `animal_marketplace`
--- Additive only: creates two tables, touches no existing data.
+-- AniMAL Migration 004: cart and saved listings.
+-- Run after 003 against `animal_marketplace`; additive, creates two tables.
 
 USE `animal_marketplace`;
 

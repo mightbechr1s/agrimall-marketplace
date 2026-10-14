@@ -18,7 +18,7 @@ $resetLink = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
 
-    // ---- Rate limit: max 5 attempts per 15 minutes per IP + email (DB-backed) ----
+    // Rate limit: 5 attempts / 15 min per IP+email (DB-backed)
     $rlKey = 'pwreset_' . md5($_SERVER['REMOTE_ADDR'] . ':' . strtolower(trim((string) ($_POST['email'] ?? ''))));
     if (rate_limit_check($rlKey)) {
         http_response_code(429);
@@ -40,13 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch();
 
         if ($user) {
-            // Generate token; only its SHA-256 hash is persisted so a DB leak
-            // cannot be replayed as a password reset.
+            // Generate token; only SHA-256 hash stored so DB leak can't replay reset.
             $token = bin2hex(random_bytes(32));
             $expiresAt = (new DateTime('+1 hour'))->format('Y-m-d H:i:s');
 
-            // Any token issued earlier stays usable until it expires on its
-            // own, so a re-request has to retire the previous ones.
+            // Re-request retires previous tokens.
             password_resets_revoke((int) $user['id']);
 
             // Store token hash
@@ -60,14 +58,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'expires_at' => $expiresAt
             ]);
 
-            // No mail transport exists in this project, so the link is handed
-            // to the operator over the local-only channel instead. Returns
-            // null in production, where the token must never be displayed.
+            // No mail transport; link handed to operator over local-only channel.
+            // Returns null in production where token must never be displayed.
             $resetLink = password_reset_deliver_local((int) $user['id'], $token);
 
             $success = $l($copy['auth'], 'reset_success');
         } else {
-            // Don't reveal that the email doesn't exist for security
+            // Don't reveal email existence for security
             $success = $l($copy['auth'], 'reset_success');
         }
     }

@@ -1,15 +1,12 @@
 #requires -Version 5.1
 <#
   HTTP end-to-end for the account work, against animal_marketplace_test only.
-  Temporarily points config/config.php at the test DB and restores the original
-  file in `finally`, so the live config can never be left redirected.
+  Points config.php at the test DB and restores it in `finally`.
 
-  NOTE: all ok() calls use the space-separated form `ok 'label' (cond) 'detail'`.
-  The parenthesized form is unusable here: `ok('l', $c -eq 'x')` parses as
-  ('l', $c) -eq 'x', so the operator filters the array instead of yielding a bool.
+  NOTE: ok() calls must use the space-separated form `ok 'label' (cond) 'detail'`;
+  `ok('l', $c -eq 'x')` parses as ('l', $c) -eq 'x' and yields no bool.
 #>
   $ErrorActionPreference = 'Continue'
-  # paths derive from the script location
   $repo  = Split-Path -Parent $PSScriptRoot
   . (Join-Path $PSScriptRoot '_env.ps1')
   $php   = Get-AnimalTool 'ANIMAL_PHP'   'php'   @('C:\xampp\php\php.exe')
@@ -252,7 +249,19 @@ try {
     ok 'the old password no longer works' (($c -match 'name="email"') -or ($c -match 'invalid|incorrect|HTTPERR')) 'old password still accepted'
 
     $c = get "$base/$link" $r
-    ok 'the reset link is single use' (($c -match 'expired|invalid|used|HTTPERR')) 'token was replayable'
+    ok 'a used reset link is reported as invalid' (($c -match 'expired|invalid|used|HTTPERR')) 'a used token was not reported as invalid'
+    # replaying a consumed token must not change the password again
+    $replaySess = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+    $replayForm = get "$base/$link" $replaySess
+    $replayPwBefore = dbq "SELECT password_hash FROM users WHERE id=$($ids.resetOnly)"
+    $replayPost = post "$base/reset.php" $replaySess @{
+        csrf_token       = csrf $replayForm
+        token            = $token
+        password         = 'replayed123'
+        password_confirm = 'replayed123'
+    }
+    ok 'the reset link is single use' (($replayPost -match 'expired|Expired|invalid|Invalid') -and ($replayPost -notmatch 'HTTPERR')) 'replaying a used token was accepted'
+    ok 'replaying the used link leaves the password unchanged' ((dbq "SELECT password_hash FROM users WHERE id=$($ids.resetOnly)") -eq $replayPwBefore) 'password changed through a replayed token'
   }
 
     "`n--- remember me ---"
@@ -302,7 +311,7 @@ try {
     $driftHash = sha256hex $driftRaw
     dbq "INSERT INTO password_resets (user_id, token, expires_at, created_at) VALUES ($($ids.buyer), '$driftHash', NOW() - INTERVAL 1 HOUR, NOW() - INTERVAL 2 DAY)"
     $driftBefore = dbq "SELECT expires_at FROM password_resets WHERE token='$driftHash'"
-    # Touch an unrelated column, the way any maintenance query would.
+    # Touch an unrelated column.
     dbq "UPDATE password_resets SET created_at = NOW() - INTERVAL 1 DAY WHERE token='$driftHash'" | Out-Null
     $driftAfter = dbq "SELECT expires_at FROM password_resets WHERE token='$driftHash'"
     ok 'an UPDATE to another column leaves the reset expiry untouched' ($driftBefore -eq $driftAfter) "expiry moved from '$driftBefore' to '$driftAfter', so an unrelated UPDATE is restamping it"
@@ -367,7 +376,7 @@ try {
   $cartGood = [int](dbq "SELECT COUNT(*) FROM cart_items WHERE buyer_id = $buyerId")
   ok 'cart_add still accepts a valid quantity' ($cartGood -eq ($cartBefore + 1)) "expected $($cartBefore + 1) cart rows, found $cartGood"
 
-  # Trailing junk is the case that used to pass silently as the leading number.
+  # Trailing junk: the case a bare cast silently accepted as the leading number.
   $form = get "$base/listing.php?id=$listingId" $vbu
   $t = csrf $form
   $r = post "$base/cart_add.php" $vbu @{ csrf_token = $t; listing_id = $listingId; quantity = '12abc'; return_to = 'browse.php' }
@@ -392,7 +401,7 @@ try {
   ok 'order_request created no order' ($ordersAfter -eq $ordersBefore) "order count went $ordersBefore -> $ordersAfter"
 
   "`n--- order_request bound messages interpolate the unit ---"
-  # these messages format unit_symbol, which needs the quantity_units join; each case pins its own bounds
+  # messages format unit_symbol, which needs the quantity_units join; each case pins its own bounds
   $symbol = dbq "SELECT qu.symbol FROM produce_listings pl JOIN quantity_units qu ON pl.unit_id=qu.id WHERE pl.id=$listingId;"
   foreach ($case in @(
       @{ label = 'below the minimum'; min = 2; max = 5;     avail = 10; qty = '1';  expect = "Minimum order is 2 $symbol." }

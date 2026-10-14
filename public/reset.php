@@ -11,7 +11,7 @@ if (current_user_id()) {
     redirect_to('dashboard.php');
 }
 
-// Tokens are stored as SHA-256 hashes; only the raw token ever leaves the server.
+// Tokens stored as SHA-256 hashes; only raw token leaves server.
 $tokenHash = static fn(string $raw): string => hash('sha256', $raw);
 
 $token = trim((string) ($_GET['token'] ?? ''));
@@ -46,7 +46,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$reset) {
             $error = $l($copy['auth'], 'err_invalid_token');
         } else {
-            // Check if token has expired
             $expiresAt = new DateTime($reset['expires_at']);
             $now = new DateTime();
             if ($now >= $expiresAt) {
@@ -61,16 +60,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'id' => $reset['user_id']
                 ]);
 
-                // Invalidate every outstanding token for this user
+                // Invalidate all tokens for this user
                 password_resets_revoke((int) $reset['user_id']);
 
-                // A password change must also end the persistent way back in.
-                // Sessions here are PHP's own file-backed store, so an
-                // already-signed-in session on some other tab or device cannot
-                // be enumerated and killed from here; revoking the remember-me
-                // token is the part that is actually enforceable. Revoking live
-                // sessions across devices needs a DB-backed session store, i.e.
-                // putting the vestigial `sessions` table back in use.
+                // Password change revokes remember-me (only enforceable part;
+                // PHP file sessions can't be enumerated across devices without
+                // a DB-backed session store).
                 remember_revoke((int) $reset['user_id']);
 
                 security_event_log('password_reset_completed', [
@@ -87,8 +82,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// Validate token for GET request. Skipped on POST: a successful reset consumes
-// the token, so re-checking it here would bounce the user away from the result.
+// Validate token for GET. Skipped on POST: successful reset consumes
+// token, so re-checking would bounce user away from result.
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     $stmt = DB::pdo()->prepare(
         'SELECT user_id, expires_at FROM password_resets WHERE token = :token'
@@ -97,15 +92,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     $reset = $stmt->fetch();
 
     if (!$reset) {
-        header('Location: forgot.php');
-        exit;
-    }
-
-    // Check if token has expired
-    $expiresAt = new DateTime($reset['expires_at']);
-    $now = new DateTime();
-    if ($now >= $expiresAt) {
-        $error = $l($copy['auth'], 'err_token_expired');
+        // Unknown/used token: report it instead of silently bouncing
+        // to forgot.php, so user learns why link failed. Form still served.
+        $error = $l($copy['auth'], 'err_invalid_token');
+    } else {
+        $expiresAt = new DateTime($reset['expires_at']);
+        $now = new DateTime();
+        if ($now >= $expiresAt) {
+            $error = $l($copy['auth'], 'err_token_expired');
+        }
     }
 }
 

@@ -49,7 +49,7 @@ if (!$item) {
     exit;
     }
 
-// Get all images for this listing
+// Get listing images
 $imageStmt = DB::pdo()->prepare('SELECT image_path FROM listing_images WHERE listing_id = :id ORDER BY is_primary DESC, sort_order');
 $imageStmt->execute(['id' => $id]);
 $images = $imageStmt->fetchAll(PDO::FETCH_COLUMN);
@@ -269,7 +269,7 @@ $fmtQty = function ($value, $symbol): string {
                 });
                 </script>
                 <script>
-                // Keep Add to Cart / Buy Now quantities in sync with the order form.
+                // Sync Add to Cart / Buy Now qty with order form
                 document.addEventListener('DOMContentLoaded', function () {
                     const qty = document.getElementById('quantity');
                     if (!qty) return;

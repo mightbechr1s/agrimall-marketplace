@@ -39,7 +39,7 @@ $check = function (string $label, $raw, float $min, float $max, ?float $expected
     );
 };
 
-// ---- values that must be accepted -------------------------------------
+// values that must be accepted
 $check('integer string',            '10',     0.0, 100.0, 10.0);
 $check('decimal string',            '10.5',   0.0, 100.0, 10.5);
 $check('leading decimal point',     '.5',     0.0, 100.0, 0.5);
@@ -52,7 +52,7 @@ $check('lower bound is inclusive',  '0',      0.0, 100.0, 0.0);
 $check('upper bound is inclusive',  '100',    0.0, 100.0, 100.0);
 $check('negative within range',     '-5',   -10.0, 10.0, -5.0);
 
-// ---- coercion that the old (float) cast silently accepted --------------
+// coercion the old (float) cast silently accepted
 $check('letters only',              'abc',    0.0, 100.0, null);
 $check('trailing junk',             '12abc',  0.0, 100.0, null);
 $check('leading junk',              'abc12',  0.0, 100.0, null);
@@ -69,7 +69,7 @@ $check('boolean',                   true,     0.0, 100.0, null);
 $check('array',                     ['1'],    0.0, 100.0, null);
 $check('object',                    new stdClass(), 0.0, 100.0, null);
 
-// ---- range enforcement ------------------------------------------------
+// range enforcement
 $check('below lower bound',         '-0.5',   0.0, 100.0, null);
 $check('above upper bound',         '100.5',  0.0, 100.0, null);
 $check('zero rejected when min > 0', '0',     0.01, 100.0, null);
@@ -87,7 +87,7 @@ if ($garbage === null) {
     $fail[] = 'regression: unparseable stock input produced a usable number';
 }
 
-// ---- constants the endpoints depend on --------------------------------
+// constants the endpoints depend on
 if (MAX_QUANTITY > 0 && MAX_DELIVERY_FEE > 0) {
     $pass++;
 } else {
@@ -114,11 +114,9 @@ if ($acceptsThatWorked === count($knownGood)) {
     );
 }
 
-// listing_is_expired(): FR-LIST-033. A missing expiry means no shelf life was
-// declared, which is not the same as expired.
+// listing_is_expired(): FR-LIST-033. Missing expiry means no shelf life, not expired.
 $warned = [];
-// Declared so the traceability generator scrapes these labels as 'valid::...'
-// like every other assertion in this file.
+// Declared so traceability generator scrapes labels as 'valid::...' like other assertions.
 $check = function (string $label, $listing, bool $wantExpired, ?string $today = null) use (&$pass, &$fail): void {
     if (listing_is_expired($listing, $today) === $wantExpired) {
         $pass++;
@@ -138,21 +136,18 @@ $expiryCases = [
 foreach ($expiryCases as [$why, $listing, $wantExpired]) {
     $check($why, $listing, $wantExpired);
 }
-// The expiry date is the last sellable day, so today itself must stay buyable.
-// Pinned explicitly rather than via date() so the boundary cannot drift.
+// Expiry date is last sellable day; today stays buyable. Pinned explicitly so boundary cannot drift.
 $check('a listing expiring today is still sellable', ['expiry_date' => '2026-10-05'], false, '2026-10-05');
 $check('a listing expired yesterday is not sellable', ['expiry_date' => '2026-10-04'], true, '2026-10-05');
 
-// Positive control: the reader must be capable of returning true at all, so a
-// stub that always says "not expired" cannot satisfy the cases above.
+// Positive control: reader must return true sometimes; always-false stub would pass above.
 if (listing_is_expired(['expiry_date' => '2000-01-01']) === true) {
     $pass++;
 } else {
     $fail[] = 'listing_is_expired never reports an expired listing -- the reader cannot be trusted';
 }
 
-// The detail page passes a PDO::fetch() stdClass, not an array, so a signature
-// that only accepts arrays would fatal on the live page while passing above.
+// Detail page passes PDO::fetch() stdClass, not array; array-only signature would fatal live.
 if (listing_is_expired((object) ['expiry_date' => '2000-01-01']) === true
     && listing_is_expired((object) ['expiry_date' => '2099-01-01']) === false) {
     $pass++;
@@ -160,9 +155,7 @@ if (listing_is_expired((object) ['expiry_date' => '2000-01-01']) === true
     $fail[] = 'listing_is_expired must accept a stdClass row as PDO::fetch() returns one';
 }
 
-// A missing expiry_date key must not warn, on either shape: a new listing row
-// that simply has no shelf life is normal, and a notice there would break the
-// page for every listing without an expiry.
+// Missing expiry_date key must not warn on either shape: new listing without shelf life is normal.
 set_error_handler(static function ($no, $str) use (&$warned) {
     $warned[] = $str;
     return true;

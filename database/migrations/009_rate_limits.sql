@@ -1,21 +1,7 @@
--- =====================================================================
--- 009: RATE LIMITS
--- =====================================================================
--- Why this file exists
--- --------------------
--- rate_limit_check() in src/functions.php queries and upserts this table on
--- every login and password-reset POST (public/login.php, public/forgot.php).
--- The table was only ever defined in database/animal_marketplace.sql, a full
--- dump that tools/db-reset.php does not run -- db-reset loads schema.sql and
--- then database/migrations/*.sql.
---
--- Consequence before this migration: a fresh clone built with the documented
--- reset tool produced a database with 20 tables and no rate_limits, so the
--- first login attempt hit "Unknown table 'rate_limits'". Verified by
--- replaying schema.sql + migrations into a scratch database.
---
--- This migration is additive and idempotent, so it is safe on a database that
--- already has the table from the dump.
+-- 009: rate_limits. rate_limit_check() (src/functions.php) queries this on every login and
+-- password-reset POST, but the table only ever existed in animal_marketplace.sql, a dump
+-- tools/db-reset.php does not run -- so fresh clones hit "Unknown table 'rate_limits'".
+-- Additive and idempotent, safe on a database that already has it from the dump.
 
 CREATE TABLE IF NOT EXISTS `rate_limits` (
     `key`          VARCHAR(128) NOT NULL,

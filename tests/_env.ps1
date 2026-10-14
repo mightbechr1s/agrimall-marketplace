@@ -1,20 +1,18 @@
 #requires -Version 5.1
 <#
-  Shared test bootstrap. Dot-source it before a suite touches the database:
-
+  Shared test bootstrap. Dot-source before a suite touches the database:
     . (Join-Path $PSScriptRoot '_env.ps1')
     $php   = Get-AnimalTool 'ANIMAL_PHP'   'php'   @('C:\xampp\php\php.exe')
     $mysql = Get-AnimalTool 'ANIMAL_MYSQL' 'mysql' @('C:\xampp\mysql\bin\mysql.exe')
     $port  = Get-AnimalPort
     $base  = "http://127.0.0.1:$port"
 
-  Per-machine overrides, so the suites do not hardcode one vendor's layout:
+  Per-machine overrides (suites don't hardcode vendor layout):
     $env:ANIMAL_PHP    full path to php.exe
     $env:ANIMAL_MYSQL  full path to mysql.exe
     $env:ANIMAL_PORT   pin the port instead of auto-picking a free one
 
-  A wrong ANIMAL_* value is reported plainly instead of failing later as a
-  confusing migration error.
+  Wrong ANIMAL_* value is reported plainly instead of failing later as migration error.
 #>
 
 function Get-AnimalTool {
@@ -41,8 +39,7 @@ function Get-AnimalTool {
 }
 
 function Get-AnimalPort {
-  # Port 0 asks the OS for any free port, so a suite never collides with a dev
-  # server the developer left running on 8000.
+  # Port 0 asks OS for free port so suite never collides with dev server on 8000.
   if ($env:ANIMAL_PORT) { return [int]$env:ANIMAL_PORT }
 
   $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
@@ -74,14 +71,10 @@ function Wait-AnimalServer {
 
 function Repair-AnimalConfigSwap {
   <#
-    Suites point config/config.php at the throwaway test database and restore it
-    afterwards. If a run dies before that restore -- the developer kills the
-    terminal, or the database server disappears mid-run, as it does in this
-    sandbox -- the dev app is left serving the test database, and because
-    config.php is gitignored nothing in git status shows it.
-
-    Call this before swapping. It only rewrites the database name, so it is safe
-    to run when config.php is already correct.
+    Suites point config.php at throwaway test DB and restore after. If run dies
+    before restore (terminal killed, DB server dies), dev app serves test DB and
+    git status shows nothing (config.php is gitignored). Call before swapping;
+    only rewrites DB name, safe when config.php is already correct.
   #>
   param(
     [Parameter(Mandatory)][string]$Cfg,
@@ -91,7 +84,7 @@ function Repair-AnimalConfigSwap {
   if (-not (Test-Path -LiteralPath $Cfg)) { return $false }
 
   $text = [System.IO.File]::ReadAllText($Cfg)
-  # Anchor on the quoted db name so the app's later 'name' => 'AniMAL' is safe.
+  # Anchor on quoted DB name so app's later 'name' => 'AniMAL' is safe.
   $stale = "('name'\s*=>\s*')animal_marketplace_test(')"
   if ($text -notmatch $stale) { return $false }
 

@@ -1,23 +1,19 @@
 <?php
 /**
- * PHP built-in server router.
- * Used with: php -S localhost:8000 -t public router.php
- *
- * This router ONLY handles requests that would otherwise 404.
- * For existing files (assets, PHP pages), it returns false to let
- * the built-in server serve them normally.
+ * PHP built-in server router (php -S localhost:8000 -t public router.php).
+ * Only handles requests that would otherwise 404; returns false for existing files.
  */
 
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
 $requestPath = parse_url($requestUri, PHP_URL_PATH) ?? '/';
 $requestPath = urldecode($requestPath);
 
-// Map of special routes that should be handled by PHP scripts
+// Routes handled by PHP scripts instead of static files
 $specialRoutes = [
     '/sitemap.xml' => __DIR__ . '/sitemap.php',
 ];
 
-// Serve an SVG favicon for browsers that request the default /favicon.ico
+// Serve an SVG favicon for the default /favicon.ico request
 if ($requestPath === '/favicon.ico') {
     $favicon = __DIR__ . '/assets/branding/mark.svg';
     if (is_file($favicon)) {
@@ -28,34 +24,30 @@ if ($requestPath === '/favicon.ico') {
     }
 }
 
-// Check if this is a special route
 if (isset($specialRoutes[$requestPath])) {
     require $specialRoutes[$requestPath];
     return true;
 }
 
-// Check if the requested file exists in the document root
 $documentRoot = __DIR__;
 $requestedFile = $documentRoot . $requestPath;
 
 // Normalize path (resolve . and ..)
 $requestedFile = realpath($requestedFile) ?: $requestedFile;
 
-// If the file exists and is within document root
 if (is_file($requestedFile) && str_starts_with($requestedFile, realpath($documentRoot) . DIRECTORY_SEPARATOR)) {
-    // Static assets: serve with Cache-Control headers
+    // Static assets: served with Cache-Control
     $ext = strtolower(pathinfo($requestedFile, PATHINFO_EXTENSION));
     $staticExtensions = ['css', 'js', 'svg', 'png', 'jpg', 'jpeg', 'webp', 'ico', 'json', 'txt', 'woff', 'woff2'];
 
-    // Never expose dotfiles (.htaccess, .env, editor backups)
+    // dotfiles (.htaccess, .env, backups) must not be served
     if (str_starts_with(basename($requestedFile), '.')) {
         http_response_code(404);
         require __DIR__ . '/404.php';
         return true;
     }
 
-    // Deny script execution inside uploads/. Apache's .htaccess is ignored by the
-    // built-in server, so mirror it here: uploads may only serve static assets.
+    // uploads/ serves static assets only: the built-in server ignores .htaccess
     $uploadsRoot = realpath($documentRoot . '/uploads');
     $isUpload = $uploadsRoot !== false
         && str_starts_with($requestedFile, $uploadsRoot . DIRECTORY_SEPARATOR);
@@ -65,12 +57,11 @@ if (is_file($requestedFile) && str_starts_with($requestedFile, realpath($documen
     }
 
     if (in_array($ext, $staticExtensions, true)) {
-        // Skip caching for robots.txt and sitemap (handled by special routes)
+        // Skip caching for robots.txt and sitemap (special routes)
         $basename = basename($requestedFile);
         if ($basename !== 'robots.txt' && $basename !== 'sitemap.xml') {
             header('Cache-Control: public, max-age=86400');
         }
-        // Serve the file
         $mimeTypes = [
             'css' => 'text/css',
             'js' => 'application/javascript',
@@ -90,17 +81,16 @@ if (is_file($requestedFile) && str_starts_with($requestedFile, realpath($documen
         readfile($requestedFile);
         return true;
     }
-    // PHP files and other files: let built-in server handle
+    // PHP and other files: let the built-in server handle them
     return false;
 }
 
-// Check if it's a directory with index.php
 $indexFile = $requestedFile . '/index.php';
 if (is_dir($requestedFile) && is_file($indexFile)) {
     return false;
 }
 
-// Handle 404 - render custom 404 page
+// Fallback: custom 404 page
 http_response_code(404);
 require __DIR__ . '/404.php';
 return true;
