@@ -58,8 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($newPass === '') {
             $error = $l($copy['account'], 'err_pass_required');
-        } elseif (strlen($newPass) < 8) {
-            $error = $l($copy['account'], 'err_pass_min');
+        } elseif (($pwError = password_policy_error($newPass)) !== null) {
+            $error = $l($copy['account'], $pwError);
         } elseif (strlen($newPass) > FIELD_LIMITS['password']) {
             $error = sprintf($l($copy['account'], 'err_too_long'), FIELD_LIMITS['password']);
         } elseif ($newPass !== (string) ($_POST['confirm_password'] ?? '')) {

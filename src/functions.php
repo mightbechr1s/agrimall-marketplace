@@ -72,6 +72,21 @@ function over_limit_fields(array $input): array
     return $over;
 }
 
+/** Returns the i18n error key for the first unmet password rule, or null. */
+function password_policy_error(string $password): ?string
+{
+    if (strlen($password) < 8) {
+        return 'err_pass_min';
+    }
+    if (!preg_match('/[A-Z]/', $password)) {
+        return 'err_pass_upper';
+    }
+    if (!preg_match('/[0-9]/', $password)) {
+        return 'err_pass_number';
+    }
+    return null;
+}
+
 /** HTML-escape untrusted output (NFR-SEC-003). */
 function e($value): string
 {

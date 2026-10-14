@@ -29,8 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = $l($copy['auth'], 'err_invalid_request');
     } elseif ($password === '') {
         $error = $l($copy['auth'], 'err_enter_password');
-    } elseif (strlen($password) < 8) {
-        $error = $l($copy['auth'], 'err_pass_min');
+    } elseif (($pwError = password_policy_error($password)) !== null) {
+        $error = $l($copy['auth'], $pwError);
     } elseif (strlen($password) > FIELD_LIMITS['password']) {
         $error = sprintf($l($copy['auth'], 'err_too_long'), FIELD_LIMITS['password']);
     } elseif ($password !== $passwordConfirm) {

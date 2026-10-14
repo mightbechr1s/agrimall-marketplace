@@ -169,6 +169,48 @@ if (!$warned) {
     $fail[] = 'listing_is_expired emitted a notice for a row with no expiry_date: ' . $warned[0];
 }
 
+// password_policy_error() is shared by register, account and reset.
+$policyCases = [
+    ['mixed password is accepted',       'Password1', null],
+    ['minimum length with case + digit', 'Passw0rd',  null],
+    ['short password fails on length',   'Pass1',     'err_pass_min'],
+    ['empty password fails on length',   '',          'err_pass_min'],
+    ['lowercase-only needs uppercase',   'weakpass',  'err_pass_upper'],
+    ['missing digit is rejected',        'Password',  'err_pass_number'],
+];
+foreach ($policyCases as [$why, $pw, $want]) {
+    $got = password_policy_error($pw);
+    if ($got === $want) {
+        $pass++;
+    } else {
+        $fail[] = sprintf(
+            'password_policy_error: %s -- got %s, expected %s',
+            $why,
+            var_export($got, true),
+            var_export($want, true)
+        );
+    }
+}
+
+// Returned dynamically, so i18n-parity.php does not cover these keys.
+$copyDeck = require dirname(__DIR__) . '/src/i18n_copy.php';
+$policyKeys = ['err_pass_min', 'err_pass_upper', 'err_pass_number'];
+$slots = 0;
+foreach (['auth', 'account'] as $block) {
+    foreach (['en', 'tl'] as $loc) {
+        foreach ($policyKeys as $k) {
+            if (!empty($copyDeck[$block][$loc][$k])) {
+                $slots++;
+            }
+        }
+    }
+}
+if ($slots === count($policyKeys) * 4) {
+    $pass++;
+} else {
+    $fail[] = sprintf('password-policy copy keys found in %d of %d deck slots', $slots, count($policyKeys) * 4);
+}
+
 echo "assertions passed: $pass\n";
 echo "assertions failed: " . count($fail) . "\n";
 

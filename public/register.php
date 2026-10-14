@@ -13,6 +13,7 @@ if (current_user_id()) {
 
 $errors = [];
 $old = [];
+$passwordError = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
@@ -55,8 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = $l($copy['auth'], 'err_email_valid');
     }
-    if (strlen($password) < 8 || !preg_match('/[A-Z]/', $password) || !preg_match('/[0-9]/', $password)) {
-        $errors[] = $l($copy['auth'], 'err_pass_min');
+    $passwordError = password_policy_error($password);
+    if ($passwordError !== null) {
+        $errors[] = $l($copy['auth'], $passwordError);
     }
     if ($password !== $passwordConfirm) {
         $errors[] = $l($copy['auth'], 'err_pass_match');
@@ -279,7 +281,7 @@ require __DIR__ . '/partials/header.php';
                         $placeholder = 'Min. 8 characters';
                         $required = true;
                         $attrs = ['minlength' => 8, 'maxlength' => FIELD_LIMITS['password'], 'autocomplete' => 'new-password'];
-                        $error = in_array($l($copy['auth'], 'err_pass_min'), $errors) ? $l($copy['auth'], 'err_pass_min') : (in_array($l($copy['auth'], 'err_pass_match'), $errors) ? $l($copy['auth'], 'err_pass_match') : '');
+                        $error = $passwordError !== null ? $l($copy['auth'], $passwordError) : (in_array($l($copy['auth'], 'err_pass_match'), $errors) ? $l($copy['auth'], 'err_pass_match') : '');
                         include __DIR__ . '/partials/form-field.php';
                         ?>
                         <ul class="pw-rules" id="pw-rules" hidden aria-label="<?= $l($copy['auth'], 'pw_strength') ?>">
