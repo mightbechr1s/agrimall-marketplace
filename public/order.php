@@ -48,11 +48,10 @@ $histStmt = $pdo->prepare('SELECT * FROM order_status_history WHERE order_id = :
 $histStmt->execute(['id' => $orderId]);
 $history = $histStmt->fetchAll();
 
-$pageTitle = 'Order ' . e($order['order_number']);
-require __DIR__ . '/partials/header.php';
+$pageTitle = 'Order ' . $order['order_number'];
+$activePage = 'orders';
+require __DIR__ . '/partials/dashboard-layout.php';
 ?>
-
-<main id="main-content" class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
             <h1 class="h3 mb-1"><?= e($order['order_number']) ?></h1>
@@ -60,7 +59,7 @@ require __DIR__ . '/partials/header.php';
                 <?= e(str_replace('_', ' ', $order['status'])) ?>
             </span>
         </div>
-        <a href="/dashboard.php" class="btn btn-outline">Back to Dashboard</a>
+        <a href="/dashboard.php" class="btn btn-outline btn-sm">Back to Dashboard</a>
     </div>
 
     <?php if ($flash = flash_get('success')): ?>
@@ -365,6 +364,5 @@ require __DIR__ . '/partials/header.php';
             </div>
         </div>
     </div>
-</main>
 
-<?php require __DIR__ . '/partials/footer.php'; ?>
+<?php require __DIR__ . '/partials/dashboard-footer.php'; ?>
