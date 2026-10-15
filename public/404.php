@@ -27,10 +27,10 @@ $notFound = $copy['errors'][$locale]['404'] ?? $copy['errors']['en']['404'] ?? [
         <p class="fs-5 text-muted mb-4" data-reveal><?= e($notFound['message'] ?? 'The page you\'re looking for doesn\'t exist or has been moved.') ?></p>
 
         <div class="d-flex flex-column flex-sm-row justify-content-center gap-3" data-reveal>
-            <a href="/" class="btn btn-primary btn-lg px-4 py-3">
+            <a href="/" class="btn btn-primary btn-lg">
                 <?= e($notFound['cta_home'] ?? 'Go Home') ?>
             </a>
-            <a href="/index.php" class="btn btn-outline-primary btn-lg px-4 py-3">
+            <a href="/index.php" class="btn btn-outline-primary btn-lg">
                 <?= e($notFound['cta_browse'] ?? 'Browse Listings') ?>
             </a>
         </div>

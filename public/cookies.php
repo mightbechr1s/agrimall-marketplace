@@ -10,6 +10,7 @@ require __DIR__ . '/partials/header.php';
 <main id="main-content" class="flex-grow-1">
 <section class="legal-section">
     <div class="container legal-container">
+        <h1 class="mb-4"><?= e($pageTitle) ?></h1>
         <div class="row g-4">
             <div class="col-md-8">
                 <article class="legal-body">

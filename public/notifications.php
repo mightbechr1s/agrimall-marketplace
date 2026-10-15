@@ -44,7 +44,7 @@ require __DIR__ . '/partials/header.php';
             <h1><?= e($l($copy['notifications'], 'page_title')) ?></h1>
             <p><?= e($l($copy['notifications'], 'page_description')) ?></p>
         </div>
-        <a href="dashboard.php" class="btn btn-outline mb-3"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i> Back</a>
+        <a href="dashboard.php" class="btn btn-outline btn-sm mb-3"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i> Back</a>
 
         <?php if (!empty($success)): ?>
             <div class="alert alert-success" role="status">

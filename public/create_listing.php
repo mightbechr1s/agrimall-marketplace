@@ -269,7 +269,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
 
 <div class="dash-panel">
     <div class="dash-panel-header">
-        <h2><?= e($pageTitle) ?></h2>
+        <h1><?= e($pageTitle) ?></h1>
         <a href="dashboard.php" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left me-1"></i> Back</a>
     </div>
         <div style="padding: 32px;">

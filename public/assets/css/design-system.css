@@ -24,6 +24,7 @@
   --text-soft: #6E6355;
   --borders: #E7DFCE;
   --danger: #B4572F;
+  --danger-fill: #B4572F;
   --success: #2E7D32;
   --focus-ring: #B45309;
 
@@ -62,9 +63,9 @@
 
 /* ── Dark mode tokens ────────────────────────────────── */
 :root[data-theme="dark"] {
-  --canvas: #121A15;
-  --canvas-deep: #182219;
-  --paper: #1B2720;
+  --canvas: #121212;
+  --canvas-deep: #171717;
+  --paper: #1E1E1E;
   --primary: #2E7D47;
   --primary-dark: #25683A;
   --primary-tint: rgba(46, 125, 71, 0.14);
@@ -75,15 +76,18 @@
   --gold-tint: rgba(224, 159, 62, 0.16);
   --gold-text: var(--gold);
   --gold-bright: var(--gold);
-  --text: #EDE8DE;
-  --text-soft: #A2B3A5;
-  --borders: rgba(255, 255, 255, 0.08);
-  --danger: #E08A5D;
+  --text: #E8E8E6;
+  --text-soft: #A3A3A3;
+  --borders: rgba(255, 255, 255, 0.10);
+  --danger: #E57373;
+  /* Darker red for filled danger buttons: white text needs 4.5:1, which the
+     light --danger tint cannot give on dark surfaces. */
+  --danger-fill: #C0453C;
   --success: #6FCF97;
   --focus-ring: #E09F3E;
 
   /* Matches the dark canvas so the split-screen form edge is seamless. */
-  --bg-primary: #121A15;
+  --bg-primary: #121212;
 
   /* Dark-mode ink + surface tokens: --accent === --gold, and --danger/--success
      are light in dark mode, so text on them needs the dark ink (--gold-ink). */
@@ -95,8 +99,8 @@
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 28px -8px rgba(0, 0, 0, 0.5);
   --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.45), 0 18px 44px -10px rgba(0, 0, 0, 0.6);
   --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px -5px rgba(0, 0, 0, 0.5);
-  --footer-bg: #0B110C;
-  --footer-text: #E9E0CD;
+  --footer-bg: #0D0D0D;
+  --footer-text: #D9D9D6;
 }
 
 /* ── Base ───────────────────────────────────────────── */
@@ -261,6 +265,7 @@ h1, h2, h3, h4, h5, h6,
 }
 .grid .card-actions .btn {
   height: 44px;
+  font-size: 0.875rem !important;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -384,6 +389,16 @@ h1, h2, h3, h4, h5, h6,
 .btn:active {
   transform: translateY(0) scale(0.99);
 }
+
+/* Canonical button geometry — one border weight and one size scale everywhere */
+.btn, .btn-primary, .btn-primary-nav, .btn-sell, .btn-logout,
+.btn-outline, .btn-outline-primary, .btn-outline-secondary {
+  border-width: 1.5px !important;
+  font-size: 1rem !important;
+}
+.btn-sm { font-size: 0.875rem !important; }
+.btn-lg { font-size: 1.0625rem !important; }
+.btn-lg { padding-left: 1.5rem !important; padding-right: 1.5rem !important; }
 .btn:focus-visible, .form-control:focus-visible, .form-select:focus-visible,
 .form-check-input:focus-visible, .filter-pill:focus-visible,
 .add-to-basket:focus-visible, .theme-toggle:focus-visible,
@@ -487,7 +502,7 @@ h1, h2, h3, h4, h5, h6,
   border: 1px solid var(--borders);
 }
 :root[data-theme="dark"] .stock-toggle {
-  background: #3a4a3e;
+  background: #3A3A3A;
 }
 .stock-toggle::after {
   content: '';
@@ -843,8 +858,6 @@ h1, h2, h3, h4, h5, h6,
 .hero-section .btn {
   height: 3.4rem;
   padding: 0 1.9rem;
-  border-radius: 10px !important;
-  border-width: 2px;
   font-size: 1rem;
   display: inline-flex !important;
   align-items: center;
@@ -854,7 +867,6 @@ h1, h2, h3, h4, h5, h6,
   box-shadow: 0 10px 24px rgba(217, 147, 30, 0.3) !important;
 }
 .hero-section .btn-outline-primary {
-  border-width: 2px !important;
   color: var(--primary) !important;
   background: transparent !important;
 }
@@ -1578,7 +1590,7 @@ h1, h2, h3, h4, h5, h6,
   font-weight: 700;
   color: var(--primary);
 }
-.stat-trend.text-success { color: var(--primary); }
+.stat-trend.text-success { color: var(--primary) !important; }
 .stat-sparkline {
   display: block;
   margin-top: 0.4rem;
@@ -1596,6 +1608,7 @@ h1, h2, h3, h4, h5, h6,
   padding: 1.1rem 1.25rem;
   border-bottom: 1px solid var(--borders);
 }
+.dash-panel-header h1,
 .dash-panel-header h2 {
   font-size: 1.2rem;
   margin: 0;
@@ -1753,9 +1766,10 @@ h1, h2, h3, h4, h5, h6,
 .priority-queue-item h5 { font-size: 0.98rem; margin-bottom: 0.15rem; font-family: var(--font-display); }
 .priority-queue-item p { color: var(--text-soft); }
 
-/* Legacy Bootstrap neutralization — softened, not squared */
-.card, .btn, .badge, .alert, .accordion-item, .accordion-button,
-.modal-content, .list-group-item, .input-group-text {
+/* Legacy Bootstrap neutralization — softened, not squared.
+   Bootstrap-only components; .card/.btn/.badge/.modal-content keep their own radii. */
+.alert, .accordion-item, .accordion-button,
+.list-group-item, .input-group-text {
   border-radius: var(--radius-sm) !important;
 }
 .alert { border-radius: var(--radius-sm) !important; }
@@ -3083,6 +3097,19 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   white-space: nowrap;
   line-height: 1.35;
 }
+
+/* Shared chip geometry — listing badges and dashboard badges are one component */
+.badge, .badge-fresh, .badge-normal, .badge-stale, .badge-location, .dash-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.78rem;
+  font-size: 0.72rem;
+  font-weight: 700 !important;
+  line-height: 1.35;
+  letter-spacing: 0.04em;
+  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-radius: var(--radius-pill) !important;
+}
 .dash-badge--success {
   color: #1C6B3A;
   background: rgba(31, 75, 50, 0.12);
@@ -3134,7 +3161,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   border-color: rgba(200, 90, 75, 0.35);
 }
 :root[data-theme="dark"] .dash-badge--secondary {
-  color: #D8E3DA;
+  color: #D6D6D6;
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.18);
 }
@@ -3222,7 +3249,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 :root[data-theme="dark"] .form-control,
 :root[data-theme="dark"] .form-select,
 :root[data-theme="dark"] .input-group-text {
-  background-color: #1B2620 !important;
+  background-color: #242424 !important;
   border-color: rgba(255, 255, 255, 0.16) !important;
 }
 /* Must follow the block above: equal specificity (0,3,0), so source order decides. */
@@ -3233,8 +3260,8 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 28%, transparent) !important;
 }
 
-/* Dark table headers — soft sage instead of dim green */
-:root[data-theme="dark"] .dash-table th { color: #C8DCC9 !important; }
+/* Dark table headers - light neutral grey */
+:root[data-theme="dark"] .dash-table th { color: #CFCFCF !important; }
 
 /* Report table columns — proportional, no dead middle gap */
 .dash-table .col-when  { width: 9rem; max-width: 9rem; }
@@ -3533,11 +3560,24 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   background: var(--accent);
   color: var(--accent-ink);
 }
-:root[data-theme="dark"] .text-danger {
-  color: var(--danger);
+/* Bootstrap status utilities mapped onto tokens - no off-palette Bootstrap reds/greens. */
+.text-danger { color: var(--danger) !important; }
+.text-success { color: var(--success) !important; }
+.btn-danger {
+  background-color: var(--danger-fill) !important;
+  border-color: var(--danger-fill) !important;
+  color: #fff !important;
 }
-:root[data-theme="dark"] .text-success {
-  color: var(--success);
+.btn-outline-danger {
+  color: var(--danger) !important;
+  border-color: var(--danger) !important;
+}
+.btn-outline-danger:hover,
+.btn-outline-danger:active,
+.btn-outline-danger:focus {
+  background-color: var(--danger-fill) !important;
+  border-color: var(--danger-fill) !important;
+  color: #fff !important;
 }
 
 /* Align buttons in listing CTA */

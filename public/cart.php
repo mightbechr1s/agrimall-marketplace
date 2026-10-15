@@ -38,7 +38,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
 
     <div class="dash-panel mt-2">
         <div class="dash-panel-header">
-            <h2><i class="bi bi-basket3 me-2" aria-hidden="true"></i>My Cart</h2>
+            <h1><i class="bi bi-basket3 me-2" aria-hidden="true"></i>My Cart</h1>
             <?php if ($items): ?>
                 <form method="post" action="cart_update.php" class="d-inline">
                     <?= csrf_field() ?>

@@ -38,8 +38,8 @@ require __DIR__ . '/partials/header.php';
                     </div>
                 </form>
                 <div class="d-flex flex-column flex-sm-row gap-3 mb-4">
-                    <a href="browse.php" class="btn btn-primary btn-lg px-4 py-3"><?= t($copy['hero'], 'cta_primary') ?></a>
-                    <a href="#steps" class="btn btn-outline-primary btn-lg px-4 py-3"><?= t($copy['hero'], 'cta_secondary') ?></a>
+                    <a href="browse.php" class="btn btn-primary btn-lg"><?= t($copy['hero'], 'cta_primary') ?></a>
+                    <a href="#steps" class="btn btn-outline-primary btn-lg"><?= t($copy['hero'], 'cta_secondary') ?></a>
                 </div>
             </div>
             <div class="col-lg-5 position-relative">
@@ -175,10 +175,10 @@ require __DIR__ . '/partials/header.php';
             <div class="rail-body">
                 <div class="rail-items rail-items--center">
                     <div class="rail-item cta-rail-item">
-                        <a href="browse.php" class="btn btn-primary btn-lg px-5 py-3 me-3"><?= t($copy['cta'], 'primary') ?></a>
+                        <a href="browse.php" class="btn btn-primary btn-lg me-3"><?= t($copy['cta'], 'primary') ?></a>
                     </div>
                     <div class="rail-item cta-rail-item">
-                        <a href="create_listing.php" class="btn btn-outline-primary btn-lg px-5 py-3"><?= t($copy['cta'], 'secondary') ?></a>
+                        <a href="create_listing.php" class="btn btn-outline-primary btn-lg"><?= t($copy['cta'], 'secondary') ?></a>
                     </div>
                 </div>
             </div>
