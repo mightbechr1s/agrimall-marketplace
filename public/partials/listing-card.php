@@ -17,6 +17,10 @@ $returnPath = ltrim((string) ($_SERVER['REQUEST_URI'] ?? ''), '/') ?: 'browse.ph
 
 $freshClass = $isFresh ? 'badge-fresh' : ($listing['is_stale'] ?? false ? 'badge-stale' : 'badge-normal');
 $freshLabel = $isFresh ? 'Fresh' : ($listing['is_stale'] ?? false ? 'Stale' : 'Available');
+// Farmer mode manages its own stock, so the card leads with the listing status
+// rather than buyer-facing freshness.
+$isFarmer = $mode === 'farmer';
+$status = $listing['status'] ?? 'active';
 $cardClasses = 'card h-100';
 if ($mode === 'horizontal') $cardClasses .= ' flex-row';
 if ($mode === 'featured') $cardClasses .= ' feature-card';
@@ -24,7 +28,9 @@ if ($mode === 'featured') $cardClasses .= ' feature-card';
 <article class="<?= e($cardClasses) ?>" data-reveal="stagger" itemscope itemtype="https://schema.org/Product">
   <div class="thumb" itemprop="image">
     <div class="badges-top">
-      <span class="badge <?= e($freshClass) ?>" itemprop="availability" content="http://schema.org/InStock"><?= e($freshLabel) ?></span>
+      <?php if (!$isFarmer): ?>
+        <span class="badge <?= e($freshClass) ?>" itemprop="availability" content="http://schema.org/InStock"><?= e($freshLabel) ?></span>
+      <?php endif; ?>
       <span class="badge badge-normal"><?= e($listing['category'] ?? 'Produce') ?></span>
     </div>
     <?php if ($mode === 'featured'): ?>
@@ -43,6 +49,10 @@ if ($mode === 'featured') $cardClasses .= ' feature-card';
         <h3 class="listing-name" itemprop="name"><a href="<?= e($listingUrl) ?>"><?= e($listing['title'] ?? 'Untitled Listing') ?></a></h3>
       </div>
     </div>
+
+    <?php if ($isFarmer): ?>
+      <div class="mb-2"><?= status_badge($status) ?></div>
+    <?php endif; ?>
 
     <div class="row">
       <div class="col text-soft small">
@@ -63,7 +73,41 @@ if ($mode === 'featured') $cardClasses .= ' feature-card';
       </div>
     </div>
 
-    <?php if ($showActions): ?>
+    <?php if ($isFarmer): ?>
+      <?php $canPause = $status === 'active'; ?>
+      <?php $canResume = $status === 'paused'; ?>
+      <div class="card-actions mt-auto">
+        <div class="d-flex gap-2">
+          <a href="<?= e($listingUrl) ?>" class="btn btn-outline-primary btn-sm flex-grow-1">
+            <i class="bi bi-eye me-1" aria-hidden="true"></i>View
+          </a>
+          <a href="create_listing.php?edit=<?= (int) $listing['id'] ?>" class="btn btn-outline-primary btn-sm flex-grow-1">
+            <i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit
+          </a>
+        </div>
+        <div class="d-flex gap-2 mt-2">
+          <?php if ($canPause || $canResume): ?>
+            <form method="post" action="listing_action.php" class="mb-0 flex-grow-1">
+              <?= csrf_field() ?>
+              <input type="hidden" name="listing_id" value="<?= (int) $listing['id'] ?>">
+              <button type="submit" name="action" value="<?= $canPause ? 'pause' : 'resume' ?>" class="btn btn-outline-secondary btn-sm w-100">
+                <i class="bi bi-<?= $canPause ? 'pause' : 'play' ?>-fill me-1" aria-hidden="true"></i><?= $canPause ? 'Pause' : 'Resume' ?>
+              </button>
+            </form>
+          <?php else: ?>
+            <span class="flex-grow-1"></span>
+          <?php endif; ?>
+          <form method="post" action="listing_action.php" class="mb-0 flex-grow-1"
+                onsubmit="return confirm('Delete this listing? Buyers will no longer see it.');">
+            <?= csrf_field() ?>
+            <input type="hidden" name="listing_id" value="<?= (int) $listing['id'] ?>">
+            <button type="submit" name="action" value="delete" class="btn btn-outline-danger btn-sm w-100">
+              <i class="bi bi-trash me-1" aria-hidden="true"></i>Delete
+            </button>
+          </form>
+        </div>
+      </div>
+    <?php elseif ($showActions): ?>
       <div class="card-actions mt-auto">
         <div class="d-flex gap-2 align-items-center">
           <form method="post" action="cart_add.php" class="mb-0" data-buy-now="true">

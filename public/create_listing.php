@@ -25,6 +25,24 @@ try {
     $errors[] = $l($copy['lf'], 'err_load_form');
 }
 
+// ?edit=<id> reuses this form to update a listing instead of creating one.
+// Scoped to the logged-in farmer so the id cannot be swapped for someone else's.
+$editId = (int) ($_GET['edit'] ?? $_POST['edit_id'] ?? 0);
+$editing = null;
+if ($editId > 0) {
+    $stmt = DB::pdo()->prepare('SELECT * FROM produce_listings WHERE id = :id AND farmer_id = :farmer');
+    $stmt->execute(['id' => $editId, 'farmer' => (int) $_SESSION['user_id']]);
+    $editing = $stmt->fetch() ?: null;
+    if (!$editing) {
+        http_response_code(404);
+        exit('Listing not found.');
+    }
+    // Prefill from the row; after a failed POST $old already holds the user's input.
+    if (!$old) {
+        $old = $editing;
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
 
@@ -80,14 +98,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = sprintf($l($copy['lf'], 'err_too_long'), $max);
     }
 
-    // Validate dates
-    if ($harvestDate !== null) {
+    // Validate dates. The "not in the past" rules are creation rules: an existing
+    // listing legitimately carries a past harvest date, so enforcing them on edit
+    // would make every older listing impossible to save.
+    if (!$editing && $harvestDate !== null) {
         if (strtotime($harvestDate) < strtotime('today')) {
             $errors[] = $l($copy['lf'], 'err_harvest_past');
         }
     }
     if ($expiryDate !== null) {
-        if (strtotime($expiryDate) < strtotime('today')) {
+        if (!$editing && strtotime($expiryDate) < strtotime('today')) {
             $errors[] = $l($copy['lf'], 'err_expiry_past');
         }
         if ($harvestDate !== null && strtotime($expiryDate) < strtotime($harvestDate)) {
@@ -178,55 +198,106 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         try {
-            // Insert listing
-            $stmt = DB::pdo()->prepare(
-                'INSERT INTO produce_listings
-                    (farmer_id, category_id, unit_id, name, description, price_per_unit,
-                     available_quantity, minimum_order_qty, maximum_order_qty,
-                     harvest_date, expiry_date, is_organic, status, published_at)
-                 VALUES
-                    (:farmer_id, :category_id, :unit_id, :name, :description, :price_per_unit,
-                     :available_quantity, :minimum_order_qty, :maximum_order_qty,
-                     :harvest_date, :expiry_date, :is_organic, :status, NOW())'
-            );
-            $stmt->execute([
-                'farmer_id' => $farmerId,
-                'category_id' => $categoryId,
-                'unit_id' => $unitId,
-                'name' => $name,
-                'description' => $description,
-                'price_per_unit' => $pricePerUnit,
-                'available_quantity' => $availableQuantity,
-                'minimum_order_qty' => $minimumOrderQty,
-                'maximum_order_qty' => $maximumOrderQty,
-                'harvest_date' => $harvestDate,
-                'expiry_date' => $expiryDate,
-                'is_organic' => $isOrganic,
-                'status' => 'active'
-            ]);
+            if ($editing) {
+                // Edit: available_quantity is deliberately absent here. It moves
+                // through stock_apply() below so the ledger stays in step
+                // (FR-LIST-029/030) instead of being silently overwritten.
+                $stmt = DB::pdo()->prepare(
+                    'UPDATE produce_listings
+                        SET category_id = :category_id, unit_id = :unit_id, name = :name,
+                            description = :description, price_per_unit = :price_per_unit,
+                            minimum_order_qty = :minimum_order_qty, maximum_order_qty = :maximum_order_qty,
+                            harvest_date = :harvest_date, expiry_date = :expiry_date, is_organic = :is_organic
+                      WHERE id = :id AND farmer_id = :farmer_id'
+                );
+                $stmt->execute([
+                    'category_id' => $categoryId,
+                    'unit_id' => $unitId,
+                    'name' => $name,
+                    'description' => $description,
+                    'price_per_unit' => $pricePerUnit,
+                    'minimum_order_qty' => $minimumOrderQty,
+                    'maximum_order_qty' => $maximumOrderQty,
+                    'harvest_date' => $harvestDate,
+                    'expiry_date' => $expiryDate,
+                    'is_organic' => $isOrganic,
+                    'id' => $editId,
+                    'farmer_id' => $farmerId,
+                ]);
 
-            $listingId = (int) DB::pdo()->lastInsertId();
+                $listingId = $editId;
 
-              // Record opening quantity for stock history (FR-LIST-029).
-              DB::pdo()->prepare(
-                  'INSERT INTO stock_adjustments
-                      (listing_id, adjustment_type, quantity_change, quantity_before, quantity_after, reference_type, reference_id, notes, created_by)
-                   VALUES
-                      (:listing_id, :type, :change, :before, :after, :ref_type, :ref_id, :notes, :created_by)'
-              )->execute([
-                  'listing_id' => $listingId,
-                  'type'       => 'initial',
-                  'change'     => $availableQuantity,
-                  'before'     => 0,
-                  'after'      => $availableQuantity,
-                  'ref_type'   => 'manual',
-                  'ref_id'     => null,
-                  'notes'      => 'Opening quantity when the listing was created.',
-                  'created_by' => $farmerId,
-              ]);
+                // Re-read the live quantity: an order may have landed since the
+                // form was rendered, and the delta must be against the real value.
+                $q = DB::pdo()->prepare('SELECT available_quantity FROM produce_listings WHERE id = :id');
+                $q->execute(['id' => $listingId]);
+                $before = (float) $q->fetchColumn();
+                $delta = round($availableQuantity - $before, 4);
+                if ($delta !== 0.0) {
+                    // shortcut: stock_adjustments has no farmer self-correction
+                    // type, so increases log as restock and decreases as spoilage.
+                    // Nothing reads adjustment_type yet; add a value if it is ever
+                    // surfaced in reporting.
+                    stock_apply(DB::pdo(), $listingId, $delta,
+                        $delta > 0 ? 'restock' : 'spoilage', null, $farmerId,
+                        'Quantity corrected from ' . qty_str($before) . ' to ' . qty_str($availableQuantity) . ' via listing edit.');
+                }
+            } else {
+                // Insert listing
+                $stmt = DB::pdo()->prepare(
+                    'INSERT INTO produce_listings
+                        (farmer_id, category_id, unit_id, name, description, price_per_unit,
+                         available_quantity, minimum_order_qty, maximum_order_qty,
+                         harvest_date, expiry_date, is_organic, status, published_at)
+                     VALUES
+                        (:farmer_id, :category_id, :unit_id, :name, :description, :price_per_unit,
+                         :available_quantity, :minimum_order_qty, :maximum_order_qty,
+                         :harvest_date, :expiry_date, :is_organic, :status, NOW())'
+                );
+                $stmt->execute([
+                    'farmer_id' => $farmerId,
+                    'category_id' => $categoryId,
+                    'unit_id' => $unitId,
+                    'name' => $name,
+                    'description' => $description,
+                    'price_per_unit' => $pricePerUnit,
+                    'available_quantity' => $availableQuantity,
+                    'minimum_order_qty' => $minimumOrderQty,
+                    'maximum_order_qty' => $maximumOrderQty,
+                    'harvest_date' => $harvestDate,
+                    'expiry_date' => $expiryDate,
+                    'is_organic' => $isOrganic,
+                    'status' => 'active'
+                ]);
+
+                $listingId = (int) DB::pdo()->lastInsertId();
+
+                // Record opening quantity for stock history (FR-LIST-029).
+                DB::pdo()->prepare(
+                    'INSERT INTO stock_adjustments
+                        (listing_id, adjustment_type, quantity_change, quantity_before, quantity_after, reference_type, reference_id, notes, created_by)
+                     VALUES
+                        (:listing_id, :type, :change, :before, :after, :ref_type, :ref_id, :notes, :created_by)'
+                )->execute([
+                    'listing_id' => $listingId,
+                    'type'       => 'initial',
+                    'change'     => $availableQuantity,
+                    'before'     => 0,
+                    'after'      => $availableQuantity,
+                    'ref_type'   => 'manual',
+                    'ref_id'     => null,
+                    'notes'      => 'Opening quantity when the listing was created.',
+                    'created_by' => $farmerId,
+                ]);
+            }
 
             // If we have a primary image, add it to listing_images
             if ($primaryImage) {
+                // Only one row may be primary; on edit demote the previous one.
+                if ($editing) {
+                    DB::pdo()->prepare('UPDATE listing_images SET is_primary = 0 WHERE listing_id = :id')
+                        ->execute(['id' => $listingId]);
+                }
                 $imageStmt = DB::pdo()->prepare(
                     'INSERT INTO listing_images (listing_id, image_path, is_primary, sort_order)
                      VALUES (:listing_id, :image_path, 1, 0)'
@@ -252,7 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            flash_set('success', $l($copy['lf'], 'submit_success'));
+            flash_set('success', $l($copy['lf'], $editing ? 'edit_success' : 'submit_success'));
             redirect_to('dashboard.php');
             exit;
         } catch (Exception $e) {
@@ -262,7 +333,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$pageTitle = $l($copy['lf'], 'title');
+$pageTitle = $l($copy['lf'], $editing ? 'edit_title' : 'title');
 $activePage = 'create_listing';
 require __DIR__ . '/partials/dashboard-layout.php';
 ?>
@@ -286,6 +357,9 @@ require __DIR__ . '/partials/dashboard-layout.php';
 
             <form method="post" action="create_listing.php" enctype="multipart/form-data">
                 <?= csrf_field() ?>
+                <?php if ($editing): ?>
+                    <input type="hidden" name="edit_id" value="<?= (int) $editId ?>">
+                <?php endif; ?>
 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:28px;">
                     <div>
@@ -389,7 +463,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
 
                 <div style="display:flex; gap:12px; align-items:center;">
                     <button class="btn btn-primary" type="submit">
-                        <i class="bi bi-plus-circle me-1"></i> <?= $l($copy['lf'], 'create_btn') ?>
+                        <i class="bi bi-<?= $editing ? 'check-lg' : 'plus-circle' ?> me-1"></i> <?= $l($copy['lf'], $editing ? 'save_btn' : 'create_btn') ?>
                     </button>
                     <a href="dashboard.php" class="btn btn-outline" style="font-size:14px; font-weight:500;">
                         <?= $l($copy['lf'], 'cancel') ?>

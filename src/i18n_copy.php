@@ -703,6 +703,8 @@ return [
 'lf' => [
     'en' => [
         'title' => 'Create New Listing',
+        'edit_title' => 'Edit Listing',
+        'edit_success' => 'Listing updated successfully!',
         'submit_success' => 'Listing created successfully!',
         'err_load_form' => 'Unable to load form data. Please try again later.',
         'err_gen' => 'Something went wrong while creating your listing. Please try again.',
@@ -727,6 +729,7 @@ return [
         'gallery' => 'Gallery Images (optional)',
         'gallery_hint' => 'Max size: 5MB each. Allowed types: JPG, PNG, WebP',
         'create_btn' => 'Create Listing',
+        'save_btn' => 'Save Changes',
         'cancel' => 'Cancel',
         'err_category' => 'Please select a category.',
         'err_unit' => 'Please select a unit.',
@@ -748,6 +751,8 @@ return [
     ],
     'tl' => [
         'title' => 'Gumawa ng Bagong Listing',
+        'edit_title' => 'I-edit ang Listing',
+        'edit_success' => 'Matagumpay na na-update ang listing!',
         'submit_success' => 'Matagumpay na nagawa ang listing!',
         'err_load_form' => 'Hindi ma-load ang data ng form. Pakisubukan muli mamaya.',
         'err_gen' => 'May nangyaring mali sa paggawa ng iyong listing. Pakisubukan muli.',
@@ -772,6 +777,7 @@ return [
         'gallery' => 'Gallery Images (opsyonal)',
         'gallery_hint' => 'Max size: 5MB bawat isa. Allow na types: JPG, PNG, WebP',
         'create_btn' => 'Gumawa ng Listing',
+        'save_btn' => 'I-save ang mga Pagbabago',
         'cancel' => 'Kanselahin',
         'err_category' => 'Pumili ng kategorya.',
         'err_unit' => 'Pumili ng unit.',

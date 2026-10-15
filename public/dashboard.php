@@ -133,11 +133,15 @@ if ($role === 'admin') {
     ];
 
     $ls = $pdo->prepare(
-        'SELECT pl.*, pc.name AS category_name, qu.symbol AS unit_symbol
+        'SELECT pl.*, pc.name AS category_name, qu.symbol AS unit_symbol,
+                (SELECT li.image_path FROM listing_images li
+                  WHERE li.listing_id = pl.id AND li.is_primary = 1
+                  ORDER BY li.sort_order LIMIT 1) AS primary_image
          FROM produce_listings pl
          JOIN produce_categories pc ON pl.category_id = pc.id
          JOIN quantity_units qu ON pl.unit_id = qu.id
-         WHERE pl.farmer_id = :id ORDER BY pl.created_at DESC'
+         WHERE pl.farmer_id = :id AND pl.status <> \'archived\'
+         ORDER BY pl.created_at DESC'
     );
     $ls->execute(['id' => $userId]);
     $farmerListings = $ls->fetchAll();
@@ -405,10 +409,10 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 'image_path' => $l['primary_image'] ?? fallback_produce_image(),
                 'is_fresh' => $l['status'] === 'active',
                 'is_saved' => false,
+                'status' => $l['status'],
                 'qty_available' => (int) ($l['available_quantity'] ?? 0),
               ];
-              $mode = 'grid';
-              $showActions = false;
+              $mode = 'farmer';
               include __DIR__ . '/partials/listing-card.php';
               ?>
             <?php endforeach; ?>
