@@ -24,6 +24,7 @@ $status = $listing['status'] ?? 'active';
 $cardClasses = 'card h-100';
 if ($mode === 'horizontal') $cardClasses .= ' flex-row';
 if ($mode === 'featured') $cardClasses .= ' feature-card';
+if ($isFarmer) $cardClasses .= ' card-farmer';
 ?>
 <article class="<?= e($cardClasses) ?>" data-reveal="stagger" itemscope itemtype="https://schema.org/Product">
   <div class="thumb" itemprop="image">
@@ -51,7 +52,7 @@ if ($mode === 'featured') $cardClasses .= ' feature-card';
     </div>
 
     <?php if ($isFarmer): ?>
-      <div class="mb-2"><?= status_badge($status) ?></div>
+      <div><?= status_badge($status) ?></div>
     <?php endif; ?>
 
     <div class="row">
@@ -76,7 +77,7 @@ if ($mode === 'featured') $cardClasses .= ' feature-card';
     <?php if ($isFarmer): ?>
       <?php $canPause = $status === 'active'; ?>
       <?php $canResume = $status === 'paused'; ?>
-      <div class="card-actions mt-auto">
+      <div class="card-actions mt-auto flex-column">
         <div class="d-flex gap-2">
           <a href="<?= e($listingUrl) ?>" class="btn btn-outline-primary btn-sm flex-grow-1">
             <i class="bi bi-eye me-1" aria-hidden="true"></i>View
@@ -85,7 +86,7 @@ if ($mode === 'featured') $cardClasses .= ' feature-card';
             <i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit
           </a>
         </div>
-        <div class="d-flex gap-2 mt-2">
+        <div class="d-flex gap-2">
           <?php if ($canPause || $canResume): ?>
             <form method="post" action="listing_action.php" class="mb-0 flex-grow-1">
               <?= csrf_field() ?>

@@ -1349,6 +1349,16 @@ h1, h2, h3, h4, h5, h6,
   font-size: 1.1rem;
   margin-bottom: 0;
 }
+/* .row inside a card body is a single-column wrapper. Its .col keeps Bootstrap's
+   12px gutter, which pushed the title, farmer line and price 12px past the card
+   padding, so they did not line up with the thumb badge or the buttons below. */
+.card .body .row > .col { padding-left: 0; padding-right: 0; }
+/* Farmer cards add a status chip and a two-row action grid, so the margins sized
+   for buyer cards read as an uneven 6.4 / 8 / 6.4 / 6.4px rhythm. One gap for the
+   stack instead; the chip and the button grid keep their own spacing. */
+.card-farmer .body { gap: 0.5rem; }
+.card-farmer .body > * { margin-bottom: 0 !important; }
+.card-farmer .body .price { margin-bottom: 0 !important; }
 .card .price {
   font-family: var(--font-display);
   font-optical-sizing: auto;
