@@ -2521,7 +2521,8 @@ h1, h2, h3, h4, h5, h6,
   font-weight: 500;
   border-radius: var(--radius-sm);
   border-left: 2px solid transparent;
-  transition: background var(--hover-speed) ease, color var(--hover-speed) ease;
+  transition: background var(--hover-speed) ease, color var(--hover-speed) ease,
+    border-color var(--hover-speed) ease, transform var(--hover-speed) ease;
 }
 .sidebar-link i { font-size: 0.95rem; flex: 0 0 auto; }
 .sidebar-link:hover {
@@ -3516,7 +3517,11 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 :root[data-theme="dark"] .sidebar-link {
   color: var(--text);
 }
-:root[data-theme="dark"] .sidebar-link:hover,
+/* Neutral hover in dark mode, so hovering never mimics the gold active indicator. */
+:root[data-theme="dark"] .sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
 :root[data-theme="dark"] .sidebar-link.is-active {
   background-color: var(--sidebar-active-bg);
   color: var(--gold-text);
