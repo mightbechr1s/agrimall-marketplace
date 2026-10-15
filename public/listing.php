@@ -64,7 +64,7 @@ $fmtQty = function ($value, $symbol): string {
 <main id="main-content" class="container py-5">
 <?php endif; ?>
     <div class="mb-3">
-        <button type="button" class="btn btn-outline-primary" onclick="if (history.length > 1) history.back(); else location.href = 'browse.php';" aria-label="Back">
+        <button type="button" class="btn btn-outline btn-sm" onclick="if (history.length > 1) history.back(); else location.href = 'browse.php';" aria-label="Back">
             <i class="bi bi-arrow-left me-1" aria-hidden="true"></i><?= $l($copy['listing'], 'back_to_market') ?? 'Back to marketplace' ?>
         </button>
     </div>

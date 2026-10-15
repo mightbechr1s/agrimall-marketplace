@@ -95,9 +95,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = $l($copy['settings'], 'page_title');
-require __DIR__ . '/partials/header.php';
+$activePage = 'settings';
+require __DIR__ . '/partials/dashboard-layout.php';
 ?>
-<main id="main-content" class="settings-wrap">
     <div class="settings-container">
         <div class="settings-header">
             <h1><?= $l($copy['settings'], 'page_title') ?></h1>
@@ -166,7 +166,6 @@ require __DIR__ . '/partials/header.php';
             <a href="dashboard.php" class="btn btn-outline"><?= $l($copy['settings'], 'button_cancel') ?></a>
         </form>
     </div>
-</main>
 <script>
   // Sync theme select with effective theme (data-theme attr).
   // Single source of truth for what user sees.
@@ -200,4 +199,4 @@ require __DIR__ . '/partials/header.php';
   })();
 </script>
 <?php endif; ?>
-<?php require __DIR__ . '/partials/footer.php'; ?>
+<?php require __DIR__ . '/partials/dashboard-footer.php'; ?>

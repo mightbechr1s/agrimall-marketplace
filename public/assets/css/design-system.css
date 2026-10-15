@@ -139,6 +139,11 @@ h1, h2, h3, h4, h5, h6,
   overflow: hidden;
   transition: transform var(--hover-speed) ease, box-shadow var(--hover-speed) ease, border-color var(--hover-speed) ease;
 }
+
+/* Settings fieldsets read as panels, so they take the card radius. */
+.settings-form fieldset {
+  border-radius: var(--radius-card);
+}
 .card:hover, .panel:hover, .dash-panel:hover,
 .feature-card:hover, .hero-card:hover {
   border-color: color-mix(in srgb, var(--gold) 55%, var(--borders));
