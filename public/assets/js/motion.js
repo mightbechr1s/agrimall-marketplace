@@ -645,6 +645,62 @@ function initTocSpy() {
   update();
 }
 
+/* ── Sidebar section scrollspy ────────────────────────────── */
+// Menu items pointing at a section on the current page (e.g. dashboard.php#orders)
+// take the active indicator once that section is reached, so the indicator is not
+// stuck on the page link when the menu link is only a same-page anchor.
+function initSidebarSpy() {
+  const all = [...document.querySelectorAll('.sidebar-nav .sidebar-link')];
+  const page = location.pathname.split('/').pop() || 'index.php';
+  const sections = [];
+  all.forEach(link => {
+    const [path, hash] = (link.getAttribute('href') || '').split('#');
+    if (!hash || (path && path !== page)) return;
+    const target = document.getElementById(hash);
+    if (target) sections.push({ link, target });
+  });
+  if (!sections.length) return;
+  // Document order decides the current section, whatever order the menu lists them in.
+  sections.sort((a, b) => (a.target.compareDocumentPosition(b.target) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1);
+
+  // Server-rendered page link, restored when scrolled back above every section.
+  const fallback = document.querySelector('.sidebar-nav .sidebar-link.is-active');
+  const setActive = (link) => all.forEach(l => l.classList.toggle('is-active', l === link));
+
+  let paused = false;
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    if (paused) return;
+    let current = fallback;
+    for (const s of sections) {
+      if (s.target.getBoundingClientRect().top <= 140) current = s.link;
+    }
+    // A short trailing section can never reach the line, so the page bottom selects it.
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    if (max > 0 && window.scrollY >= max - 2) current = sections[sections.length - 1].link;
+    setActive(current);
+  };
+  const onScroll = () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  // A clicked section wins until the next real scroll, so the smooth scroll in
+  // progress cannot flash an intermediate section.
+  ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(ev => {
+    window.addEventListener(ev, () => { paused = false; }, { passive: true });
+  });
+  all.forEach(link => link.addEventListener('click', () => {
+    if (!sections.some(s => s.link === link)) return;
+    paused = true;
+    setActive(link);
+  }));
+
+  update();
+}
+
 /* ── Initialize ───────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   initThemeToggle();
@@ -663,6 +719,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMobileMenu();
   initSidebar();
   initTocSpy();
+  initSidebarSpy();
 
   // Show any toasts already in markup
   document.querySelectorAll('.toast-item').forEach(toast => {
