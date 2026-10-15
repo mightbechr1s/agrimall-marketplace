@@ -341,7 +341,20 @@ require __DIR__ . '/partials/dashboard-layout.php';
 <div class="dash-panel">
     <div class="dash-panel-header">
         <h1><?= e($pageTitle) ?></h1>
-        <a href="dashboard.php" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left me-1"></i> Back</a>
+        <div class="d-flex gap-2">
+            <?php if ($editing && in_array($editing['status'], ['active', 'paused'], true)): ?>
+                <?php $pausing = $editing['status'] === 'active'; ?>
+                <form method="post" action="listing_action.php" class="mb-0">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="listing_id" value="<?= (int) $editId ?>">
+                    <input type="hidden" name="return_to" value="create_listing.php?edit=<?= (int) $editId ?>">
+                    <button type="submit" name="action" value="<?= $pausing ? 'pause' : 'resume' ?>" class="btn btn-outline btn-sm">
+                        <i class="bi bi-<?= $pausing ? 'pause' : 'play' ?>-fill me-1"></i><?= $pausing ? 'Pause' : 'Resume' ?>
+                    </button>
+                </form>
+            <?php endif; ?>
+            <a href="dashboard.php" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left me-1"></i> Back</a>
+        </div>
     </div>
         <div style="padding: 32px;">
             <?php if ($errors): ?>

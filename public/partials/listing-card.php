@@ -75,9 +75,7 @@ if ($isFarmer) $cardClasses .= ' card-farmer';
     </div>
 
     <?php if ($isFarmer): ?>
-      <?php $canPause = $status === 'active'; ?>
-      <?php $canResume = $status === 'paused'; ?>
-      <div class="card-actions mt-auto flex-column">
+      <div class="card-actions mt-auto">
         <div class="d-flex gap-2">
           <a href="<?= e($listingUrl) ?>" class="btn btn-outline-primary btn-sm flex-grow-1">
             <i class="bi bi-eye me-1" aria-hidden="true"></i>View
@@ -85,23 +83,11 @@ if ($isFarmer) $cardClasses .= ' card-farmer';
           <a href="create_listing.php?edit=<?= (int) $listing['id'] ?>" class="btn btn-outline-primary btn-sm flex-grow-1">
             <i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit
           </a>
-        </div>
-        <div class="d-flex gap-2">
-          <?php if ($canPause || $canResume): ?>
-            <form method="post" action="listing_action.php" class="mb-0 flex-grow-1">
-              <?= csrf_field() ?>
-              <input type="hidden" name="listing_id" value="<?= (int) $listing['id'] ?>">
-              <button type="submit" name="action" value="<?= $canPause ? 'pause' : 'resume' ?>" class="btn btn-outline-secondary btn-sm w-100">
-                <i class="bi bi-<?= $canPause ? 'pause' : 'play' ?>-fill me-1" aria-hidden="true"></i><?= $canPause ? 'Pause' : 'Resume' ?>
-              </button>
-            </form>
-          <?php else: ?>
-            <span class="flex-grow-1"></span>
-          <?php endif; ?>
           <form method="post" action="listing_action.php" class="mb-0 flex-grow-1"
                 onsubmit="return confirm('Delete this listing? Buyers will no longer see it.');">
             <?= csrf_field() ?>
             <input type="hidden" name="listing_id" value="<?= (int) $listing['id'] ?>">
+            <input type="hidden" name="return_to" value="dashboard.php#listings">
             <button type="submit" name="action" value="delete" class="btn btn-outline-danger btn-sm w-100">
               <i class="bi bi-trash me-1" aria-hidden="true"></i>Delete
             </button>

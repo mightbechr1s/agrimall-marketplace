@@ -11,6 +11,12 @@ csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
 $listingId = (int) ($_POST['listing_id'] ?? 0);
 $action    = $_POST['action'] ?? '';
 
+// Return to whichever page sent the action, so a pause from the edit form comes
+// back to the form instead of discarding edits in progress.
+$returnTo = is_safe_path((string) ($_POST['return_to'] ?? ''))
+    ? (string) $_POST['return_to']
+    : 'dashboard.php#listings';
+
 if (!$listingId || !$action) {
     flash_set('error', 'Invalid request.');
     redirect_to('/dashboard.php');
@@ -72,10 +78,10 @@ try {
 
     $pdo->commit();
     flash_set('success', 'Listing is now ' . str_replace('_', ' ', $newStatus) . '.');
-    redirect_to('/dashboard.php#listings');
+    redirect_to($returnTo);
 
 } catch (Throwable $e) {
     $pdo->rollBack();
     flash_set('error', $e->getMessage());
-    redirect_to('/dashboard.php#listings');
+    redirect_to($returnTo);
 }
