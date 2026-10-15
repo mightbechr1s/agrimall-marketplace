@@ -50,10 +50,11 @@ foreach ($items as $item) {
     }
 }
 
+$activePage = 'notifications';
 $pageTitle = $l($copy['notifications'], 'page_title');
-require __DIR__ . '/partials/header.php';
+require __DIR__ . '/partials/dashboard-layout.php';
 ?>
-<main id="main-content" class="settings-wrap">
+<div class="settings-wrap">
     <div class="settings-container">
         <div class="settings-header">
             <h1><?= e($l($copy['notifications'], 'page_title')) ?></h1>
@@ -123,5 +124,5 @@ require __DIR__ . '/partials/header.php';
             <?php endif; ?>
         <?php endif; ?>
     </div>
-</main>
-<?php require __DIR__ . '/partials/footer.php'; ?>
+</div>
+<?php require __DIR__ . '/partials/dashboard-footer.php'; ?>
