@@ -348,8 +348,8 @@ require __DIR__ . '/partials/dashboard-layout.php';
                     <?= csrf_field() ?>
                     <input type="hidden" name="listing_id" value="<?= (int) $editId ?>">
                     <input type="hidden" name="return_to" value="create_listing.php?edit=<?= (int) $editId ?>">
-                    <button type="submit" name="action" value="<?= $pausing ? 'pause' : 'resume' ?>" class="btn btn-outline btn-sm">
-                        <i class="bi bi-<?= $pausing ? 'pause' : 'play' ?>-fill me-1"></i><?= $pausing ? 'Pause' : 'Resume' ?>
+                    <button type="submit" id="listing-status-toggle" name="action" value="<?= $pausing ? 'pause' : 'resume' ?>" class="btn btn-outline btn-sm">
+                        <i class="bi bi-<?= $pausing ? 'pause' : 'play' ?>-fill me-1"></i><?= $l($copy['lf'], $pausing ? 'pause' : 'resume') ?>
                     </button>
                 </form>
             <?php endif; ?>
@@ -475,7 +475,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 </div>
 
                 <div style="display:flex; gap:12px; align-items:center;">
-                    <button class="btn btn-primary" type="submit">
+                    <button class="btn btn-primary" id="listing-submit" type="submit">
                         <i class="bi bi-<?= $editing ? 'check-lg' : 'plus-circle' ?> me-1"></i> <?= $l($copy['lf'], $editing ? 'save_btn' : 'create_btn') ?>
                     </button>
                     <a href="dashboard.php" class="btn btn-outline" style="font-size:14px; font-weight:500;">
