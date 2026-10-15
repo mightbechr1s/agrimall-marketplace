@@ -358,6 +358,31 @@ function preview(?string $text, int $length = 110): string
     return strlen($text) > $length ? substr($text, 0, $length - 3) . '...' : $text;
 }
 
+/**
+ * Colour family for a status value, so the same status reads the same way on
+ * every page: settled, in progress, waiting, stopped, or dormant.
+ */
+function status_variant(string $status): string
+{
+    static $families = [
+        'active' => 'success', 'approved' => 'success', 'completed' => 'success',
+        'delivered' => 'success', 'verified' => 'success',
+        'confirmed' => 'info', 'preparing' => 'info', 'out_for_delivery' => 'info',
+        'ready_for_pickup' => 'info', 'shipped' => 'info',
+        'pending' => 'warning', 'pending_verification' => 'warning',
+        'delivery_fee_review' => 'warning',
+        'cancelled' => 'danger', 'rejected' => 'danger', 'suspended' => 'danger',
+    ];
+    return $families[$status] ?? 'secondary';
+}
+
+/** Status chip. */
+function status_badge(string $status): string
+{
+    return '<span class="dash-badge dash-badge--' . status_variant($status) . '">'
+        . e(str_replace('_', ' ', $status)) . '</span>';
+}
+
 /** Generate a human order reference like AM-20260915-4F9E2C. */
 function order_ref(): string
 {

@@ -762,7 +762,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <td class="cell-muted text-nowrap"><?= e(date('Y-m-d', strtotime($r['created_at']))) ?></td>
                 <td><?= e($r['email']) ?></td>
                 <td><span class="dash-badge <?= $r['role'] === 'farmer' ? 'dash-badge--role-farmer' : ($r['role'] === 'admin' ? 'dash-badge--role-admin' : 'dash-badge--role-buyer') ?>"><?= e(ucfirst($r['role'])) ?></span></td>
-                <td class="cell-muted"><?= e(ucfirst(str_replace('_', ' ', $r['status']))) ?></td>
+                <td><?= status_badge($r['status']) ?></td>
             </tr>
             <?php endforeach; ?>
         </tbody>
@@ -781,7 +781,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <td class="cell-muted"><?= e($r['unit_symbol'] ?? '') ?></td>
                 <td class="text-end"><?= p($r['price_per_unit']) ?></td>
                 <td class="text-end"><?= e(fmt_qty($r['available_quantity'])) ?></td>
-                <td><?= e(ucfirst(str_replace('_', ' ', $r['status']))) ?></td>
+                <td><?= status_badge($r['status']) ?></td>
                 <td class="cell-muted text-nowrap"><?= $r['published_at'] ? e(date('Y-m-d', strtotime($r['published_at']))) : '—' ?></td>
             </tr>
             <?php endforeach; ?>
@@ -807,7 +807,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <td class="text-end"><?= p($r['delivery_fee']) ?></td>
                 <td class="text-end fw-medium"><?= p($r['produce_subtotal'] + $r['delivery_fee']) ?></td>
                 <td class="cell-muted"><?= $r['delivery_method'] === 'farmer_delivery' ? 'Delivery' : 'Pickup' ?></td>
-                <td><span class="dash-badge dash-badge--secondary"><?= e(str_replace('_', ' ', $r['status'])) ?></span></td>
+                <td><?= status_badge($r['status']) ?></td>
             </tr>
             <?php endforeach; ?>
         </tbody>
@@ -830,15 +830,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <td class="cell-muted"><?= e($r['municipality_city'] . ', ' . $r['province']) ?></td>
                 <td class="cell-muted text-nowrap"><?= e(date('Y-m-d', strtotime($r['created_at']))) ?></td>
                 <td class="cell-muted"><?= e(ucwords(str_replace('_', ' ', $r['valid_id_type']))) ?></td>
-                <td>
-                    <?php if ($r['verification_status'] === 'approved'): ?>
-                        <span class="dash-badge dash-badge--success">Approved</span>
-                    <?php elseif ($r['verification_status'] === 'rejected'): ?>
-                        <span class="dash-badge dash-badge--danger">Rejected</span>
-                    <?php else: ?>
-                        <span class="dash-badge dash-badge--secondary">Pending</span>
-                    <?php endif; ?>
-                </td>
+                <td><?= status_badge($r['verification_status']) ?></td>
                 <td class="cell-muted text-nowrap"><?= $r['verified_at'] ? e(date('Y-m-d', strtotime($r['verified_at']))) : '—' ?></td>
                 <td class="cell-muted"><?= e($r['reviewer_email'] ?? '—') ?></td>
                 <td class="cell-muted"><?= e($r['rejection_reason'] ?? '—') ?></td>
@@ -863,7 +855,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <td class="text-end"><?= p($r['delivery_fee']) ?></td>
                 <td class="text-end fw-medium"><?= p($r['final_total']) ?></td>
                 <td class="cell-muted"><?= $r['delivery_method'] === 'farmer_delivery' ? 'Delivery' : 'Pickup' ?></td>
-                <td><span class="dash-badge dash-badge--secondary"><?= e(str_replace('_', ' ', $r['status'])) ?></span></td>
+                <td><?= status_badge($r['status']) ?></td>
             </tr>
             <?php endforeach; ?>
         </tbody>

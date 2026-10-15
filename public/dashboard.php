@@ -8,20 +8,6 @@ $pageTitle = 'Dashboard';
 $activePage = 'dashboard';
 
 // Helpers
-function status_badge(string $status): string
-{
-    $map = [
-        'active' => 'success', 'completed' => 'success', 'confirmed' => 'info',
-        'out_for_delivery' => 'info', 'preparing' => 'info', 'ready_for_pickup' => 'info',
-        'pending' => 'warning', 'delivery_fee_review' => 'warning',
-        'pending_verification' => 'warning', 'paused' => 'warning',
-        'draft' => 'secondary', 'archived' => 'secondary', 'sold_out' => 'secondary',
-        'rejected' => 'danger', 'cancelled' => 'danger', 'suspended' => 'danger',
-    ];
-    $variant = $map[$status] ?? 'secondary';
-    return '<span class="dash-badge dash-badge--' . $variant . '">' . e($status) . '</span>';
-}
-
 function order_total(array $order): string
 {
     $total = ((float) $order['unit_price'] * (float) $order['quantity']) + (float) $order['delivery_fee'];
@@ -50,22 +36,26 @@ if ($role === 'admin') {
         'Users' => [
             'value' => (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn(),
             'trend' => $usersNew . ' new this week',
-            'icon' => 'bi-people'
+            'icon' => 'bi-people',
+            'variant' => 'info'
         ],
         'Pending Verifications' => [
             'value' => (int) $pdo->query('SELECT COUNT(*) FROM farmer_profiles WHERE verification_status = \'pending\'')->fetchColumn(),
             'trend' => 'awaiting review',
-            'icon' => 'bi-patch-check-fill'
+            'icon' => 'bi-patch-check-fill',
+            'variant' => 'warning'
         ],
         'Active Listings' => [
             'value' => (int) $pdo->query('SELECT COUNT(*) FROM produce_listings WHERE status = \'active\'')->fetchColumn(),
             'trend' => $listingsNew . ' new this week',
-            'icon' => 'bi-basket3-fill'
+            'icon' => 'bi-basket3-fill',
+            'variant' => 'success'
         ],
         'Pending Orders' => [
             'value' => (int) $pdo->query('SELECT COUNT(*) FROM orders WHERE status IN (\'pending\',\'delivery_fee_review\')')->fetchColumn(),
             'trend' => $ordersNew . ' placed this week',
-            'icon' => 'bi-clock-history'
+            'icon' => 'bi-clock-history',
+            'variant' => 'warning'
         ],
     ];
     $orders = $pdo->query('SELECT * FROM v_order_summary ORDER BY created_at DESC LIMIT 10')->fetchAll();
@@ -125,17 +115,20 @@ if ($role === 'admin') {
             'value' => $totalEarnings,
             'trend' => $completed . ' completed order' . ($completed === 1 ? '' : 's'),
             'icon' => 'bi-currency-dollar',
-            'type' => 'money'
+            'type' => 'money',
+            'variant' => 'success'
         ],
         'Volume Sold' => [
             'value' => $totalVolume,
             'trend' => $closed . ' cancelled/rejected',
-            'icon' => 'bi-box-seam'
+            'icon' => 'bi-box-seam',
+            'variant' => 'info'
         ],
         'Pending Orders' => [
             'value' => (int) $pendingOrders->fetchColumn(),
             'trend' => 'awaiting action',
-            'icon' => 'bi-clock-history'
+            'icon' => 'bi-clock-history',
+            'variant' => 'warning'
         ],
     ];
 
@@ -167,17 +160,20 @@ if ($role === 'admin') {
         'Total Orders' => [
             'value' => count($orders),
             'trend' => '+7%',
-            'icon' => 'bi-receipt'
+            'icon' => 'bi-receipt',
+            'variant' => 'info'
         ],
         'Active Orders' => [
             'value' => $activeOrders,
             'trend' => '+5%',
-            'icon' => 'bi-clock'
+            'icon' => 'bi-clock',
+            'variant' => 'warning'
         ],
         'Completed' => [
             'value' => count($orders) - $activeOrders,
             'trend' => '+3%',
-            'icon' => 'bi-check-circle'
+            'icon' => 'bi-check-circle',
+            'variant' => 'success'
         ],
     ];
 }
@@ -195,7 +191,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
     <div class="row g-4 mb-4" data-reveal="stagger">
         <?php foreach ($stats as $label => $data): ?>
             <div class="col-6 col-lg-3">
-<div class="stat-card" data-reveal="stagger">
+<div class="stat-card stat-card--<?= e($data['variant'] ?? 'info') ?>" data-reveal="stagger">
                     <div class="stat-content">
                         <div class="stat-icon"><i class="bi <?= e($data['icon']) ?>" aria-hidden="true"></i></div>
                         <div class="stat-body">
@@ -371,7 +367,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
     <div class="row g-4 mb-4" data-reveal="stagger">
         <?php foreach ($stats as $label => $data): ?>
             <div class="col-6 col-lg-4">
-<div class="stat-card" data-reveal="stagger">
+<div class="stat-card stat-card--<?= e($data['variant'] ?? 'info') ?>" data-reveal="stagger">
                     <div class="stat-content">
                         <div class="stat-icon"><i class="bi <?= e($data['icon']) ?>" aria-hidden="true"></i></div>
                         <div class="stat-body">
@@ -605,7 +601,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
     <div class="row g-4 mb-4" data-reveal="stagger">
         <?php foreach ($stats as $label => $data): ?>
             <div class="col-6 col-lg-4">
-                <div class="stat-card" data-reveal="stagger">
+                <div class="stat-card stat-card--<?= e($data['variant'] ?? 'info') ?>" data-reveal="stagger">
                     <div class="stat-content">
                         <div class="stat-icon"><i class="bi <?= e($data['icon']) ?>" aria-hidden="true"></i></div>
                         <div class="stat-body">

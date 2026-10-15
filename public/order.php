@@ -12,18 +12,6 @@ $pdo = DB::pdo();
 $userId = current_user_id();
 $role = current_user_role();
 
-$map = [
-    'pending' => 'primary',
-    'delivery_fee_review' => 'primary',
-    'confirmed' => 'primary',
-    'preparing' => 'primary',
-    'ready_for_pickup' => 'primary',
-    'out_for_delivery' => 'primary',
-    'completed' => 'success',
-    'rejected' => 'danger',
-    'cancelled' => 'danger',
-];
-
 // Load order with access check
 $stmt = $pdo->prepare('SELECT * FROM v_order_summary WHERE id = :id');
 $stmt->execute(['id' => $orderId]);
@@ -55,9 +43,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
             <h1 class="h3 mb-1"><?= e($order['order_number']) ?></h1>
-            <span class="dash-badge dash-badge--<?= e($map[$order['status']] ?? 'secondary') ?>">
-                <?= e(str_replace('_', ' ', $order['status'])) ?>
-            </span>
+            <?= status_badge($order['status']) ?>
         </div>
         <a href="/dashboard.php" class="btn btn-outline btn-sm">Back to Dashboard</a>
     </div>
@@ -173,9 +159,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                                 </div>
                                 <div class="flex-grow-1">
                                     <div class="d-flex align-items-center gap-2 mb-1">
-                                        <span class="dash-badge dash-badge--<?= in_array($h['to_status'], ['completed']) ? 'success' : (in_array($h['to_status'], ['rejected','cancelled']) ? 'danger' : 'primary') ?>">
-                                            <?= e(str_replace('_', ' ', $h['to_status'])) ?>
-                                        </span>
+                                        <?= status_badge($h['to_status']) ?>
                                         <span class="text-muted small">by <?= e($h['changed_by_role']) ?></span>
                                     </div>
                                     <?php if ($h['reason']): ?>

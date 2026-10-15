@@ -28,6 +28,20 @@
   --success: #2E7D32;
   --focus-ring: #B45309;
 
+  /* Status families — one palette for status chips and dashboard tiles, so a
+     status keeps its colour page to page and theme to theme. */
+  --status-ok-ink: #1C6B3A;
+  --status-ok-fill: rgba(31, 75, 50, 0.12);
+  --status-info-ink: #1F5E97;
+  --status-info-fill: rgba(31, 94, 151, 0.12);
+  --status-warn-ink: #8A5A12;
+  --status-warn-fill: rgba(217, 154, 43, 0.16);
+  --status-bad-ink: #A3372B;
+  --status-bad-fill: rgba(176, 60, 50, 0.12);
+  --status-neutral-ink: var(--text-soft);
+  --status-neutral-fill: var(--canvas-deep);
+  --status-neutral-border: var(--borders);
+
   /* Soft alert fills + the --ok alias, used by forgot.php, create_listing.php
      and account_delete.php. Built from --danger/--success so dark theme follows. */
   --ok: var(--success);
@@ -85,6 +99,19 @@
   --danger-fill: #C0453C;
   --success: #6FCF97;
   --focus-ring: #E09F3E;
+
+  /* Light inks on dark surfaces; same names as the light theme. */
+  --status-ok-ink: #9BD5AE;
+  --status-ok-fill: rgba(140, 195, 160, 0.14);
+  --status-info-ink: #9CC6E8;
+  --status-info-fill: rgba(120, 170, 215, 0.14);
+  --status-warn-ink: #E8C27E;
+  --status-warn-fill: rgba(217, 154, 43, 0.16);
+  --status-bad-ink: #E8A09A;
+  --status-bad-fill: rgba(200, 90, 75, 0.16);
+  --status-neutral-ink: #D6D6D6;
+  --status-neutral-fill: rgba(255, 255, 255, 0.06);
+  --status-neutral-border: rgba(255, 255, 255, 0.18);
 
   /* Matches the dark canvas so the split-screen form edge is seamless. */
   --bg-primary: #121212;
@@ -3045,7 +3072,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 /* Stat cards: icon + gradient presence */
 .stat-card {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--paper) 88%, var(--gold) 12%), var(--paper)) !important;
+    linear-gradient(180deg, color-mix(in srgb, var(--paper) 88%, var(--stat-accent, var(--gold)) 12%), var(--paper)) !important;
 }
 .stat-content {
   display: flex;
@@ -3073,6 +3100,24 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 .stat-body .stat-value {
   font-size: clamp(1.7rem, 3vw, 2.3rem);
   color: var(--primary);
+}
+
+/* A tile wears the state it counts, so "needs attention" stops looking the
+   same as "all good". The variant comes from the stat array in dashboard.php. */
+.stat-card--success { --stat-accent: var(--status-ok-ink);  --stat-fill: var(--status-ok-fill); }
+.stat-card--info    { --stat-accent: var(--status-info-ink); --stat-fill: var(--status-info-fill); }
+.stat-card--warning { --stat-accent: var(--status-warn-ink); --stat-fill: var(--status-warn-fill); }
+.stat-card--danger  { --stat-accent: var(--status-bad-ink);  --stat-fill: var(--status-bad-fill); }
+.stat-card .stat-icon {
+  color: var(--stat-accent, var(--gold-deep));
+  background: var(--stat-fill, var(--gold-tint));
+  border-color: color-mix(in srgb, var(--stat-accent, var(--gold)) 32%, transparent);
+}
+.stat-card .stat-body .stat-value {
+  color: var(--stat-accent, var(--primary));
+}
+.stat-card .stat-trend.text-success {
+  color: var(--stat-accent, var(--primary)) !important;
 }
 
 /* Tables: dark-green headers, zebra rows, tighter cells */
@@ -3116,60 +3161,32 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
   border-radius: var(--radius-pill) !important;
 }
+/* Status families. Both themes read the same tokens, so the variants need no
+   per-theme overrides; the chip border comes from the shared currentColor rule. */
 .dash-badge--success {
-  color: #1C6B3A;
-  background: rgba(31, 75, 50, 0.12);
-  border-color: rgba(31, 75, 50, 0.3);
+  color: var(--status-ok-ink);
+  background: var(--status-ok-fill);
 }
 .dash-badge--info {
-  color: #1F5E97;
-  background: rgba(31, 94, 151, 0.12);
-  border-color: rgba(31, 94, 151, 0.3);
+  color: var(--status-info-ink);
+  background: var(--status-info-fill);
 }
 .dash-badge--primary {
   color: var(--primary);
   background: var(--primary-tint);
-  border-color: color-mix(in srgb, var(--primary) 30%, transparent);
 }
 .dash-badge--warning {
-  color: #8A5A12;
-  background: rgba(217, 154, 43, 0.16);
-  border-color: rgba(217, 154, 43, 0.4);
+  color: var(--status-warn-ink);
+  background: var(--status-warn-fill);
 }
 .dash-badge--danger {
-  color: #A3372B;
-  background: rgba(176, 60, 50, 0.12);
-  border-color: rgba(176, 60, 50, 0.3);
+  color: var(--status-bad-ink);
+  background: var(--status-bad-fill);
 }
 .dash-badge--secondary {
-  color: var(--text-soft);
-  background: var(--canvas-deep);
-  border-color: var(--borders);
-}
-:root[data-theme="dark"] .dash-badge--success {
-  color: #9BD5AE;
-  background: rgba(140, 195, 160, 0.14);
-  border-color: rgba(140, 195, 160, 0.32);
-}
-:root[data-theme="dark"] .dash-badge--info {
-  color: #9CC6E8;
-  background: rgba(120, 170, 215, 0.14);
-  border-color: rgba(120, 170, 215, 0.32);
-}
-:root[data-theme="dark"] .dash-badge--warning {
-  color: #E8C27E;
-  background: rgba(217, 154, 43, 0.16);
-  border-color: rgba(217, 154, 43, 0.4);
-}
-:root[data-theme="dark"] .dash-badge--danger {
-  color: #E8A09A;
-  background: rgba(200, 90, 75, 0.16);
-  border-color: rgba(200, 90, 75, 0.35);
-}
-:root[data-theme="dark"] .dash-badge--secondary {
-  color: #D6D6D6;
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.18);
+  color: var(--status-neutral-ink);
+  background: var(--status-neutral-fill);
+  border-color: var(--status-neutral-border);
 }
 
 /* Role badge fills — quick-scan colors */

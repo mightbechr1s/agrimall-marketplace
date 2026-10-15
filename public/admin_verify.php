@@ -14,17 +14,6 @@ $idLabels = [
     'pwd_id'            => 'PWD ID',
 ];
 
-function v_badge(string $status): string
-{
-    $map = [
-        'pending'  => 'warning',
-        'approved' => 'success',
-        'rejected' => 'danger',
-    ];
-    $variant = $map[$status] ?? 'secondary';
-    return '<span class="dash-badge dash-badge--' . $variant . '">' . e($status) . '</span>';
-}
-
 // Decide a pending application
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
@@ -212,7 +201,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                     <div class="small"><?= e($app['valid_id_number']) ?></div>
                 </td>
                 <td class="cell-muted text-nowrap"><?= e(date('M j, Y', strtotime($app['registered_at']))) ?></td>
-                <td><?= v_badge($app['verification_status']) ?></td>
+                <td><?= status_badge($app['verification_status']) ?></td>
                 <td class="cell-muted">
                     <?php if ($app['verified_at']): ?>
                         <?= e($app['reviewer_email'] ?? '—') ?>
