@@ -716,6 +716,7 @@ h1, h2, h3, h4, h5, h6,
   color: var(--gold-text);
   margin-bottom: 0.5rem;
 }
+.section-head h1,
 .section-head h2 {
   font-size: clamp(1.9rem, 3.6vw, 2.7rem);
   margin-bottom: 0.5rem;
@@ -2737,6 +2738,10 @@ html[data-drawer-open] .sidebar-toggle-lines span:nth-child(3) { transform: tran
   width: 100%;
 }
 .sidebar-content .container-fluid { max-width: none; }
+/* browse.php is the one shell page still wrapped in .section/.container: the
+   shell already pads, so the inner padding would double up. */
+.sidebar-content .section { padding: 0; }
+.sidebar-content .container { padding-left: 0; padding-right: 0; }
 
 /* ═══ Responsive — nav / auth / sidebar ═════════════ */
 @media (max-width: 991.98px) {
@@ -2832,6 +2837,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 /* Micro-layout refinements */
 .section { padding: 4rem 0; }
 .section-head { margin-bottom: 2rem; }
+.section-head h1,
 .section-head h2,
 .how-it-works .section-title,
 .cta-section .section-title { margin-top: 0; }

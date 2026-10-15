@@ -46,16 +46,25 @@ if (current_user_id() && current_user_role() === 'buyer') {
         $savedIds = $savedStmt->fetchAll(PDO::FETCH_COLUMN);
     } catch (Exception $e) {}
 }
-require __DIR__ . '/partials/header.php';
+$role = function_exists('current_user_role') ? current_user_role() : null;
+$sidebarShell = (bool) current_user_id();
+if ($sidebarShell) {
+    $activePage = $role === 'buyer' ? 'browse' : 'market';
+    require __DIR__ . '/partials/dashboard-layout.php';
+} else {
+    require __DIR__ . '/partials/header.php';
+}
 ?>
 
 <!-- Marketplace -->
+<?php if (!$sidebarShell): ?>
 <main id="main-content" class="flex-grow-1">
+<?php endif; ?>
 <section class="section" id="market">
   <div class="container">
     <div class="section-head" data-reveal>
       <span class="kicker"><?php echo $l($copy['preview'], 'section_title'); ?></span>
-      <h2>What's fresh today</h2>
+      <h1>What's fresh today</h1>
       <p><?php echo $l($copy['preview'], 'intro'); ?></p>
     </div>
 
@@ -296,11 +305,17 @@ require __DIR__ . '/partials/header.php';
       <?php endif; ?>
   </div>
 </section>
+<?php if (!$sidebarShell): ?>
 </main>
+<?php endif; ?>
 
 <div class="mobile-cta-bar" role="navigation" aria-label="Quick actions">
    <a href="browse.php" class="btn btn-outline">Browse</a>
    <a href="create_listing.php" class="btn btn-primary">Sell</a>
 </div>
 
+<?php if (!$sidebarShell): ?>
 <?php require __DIR__ . '/partials/footer.php'; ?>
+<?php else: ?>
+<?php require __DIR__ . '/partials/dashboard-footer.php'; ?>
+<?php endif; ?>

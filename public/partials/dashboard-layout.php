@@ -15,6 +15,7 @@ $sidebarMenus = [
         ['page' => 'listings',       'label' => 'My Listings',    'icon' => 'bi-basket3-fill',   'href' => 'dashboard.php#listings'],
         ['page' => 'create_listing', 'label' => 'New Listing',    'icon' => 'bi-plus-circle-fill','href' => 'create_listing.php'],
         ['page' => 'orders',         'label' => 'Orders',         'icon' => 'bi-receipt-cutoff', 'href' => 'dashboard.php#orders'],
+        ['page' => 'market',         'label' => 'Market',         'icon' => 'bi-shop',           'href' => 'browse.php'],
         ['page' => 'analytics',      'label' => 'Analytics',      'icon' => 'bi-graph-up',       'href' => 'dashboard.php#analytics'],
     ],
     'buyer' => [
