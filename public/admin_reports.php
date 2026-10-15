@@ -747,7 +747,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
 
 <p class="text-muted small report-meta">
     Generated: <?= e(date('Y-m-d H:i')) ?> &middot; Filters: <?= e(implode(', ', $filters)) ?> &middot;
-    <?= count($rows) ?> <?= $type === 'fulfillment' || $type === 'cancellations' ? 'record(s)' : 'row(s)' ?>
+    <?= count($rows) ?><?= $total > count($rows) ? ' of ' . $total : '' ?> <?= $type === 'fulfillment' || $type === 'cancellations' ? 'record(s)' : 'row(s)' ?>
 </p>
 
 <div class="table-responsive">
@@ -813,7 +813,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="12" class="cell-muted"><?= count($rows) ?> order(s)</td>
+                <td colspan="12" class="cell-muted"><?= count($rows) ?><?= $total > count($rows) ? ' of ' . $total : '' ?> order(s)</td>
             </tr>
         </tfoot>
 
