@@ -53,6 +53,8 @@ $from = trim((string) ($_GET['from'] ?? ''));
 $to = trim((string) ($_GET['to'] ?? ''));
 $diffFrom = trim((string) ($_GET['diff_from'] ?? ''));
 $diffTo = trim((string) ($_GET['diff_to'] ?? ''));
+$page = max(1, (int)($_GET['page'] ?? 1));
+$perPage = 25;
 
 // Dropdown source data; loaded even when the result set is empty.
 $roles = ['farmer' => 'Farmer', 'buyer' => 'Buyer', 'admin' => 'Admin'];
@@ -95,14 +97,34 @@ if ($type === 'registration') {
         $where[] = 'role = :role';
         $params['role'] = $role;
     }
+    $baseSql = 'SELECT id, email, role, status, created_at FROM users';
     if ($where) {
-        $sql = 'SELECT id, email, role, status, created_at FROM users WHERE ' . implode(' AND ', $where);
-    } else {
-        $sql = 'SELECT id, email, role, status, created_at FROM users';
+        $baseSql .= ' WHERE ' . implode(' AND ', $where);
     }
-    $sql .= ' ORDER BY created_at DESC';
+    $baseSql .= ' ORDER BY created_at DESC';
+
+    // Total count for pagination
+    $countSql = 'SELECT COUNT(*) FROM users';
+    if ($where) {
+        $countSql .= ' WHERE ' . implode(' AND ', $where);
+    }
+    $countStmt = $pdo->prepare($countSql);
+    $countStmt->execute($params);
+    $total = (int) $countStmt->fetchColumn();
+    $totalPages = max(1, (int) ceil($total / $perPage));
+    if ($page > $totalPages) {
+        $page = $totalPages;
+    }
+    $offset = ($page - 1) * $perPage;
+
+    $sql = $baseSql . ' LIMIT :limit OFFSET :offset';
     $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
+    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    foreach ($params as $k => $v) {
+        $stmt->bindValue(':' . $k, $v);
+    }
+    $stmt->execute();
     $rows = $stmt->fetchAll();
     $filterLabel = $role !== '' ? 'role ' . $role : null;
     $filters[] = 'Role: ' . ($roles[$role] ?? 'all');
@@ -129,19 +151,44 @@ if ($type === 'registration') {
         $where[] = 'l.status = :status';
         $params['status'] = $status;
     }
-    $sql = 'SELECT l.id, l.name, l.price_per_unit, l.available_quantity, l.status, l.published_at,
-                   c.name AS category, u.symbol AS unit_symbol, COALESCE(fp.farm_name, ue.email) AS farmer
-            FROM produce_listings l
-            JOIN produce_categories c ON c.id = l.category_id
-            LEFT JOIN quantity_units u ON u.id = l.unit_id
-            LEFT JOIN users ue ON ue.id = l.farmer_id
-            LEFT JOIN farmer_profiles fp ON fp.user_id = l.farmer_id';
+    $baseSql = 'SELECT l.id, l.name, l.price_per_unit, l.available_quantity, l.status, l.published_at,
+                       c.name AS category, u.symbol AS unit_symbol, COALESCE(fp.farm_name, ue.email) AS farmer
+                FROM produce_listings l
+                JOIN produce_categories c ON c.id = l.category_id
+                LEFT JOIN quantity_units u ON u.id = l.unit_id
+                LEFT JOIN users ue ON ue.id = l.farmer_id
+                LEFT JOIN farmer_profiles fp ON fp.user_id = l.farmer_id';
     if ($where) {
-        $sql .= ' WHERE ' . implode(' AND ', $where);
+        $baseSql .= ' WHERE ' . implode(' AND ', $where);
     }
-    $sql .= ' ORDER BY l.created_at DESC';
+    $baseSql .= ' ORDER BY l.created_at DESC';
+
+    // Total count for pagination
+    $countSql = 'SELECT COUNT(*) FROM produce_listings l
+                 JOIN produce_categories c ON c.id = l.category_id
+                 LEFT JOIN quantity_units u ON u.id = l.unit_id
+                 LEFT JOIN users ue ON ue.id = l.farmer_id
+                 LEFT JOIN farmer_profiles fp ON fp.user_id = l.farmer_id';
+    if ($where) {
+        $countSql .= ' WHERE ' . implode(' AND ', $where);
+    }
+    $countStmt = $pdo->prepare($countSql);
+    $countStmt->execute($params);
+    $total = (int) $countStmt->fetchColumn();
+    $totalPages = max(1, (int) ceil($total / $perPage));
+    if ($page > $totalPages) {
+        $page = $totalPages;
+    }
+    $offset = ($page - 1) * $perPage;
+
+    $sql = $baseSql . ' LIMIT :limit OFFSET :offset';
     $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
+    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    foreach ($params as $k => $v) {
+        $stmt->bindValue(':' . $k, $v);
+    }
+    $stmt->execute();
     $rows = $stmt->fetchAll();
     $catName = null;
     foreach ($categories as $c) { if ((string) $c['id'] === $category) $catName = $c['name']; }
@@ -173,23 +220,50 @@ if ($type === 'registration') {
         $where[] = 'o.buyer_id = :buyer';
         $params['buyer'] = (int) $buyer;
     }
-    $sql = 'SELECT o.*, pl.name AS listing, pl.unit_id,
-                   COALESCE(bp.full_name, ub.email) AS buyer, COALESCE(fp.farm_name, uf.email) AS farmer,
-                   u.symbol AS unit_symbol,
-                   (o.quantity * o.unit_price) AS produce_subtotal
-            FROM orders o
-            JOIN produce_listings pl ON pl.id = o.listing_id
-            LEFT JOIN quantity_units u ON u.id = pl.unit_id
-            LEFT JOIN users ub ON ub.id = o.buyer_id
-            LEFT JOIN buyer_profiles bp ON bp.user_id = o.buyer_id
-            LEFT JOIN users uf ON uf.id = o.farmer_id
-            LEFT JOIN farmer_profiles fp ON fp.user_id = o.farmer_id';
+    $baseSql = 'SELECT o.*, pl.name AS listing, pl.unit_id,
+                       COALESCE(bp.full_name, ub.email) AS buyer, COALESCE(fp.farm_name, uf.email) AS farmer,
+                       u.symbol AS unit_symbol,
+                       (o.quantity * o.unit_price) AS produce_subtotal
+                FROM orders o
+                JOIN produce_listings pl ON pl.id = o.listing_id
+                LEFT JOIN quantity_units u ON u.id = pl.unit_id
+                LEFT JOIN users ub ON ub.id = o.buyer_id
+                LEFT JOIN buyer_profiles bp ON bp.user_id = o.buyer_id
+                LEFT JOIN users uf ON uf.id = o.farmer_id
+                LEFT JOIN farmer_profiles fp ON fp.user_id = o.farmer_id';
     if ($where) {
-        $sql .= ' WHERE ' . implode(' AND ', $where);
+        $baseSql .= ' WHERE ' . implode(' AND ', $where);
     }
-    $sql .= ' ORDER BY o.created_at DESC';
+    $baseSql .= ' ORDER BY o.created_at DESC';
+
+    // Total count for pagination
+    $countSql = 'SELECT COUNT(*) FROM orders o
+                 JOIN produce_listings pl ON pl.id = o.listing_id
+                 LEFT JOIN quantity_units u ON u.id = pl.unit_id
+                 LEFT JOIN users ub ON ub.id = o.buyer_id
+                 LEFT JOIN buyer_profiles bp ON bp.user_id = o.buyer_id
+                 LEFT JOIN users uf ON uf.id = o.farmer_id
+                 LEFT JOIN farmer_profiles fp ON fp.user_id = o.farmer_id';
+    if ($where) {
+        $countSql .= ' WHERE ' . implode(' AND ', $where);
+    }
+    $countStmt = $pdo->prepare($countSql);
+    $countStmt->execute($params);
+    $total = (int) $countStmt->fetchColumn();
+    $totalPages = max(1, (int) ceil($total / $perPage));
+    if ($page > $totalPages) {
+        $page = $totalPages;
+    }
+    $offset = ($page - 1) * $perPage;
+
+    $sql = $baseSql . ' LIMIT :limit OFFSET :offset';
     $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
+    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    foreach ($params as $k => $v) {
+        $stmt->bindValue(':' . $k, $v);
+    }
+    $stmt->execute();
     $rows = $stmt->fetchAll();
     $farmerName = null;
     foreach ($farmers as $f) { if ((string) $f['id'] === $farmer) $farmerName = $f['label']; }
@@ -217,16 +291,39 @@ if ($type === 'registration') {
         $where[] = 'fp.verified_by = :reviewer';
         $params['reviewer'] = (int) $reviewer;
     }
-    $sql = 'SELECT fp.*, u.email, ue.email AS reviewer_email
-            FROM farmer_profiles fp
-            JOIN users u ON u.id = fp.user_id
-            LEFT JOIN users ue ON ue.id = fp.verified_by';
+    $baseSql = 'SELECT fp.*, u.email, ue.email AS reviewer_email
+                FROM farmer_profiles fp
+                JOIN users u ON u.id = fp.user_id
+                LEFT JOIN users ue ON ue.id = fp.verified_by';
     if ($where) {
-        $sql .= ' WHERE ' . implode(' AND ', $where);
+        $baseSql .= ' WHERE ' . implode(' AND ', $where);
     }
-    $sql .= ' ORDER BY fp.created_at DESC';
+    $baseSql .= ' ORDER BY fp.created_at DESC';
+
+    // Total count for pagination
+    $countSql = 'SELECT COUNT(*) FROM farmer_profiles fp
+                 JOIN users u ON u.id = fp.user_id
+                 LEFT JOIN users ue ON ue.id = fp.verified_by';
+    if ($where) {
+        $countSql .= ' WHERE ' . implode(' AND ', $where);
+    }
+    $countStmt = $pdo->prepare($countSql);
+    $countStmt->execute($params);
+    $total = (int) $countStmt->fetchColumn();
+    $totalPages = max(1, (int) ceil($total / $perPage));
+    if ($page > $totalPages) {
+        $page = $totalPages;
+    }
+    $offset = ($page - 1) * $perPage;
+
+    $sql = $baseSql . ' LIMIT :limit OFFSET :offset';
     $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
+    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    foreach ($params as $k => $v) {
+        $stmt->bindValue(':' . $k, $v);
+    }
+    $stmt->execute();
     $rows = $stmt->fetchAll();
     $reviewerName = null;
     foreach ($reviewers as $r) { if ((string) $r['id'] === $reviewer) $reviewerName = $r['email']; }
@@ -257,31 +354,60 @@ if ($type === 'registration') {
         $where[] = 'o.delivery_method = :method';
         $params['method'] = $method;
     }
-    $sql = 'SELECT o.order_number, o.created_at, o.quantity, o.unit_price, o.delivery_fee, o.status, o.delivery_method,
-                   pl.name AS listing, COALESCE(fp.farm_name, uf.email) AS farmer, u.symbol AS unit_symbol,
-                   (o.quantity * o.unit_price) AS produce_subtotal,
-                   (o.quantity * o.unit_price + o.delivery_fee) AS final_total
+    $baseSql = 'SELECT o.order_number, o.created_at, o.quantity, o.unit_price, o.delivery_fee, o.status, o.delivery_method,
+                       pl.name AS listing, COALESCE(fp.farm_name, uf.email) AS farmer, u.symbol AS unit_symbol,
+                       (o.quantity * o.unit_price) AS produce_subtotal,
+                       (o.quantity * o.unit_price + o.delivery_fee) AS final_total
+                FROM orders o
+                JOIN produce_listings pl ON pl.id = o.listing_id
+                LEFT JOIN quantity_units u ON u.id = pl.unit_id
+                LEFT JOIN users uf ON uf.id = o.farmer_id
+                LEFT JOIN farmer_profiles fp ON fp.user_id = o.farmer_id';
+    if ($where) {
+        $baseSql .= ' WHERE ' . implode(' AND ', $where);
+    }
+    $baseSql .= ' ORDER BY o.created_at DESC';
+
+    // Total count for pagination
+    $countSql = 'SELECT COUNT(*) FROM orders o
+                 JOIN produce_listings pl ON pl.id = o.listing_id
+                 LEFT JOIN quantity_units u ON u.id = pl.unit_id
+                 LEFT JOIN users uf ON uf.id = o.farmer_id
+                 LEFT JOIN farmer_profiles fp ON fp.user_id = o.farmer_id';
+    if ($where) {
+        $countSql .= ' WHERE ' . implode(' AND ', $where);
+    }
+    $countStmt = $pdo->prepare($countSql);
+    $countStmt->execute($params);
+    $total = (int) $countStmt->fetchColumn();
+    $totalPages = max(1, (int) ceil($total / $perPage));
+    if ($page > $totalPages) {
+        $page = $totalPages;
+    }
+    $offset = ($page - 1) * $perPage;
+
+    $sql = $baseSql . ' LIMIT :limit OFFSET :offset';
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    foreach ($params as $k => $v) {
+        $stmt->bindValue(':' . $k, $v);
+    }
+    $stmt->execute();
+    $rows = $stmt->fetchAll();
+    // Totals cover the whole filtered set, not just the page on screen.
+    $totalsStmt = $pdo->prepare('SELECT COUNT(*) AS count,
+                COALESCE(SUM(o.quantity * o.unit_price), 0) AS subtotal,
+                COALESCE(SUM(o.delivery_fee), 0) AS fees,
+                COALESCE(SUM(o.quantity * o.unit_price + o.delivery_fee), 0) AS final
             FROM orders o
             JOIN produce_listings pl ON pl.id = o.listing_id
             LEFT JOIN quantity_units u ON u.id = pl.unit_id
             LEFT JOIN users uf ON uf.id = o.farmer_id
-            LEFT JOIN farmer_profiles fp ON fp.user_id = o.farmer_id';
-    if ($where) {
-        $sql .= ' WHERE ' . implode(' AND ', $where);
-    }
-    $sql .= ' ORDER BY o.created_at DESC';
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    $rows = $stmt->fetchAll();
-    $totals = [
-        'count' => 0, 'subtotal' => 0.0, 'fees' => 0.0, 'final' => 0.0,
-    ];
-    foreach ($rows as $r) {
-        $totals['count']++;
-        $totals['subtotal'] += (float) $r['produce_subtotal'];
-        $totals['fees'] += (float) $r['delivery_fee'];
-        $totals['final'] += (float) $r['final_total'];
-    }
+            LEFT JOIN farmer_profiles fp ON fp.user_id = o.farmer_id'
+        . ($where ? ' WHERE ' . implode(' AND ', $where) : ''));
+    $totalsStmt->execute($params);
+    $totals = $totalsStmt->fetch();
     $farmerName = null;
     foreach ($farmers as $f) { if ((string) $f['id'] === $farmer) $farmerName = $f['label']; }
     $filters[] = 'Status: ' . ($status !== '' ? $status : 'all');
@@ -315,22 +441,49 @@ if ($type === 'registration') {
         $where[] = 'o.buyer_id = :buyer';
         $params['buyer'] = (int) $buyer;
     }
-    $sql = 'SELECT o.order_number, o.cancelled_at, o.cancelled_by_role, o.cancellation_reason,
-                   COALESCE(bp.full_name, ub.email) AS buyer, COALESCE(fp.farm_name, uf.email) AS farmer,
-                   osh.from_status AS stage
-            FROM orders o
-            LEFT JOIN order_status_history osh ON osh.order_id = o.id AND osh.to_status = \'cancelled\'
-            LEFT JOIN users ub ON ub.id = o.buyer_id
-            LEFT JOIN buyer_profiles bp ON bp.user_id = o.buyer_id
-            LEFT JOIN users uf ON uf.id = o.farmer_id
-            LEFT JOIN farmer_profiles fp ON fp.user_id = o.farmer_id
-            WHERE o.status = \'cancelled\'';
+    $baseSql = 'SELECT o.order_number, o.cancelled_at, o.cancelled_by_role, o.cancellation_reason,
+                       COALESCE(bp.full_name, ub.email) AS buyer, COALESCE(fp.farm_name, uf.email) AS farmer,
+                       osh.from_status AS stage
+                FROM orders o
+                LEFT JOIN order_status_history osh ON osh.order_id = o.id AND osh.to_status = \'cancelled\'
+                LEFT JOIN users ub ON ub.id = o.buyer_id
+                LEFT JOIN buyer_profiles bp ON bp.user_id = o.buyer_id
+                LEFT JOIN users uf ON uf.id = o.farmer_id
+                LEFT JOIN farmer_profiles fp ON fp.user_id = o.farmer_id
+                WHERE o.status = \'cancelled\'';
     if ($where) {
-        $sql .= ' AND ' . implode(' AND ', $where);
+        $baseSql .= ' AND ' . implode(' AND ', $where);
     }
-    $sql .= ' ORDER BY o.cancelled_at DESC';
+    $baseSql .= ' ORDER BY o.cancelled_at DESC';
+
+    // Total count for pagination
+    $countSql = 'SELECT COUNT(*) FROM orders o
+                 LEFT JOIN order_status_history osh ON osh.order_id = o.id AND osh.to_status = \'cancelled\'
+                 LEFT JOIN users ub ON ub.id = o.buyer_id
+                 LEFT JOIN buyer_profiles bp ON bp.user_id = o.buyer_id
+                 LEFT JOIN users uf ON uf.id = o.farmer_id
+                 LEFT JOIN farmer_profiles fp ON fp.user_id = o.farmer_id
+                 WHERE o.status = \'cancelled\'';
+    if ($where) {
+        $countSql .= ' AND ' . implode(' AND ', $where);
+    }
+    $countStmt = $pdo->prepare($countSql);
+    $countStmt->execute($params);
+    $total = (int) $countStmt->fetchColumn();
+    $totalPages = max(1, (int) ceil($total / $perPage));
+    if ($page > $totalPages) {
+        $page = $totalPages;
+    }
+    $offset = ($page - 1) * $perPage;
+
+    $sql = $baseSql . ' LIMIT :limit OFFSET :offset';
     $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
+    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    foreach ($params as $k => $v) {
+        $stmt->bindValue(':' . $k, $v);
+    }
+    $stmt->execute();
     $rows = $stmt->fetchAll();
     $farmerName = null;
     foreach ($farmers as $f) { if ((string) $f['id'] === $farmer) $farmerName = $f['label']; }
@@ -351,7 +504,14 @@ if (!isset($filters) || empty($filters)) {
 
 
 if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
-    $pdf = build_report_pdf($reportTitle, $reportRef, $filters, $rows, $totals);
+    // Export the whole filtered set, not just the page on screen.
+    $exportRows = $rows;
+    if (isset($baseSql)) {
+        $exportStmt = $pdo->prepare($baseSql);
+        $exportStmt->execute($params);
+        $exportRows = $exportStmt->fetchAll();
+    }
+    $pdf = build_report_pdf($reportTitle, $reportRef, $filters, $exportRows, $totals);
     header('Content-Type: application/pdf');
     header('Content-Disposition: attachment; filename="animal-' . strtolower($reportRef) . '.pdf"');
     header('Content-Length: ' . strlen($pdf));
@@ -743,6 +903,20 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <?php endif; ?>
     </table>
 </div>
+
+<?php if ($totalPages > 1): ?>
+    <?php
+    $paramParts = ['t=' . urlencode($type)];
+    // Preserve all filter parameters
+    foreach ($_GET as $key => $value) {
+        if ($key !== 'page' && $key !== 't' && $key !== 'export') {
+            $paramParts[] = $key . '=' . urlencode((string)$value);
+        }
+    }
+    $param = implode('&', $paramParts);
+    include __DIR__ . '/partials/pager.php';
+    ?>
+<?php endif; ?>
 
 <?php if ($type !== 'cancellations' && !$rows): ?>
 <div class="empty-state">

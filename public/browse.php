@@ -9,7 +9,7 @@ $locale = locale_current();
 $l = function($dict, $key) use ($copy, $locale) {
     return $dict[$locale][$key] ?? $dict['en'][$key] ?? $key;
 };
-$q = $_GET['q'] ?? '';
+$q = is_string($_GET['q'] ?? null) ? $_GET['q'] : '';
 $page = max(1, (int)($_GET['page'] ?? 1));
 
 // Category label formatter
@@ -92,34 +92,41 @@ require __DIR__ . '/partials/header.php';
       <?php
       $listings = [];
       $total = 0;
+      $totalPages = 0;
       // A DB outage and an empty marketplace are different states; do not share one flag.
       $listingsFailed = false;
       try {
-        $offset = ($page - 1) * 12;
-        if ($q) {
-          $stmt = DB::pdo()->prepare('SELECT * FROM v_active_listings WHERE status = \'active\' AND name LIKE :q ORDER BY published_at DESC LIMIT 12 OFFSET :offset');
-          $stmt->bindValue(':q', '%'.$q.'%', PDO::PARAM_STR);
-          $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-          $stmt->execute();
-          $listings = $stmt->fetchAll();
+        $where = $q !== ''
+          ? "status = 'active' AND name LIKE :q"
+          : "status = 'active'";
 
-          $totalStmt = DB::pdo()->prepare('SELECT COUNT(*) FROM v_active_listings WHERE status = \'active\' AND name LIKE :q');
-          $totalStmt->bindValue(':q', '%'.$q.'%', PDO::PARAM_STR);
-          $total = $totalStmt->fetchColumn();
-        } else {
-          $stmt = DB::pdo()->prepare('SELECT * FROM v_active_listings WHERE status = \'active\' ORDER BY published_at DESC LIMIT 12 OFFSET :offset');
-          $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-          $stmt->execute();
-          $listings = $stmt->fetchAll();
-
-          $total = DB::pdo()->query('SELECT COUNT(*) FROM v_active_listings WHERE status = \'active\'')->fetchColumn();
+        // Count first: an out-of-range ?page= (bookmark, edited URL) is pulled back
+        // onto the last page before it can become an OFFSET and show an empty grid.
+        $countStmt = DB::pdo()->prepare("SELECT COUNT(*) FROM v_active_listings WHERE $where");
+        if ($q !== '') {
+          $countStmt->bindValue(':q', '%'.$q.'%', PDO::PARAM_STR);
         }
+        $countStmt->execute();
+        $total = (int) $countStmt->fetchColumn();
+        $totalPages = (int) ceil($total / 12);
+        if ($totalPages > 0 && $page > $totalPages) {
+          $page = $totalPages;
+        }
+
+        $offset = ($page - 1) * 12;
+        $stmt = DB::pdo()->prepare("SELECT * FROM v_active_listings WHERE $where ORDER BY published_at DESC LIMIT 12 OFFSET :offset");
+        if ($q !== '') {
+          $stmt->bindValue(':q', '%'.$q.'%', PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $listings = $stmt->fetchAll();
       } catch (Exception $e) {
         $listingsFailed = true;
         error_log('browse: listing query failed: ' . $e->getMessage());
       }
 
-      $totalPages = $listingsFailed ? 0 : (int)ceil($total / 12); ?>
+      $totalPages = $listingsFailed ? 0 : $totalPages; ?>
       <?php if ($listings): ?>
         <?php foreach ($listings as $item): ?>
           <article class="card" data-reveal="stagger" data-category="<?php echo e(strtolower($item['category_name'] ?? '')); ?>">
@@ -272,50 +279,24 @@ require __DIR__ . '/partials/header.php';
         </div>
       <?php endif; ?>
     </div>
-      <?php if (!$listingsFailed && $page < $totalPages): ?>
-        <div style="text-align:center;margin-top:32px;">
-          <a class="btn btn-outline load-more-btn" href="?page=<?php echo $page+1; ?><?php if (isset($_GET['lang'])): ?>&lang=<?php echo urlencode($_GET['lang']); ?><?php endif; ?><?php if ($q): ?>&q=<?php echo urlencode($q); ?><?php endif; ?>">Load more</a>
-        </div>
+      <?php if (!$listingsFailed && $totalPages > 1): ?>
+        <?php
+        $paramParts = [];
+        if (isset($_GET['lang'])) $paramParts[] = 'lang=' . urlencode($_GET['lang']);
+        if ($q !== '') $paramParts[] = 'q=' . urlencode($q);
+        $param = implode('&', $paramParts);
+        $labels = [
+            'prev' => $l($copy['ui'], 'pager_prev'),
+            'next' => $l($copy['ui'], 'pager_next'),
+            'page' => $l($copy['ui'], 'pager_page'),
+            'of'   => $l($copy['ui'], 'pager_of'),
+        ];
+        include __DIR__ . '/partials/pager.php';
+        ?>
       <?php endif; ?>
   </div>
 </section>
 </main>
-
-<script>
-(function () {
-  'use strict';
-  document.addEventListener('click', async function (e) {
-    var btn = e.target.closest('.load-more-btn');
-    if (!btn) return;
-    e.preventDefault();
-    var url = btn.href;
-    try {
-      var resp = await fetch(url, {
-        headers: { 'X-Requested-With': 'fetch' },
-        credentials: 'same-origin'
-      });
-      if (!resp.ok) return;
-      var html = await resp.text();
-      var parser = new DOMParser();
-      var doc = parser.parseFromString(html, 'text/html');
-      var newCards = doc.querySelectorAll('#product-grid .card');
-      var grid = document.getElementById('product-grid');
-      newCards.forEach(function (card) {
-        grid.appendChild(card.cloneNode(true));
-      });
-      var nextBtn = doc.querySelector('.load-more-btn');
-      if (nextBtn) {
-        btn.href = nextBtn.href;
-      } else {
-        btn.remove();
-      }
-    } catch (err) {
-      // fallback to normal navigation
-      window.location.href = url;
-    }
-  });
-})();
-</script>
 
 <div class="mobile-cta-bar" role="navigation" aria-label="Quick actions">
    <a href="browse.php" class="btn btn-outline">Browse</a>

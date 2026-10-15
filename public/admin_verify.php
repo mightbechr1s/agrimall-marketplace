@@ -96,6 +96,9 @@ if (!in_array($filter, ['pending', 'approved', 'rejected', 'all'], true)) {
     $filter = 'pending';
 }
 
+$page = max(1, (int)($_GET['page'] ?? 1));
+$perPage = 25;
+
 // Farmer applications
 $sql = 'SELECT u.id AS user_id, u.email, u.status AS user_status, u.created_at AS registered_at,
                fp.farm_name, fp.contact_person, fp.contact_phone, fp.contact_email,
@@ -111,9 +114,29 @@ if ($filter !== 'all') {
     $sql .= ' WHERE fp.verification_status = :status';
     $params['status'] = $filter;
 }
-$sql .= ' ORDER BY u.created_at ASC LIMIT 200';
+
+// Total count for pagination
+$countSql = 'SELECT COUNT(*) FROM farmer_profiles fp JOIN users u ON u.id = fp.user_id';
+if ($filter !== 'all') {
+    $countSql .= ' WHERE fp.verification_status = :status';
+}
+$countStmt = $pdo->prepare($countSql);
+$countStmt->execute($params);
+$total = (int) $countStmt->fetchColumn();
+$totalPages = max(1, (int) ceil($total / $perPage));
+if ($page > $totalPages) {
+    $page = $totalPages;
+}
+$offset = ($page - 1) * $perPage;
+
+$sql .= ' ORDER BY u.created_at ASC LIMIT :limit OFFSET :offset';
 $stmt = $pdo->prepare($sql);
-$stmt->execute($params);
+$stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+foreach ($params as $k => $v) {
+    $stmt->bindValue(':' . $k, $v);
+}
+$stmt->execute();
 $apps = $stmt->fetchAll();
 
 $counts = [
@@ -221,6 +244,15 @@ require __DIR__ . '/partials/dashboard-layout.php';
         </tbody>
     </table>
 </div>
+
+<?php if ($totalPages > 1): ?>
+    <?php
+    $paramParts = ['status=' . urlencode($filter)];
+    $param = implode('&', $paramParts);
+    include __DIR__ . '/partials/pager.php';
+    ?>
+<?php endif; ?>
+
 <?php else: ?>
 <div class="empty-state">
     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon">

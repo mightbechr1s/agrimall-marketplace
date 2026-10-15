@@ -18,6 +18,8 @@ function fmt_json(?string $json): string
 
 $entityFilter = trim((string) ($_GET['entity'] ?? ''));
 $actionFilter = trim((string) ($_GET['action'] ?? ''));
+$page = max(1, (int)($_GET['page'] ?? 1));
+$perPage = 25;
 
 $sql = 'SELECT al.*, u.email AS admin_email
         FROM admin_audit_log al
@@ -35,9 +37,29 @@ if ($actionFilter !== '') {
 if ($where) {
     $sql .= ' WHERE ' . implode(' AND ', $where);
 }
-$sql .= ' ORDER BY al.created_at DESC LIMIT 200';
+
+// Total count for pagination
+$countSql = 'SELECT COUNT(*) FROM admin_audit_log al';
+if ($where) {
+    $countSql .= ' WHERE ' . implode(' AND ', $where);
+}
+$countStmt = $pdo->prepare($countSql);
+$countStmt->execute($params);
+$total = (int) $countStmt->fetchColumn();
+$totalPages = max(1, (int) ceil($total / $perPage));
+if ($page > $totalPages) {
+    $page = $totalPages;
+}
+$offset = ($page - 1) * $perPage;
+
+$sql .= ' ORDER BY al.created_at DESC LIMIT :limit OFFSET :offset';
 $stmt = $pdo->prepare($sql);
-$stmt->execute($params);
+$stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+foreach ($params as $k => $v) {
+    $stmt->bindValue(':' . $k, $v);
+}
+$stmt->execute();
 $events = $stmt->fetchAll();
 
 $entities = $pdo->query('SELECT DISTINCT entity_type FROM admin_audit_log ORDER BY entity_type')->fetchAll(PDO::FETCH_COLUMN);
@@ -92,5 +114,15 @@ $data = $events;
 $filters = array_merge($filters, ['sort' => '', 'dir' => '']);
 include __DIR__ . '/partials/admin-table.php';
 ?>
+
+<?php if ($totalPages > 1): ?>
+    <?php
+    $paramParts = [];
+    if ($entityFilter !== '') $paramParts[] = 'entity=' . urlencode($entityFilter);
+    if ($actionFilter !== '') $paramParts[] = 'action=' . urlencode($actionFilter);
+    $param = implode('&', $paramParts);
+    include __DIR__ . '/partials/pager.php';
+    ?>
+<?php endif; ?>
 
 <?php require __DIR__ . '/partials/dashboard-footer.php'; ?>

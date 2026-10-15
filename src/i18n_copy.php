@@ -814,6 +814,10 @@ return [
             'community_title' => 'Meet the Community',
             'community_lead' => 'Hear from those who make AniMAL work.',
             'faq_lead' => 'Find answers to common questions about buying and selling on AniMAL.',
+            'pager_prev' => 'Previous',
+            'pager_next' => 'Next',
+            'pager_page' => 'Page',
+            'pager_of' => 'of',
         ],
         'tl' => [
             'stat_farmers' => 'Na-verify na Magsasaka',
@@ -835,6 +839,10 @@ return [
             'community_title' => 'Kilalanin ang Komunidad',
             'community_lead' => 'Makinig mula sa mga bumubuo sa AniMAL.',
             'faq_lead' => 'Hanapin ang mga sagot sa mga karaniwang tanong tungkol sa pagbili at pagbenta sa AniMAL.',
+            'pager_prev' => 'Nakaraan',
+            'pager_next' => 'Susunod',
+            'pager_page' => 'Pahina',
+            'pager_of' => 'ng',
         ],
     ],
     'account' => [

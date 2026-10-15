@@ -10,6 +10,8 @@ $l = function ($dict, $key) use ($copy, $locale) {
 require_login();
 $userId = current_user_id();
 $success = null;
+$page = max(1, (int)($_GET['page'] ?? 1));
+$perPage = 50;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
@@ -20,12 +22,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Total count for pagination
+$countStmt = DB::pdo()->prepare('SELECT COUNT(*) FROM notifications WHERE user_id = :id');
+$countStmt->execute(['id' => $userId]);
+$total = (int) $countStmt->fetchColumn();
+$totalPages = max(1, (int) ceil($total / $perPage));
+if ($page > $totalPages) {
+    $page = $totalPages;
+}
+$offset = ($page - 1) * $perPage;
+
 $stmt = DB::pdo()->prepare(
     'SELECT id, category, title, body, link, read_at, created_at
      FROM notifications WHERE user_id = :id
-     ORDER BY created_at DESC, id DESC LIMIT 50'
+     ORDER BY created_at DESC, id DESC LIMIT :limit OFFSET :offset'
 );
-$stmt->execute(['id' => $userId]);
+$stmt->bindValue(':id', $userId, PDO::PARAM_INT);
+$stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
 $items = $stmt->fetchAll();
 
 $unread = 0;
@@ -94,6 +109,18 @@ require __DIR__ . '/partials/header.php';
                     </li>
                 <?php endforeach; ?>
             </ul>
+
+            <?php if ($totalPages > 1): ?>
+                <?php
+                $labels = [
+                    'prev' => $l($copy['ui'], 'pager_prev'),
+                    'next' => $l($copy['ui'], 'pager_next'),
+                    'page' => $l($copy['ui'], 'pager_page'),
+                    'of'   => $l($copy['ui'], 'pager_of'),
+                ];
+                include __DIR__ . '/partials/pager.php';
+                ?>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 </main>
