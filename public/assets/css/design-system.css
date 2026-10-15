@@ -3613,6 +3613,15 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   color: #fff !important;
 }
 
+/* Product photo on the listing detail page. Cards pin a 1:1 frame and crop with
+   object-fit; this gallery had neither, so a wide or tall source stretched the
+   carousel to its native ratio and the photo framed differently per listing. */
+.listing-gallery .carousel-item img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
 /* Align buttons in listing CTA */
 .listing-cta .d-flex {
   align-items: center;
@@ -3865,6 +3874,25 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 .cart-table .text-muted { color: var(--text-soft) !important; }
 .cart-table a { color: var(--text); }
 .cart-table a:hover, .cart-table a:focus-visible { color: var(--gold-text); }
+
+/* ---- List group (notifications) ----
+   Same problem as the cart table above: Bootstrap reads [data-bs-theme], the app
+   themes via [data-theme], so its --bs-list-group-* defaults never move. Token
+   them so the cards follow the theme; light mode resolves to the white it had. */
+.list-group {
+  --bs-list-group-bg: var(--paper);
+  --bs-list-group-color: var(--text);
+  --bs-list-group-border-color: var(--borders);
+  --bs-list-group-action-color: var(--text);
+  --bs-list-group-action-hover-color: var(--text);
+  --bs-list-group-action-hover-bg: color-mix(in srgb, var(--primary) 8%, transparent);
+  --bs-list-group-action-active-color: var(--text);
+  --bs-list-group-action-active-bg: color-mix(in srgb, var(--primary) 14%, transparent);
+}
+/* Anchors inside a card fall through to Bootstrap blue in light mode: the global
+   dark-mode `a` rule has no light counterpart, so pin them here. */
+.list-group-item a { color: var(--primary); }
+.list-group-item a:hover, .list-group-item a:focus-visible { color: var(--gold-text); }
 
 /* Product thumbnail in the cart */
 .cart-thumb {
