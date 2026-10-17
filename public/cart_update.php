@@ -8,6 +8,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit('Method not allowed.');
 }
 csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
+$i18nAll = include __DIR__ . '/../src/i18n_copy.php';
+$cartCopy = $i18nAll['cart'] ?? [];
 
 $action = $_POST['action'] ?? '';
 $itemId = (int) ($_POST['item_id'] ?? 0);
@@ -18,14 +20,14 @@ $pdo = DB::pdo();
 if ($action === 'remove' && $itemId > 0) {
     $pdo->prepare('DELETE FROM cart_items WHERE id = :id AND buyer_id = :buyer')
         ->execute(['id' => $itemId, 'buyer' => $buyerId]);
-    flash_set('success', 'Item removed from cart.');
+    flash_set('success', t($cartCopy, 'item_removed'));
     redirect_to('cart.php');
 }
 
 if ($action === 'clear') {
     $pdo->prepare('DELETE FROM cart_items WHERE buyer_id = :buyer')
         ->execute(['buyer' => $buyerId]);
-    flash_set('success', 'Cart cleared.');
+    flash_set('success', t($cartCopy, 'cart_cleared'));
     redirect_to('cart.php');
 }
 
@@ -43,12 +45,12 @@ if ($action === 'update' && $itemId > 0 && $quantity !== null) {
         $min = (float) $item['minimum_order_qty'];
         $max = $item['maximum_order_qty'] === null ? null : (float) $item['maximum_order_qty'];
         if ($quantity < $min || ($max !== null && $quantity > $max) || $quantity > (float) $item['available_quantity']) {
-            flash_set('error', 'Quantity must be between ' . $min . ' and ' . ($max ?? $item['available_quantity']) . ' ' . $item['symbol'] . '.');
+            flash_set('error', sprintf(t($cartCopy, 'qty_range'), $min, ($max ?? $item['available_quantity']), $item['symbol']));
             redirect_to('cart.php');
         }
         $pdo->prepare('UPDATE cart_items SET quantity = :qty, updated_at = CURRENT_TIMESTAMP WHERE id = :id AND buyer_id = :buyer')
             ->execute(['qty' => $quantity, 'id' => $itemId, 'buyer' => $buyerId]);
-        flash_set('success', 'Cart updated.');
+        flash_set('success', t($cartCopy, 'cart_updated'));
     }
 }
 

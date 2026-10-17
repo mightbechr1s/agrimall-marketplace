@@ -8,6 +8,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit('Method not allowed.');
 }
 csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
+$i18nAll = include __DIR__ . '/../src/i18n_copy.php';
+$cartCopy = $i18nAll['cart'] ?? [];
 
 $method      = ($_POST['delivery_method'] ?? 'pickup') === 'farmer_delivery' ? 'farmer_delivery' : 'pickup';
 $address     = trim((string) ($_POST['delivery_address'] ?? ''));
@@ -30,19 +32,19 @@ try {
     $cartStmt->execute(['buyer' => current_user_id()]);
     $items = $cartStmt->fetchAll();
     if (!$items) {
-        flash_set('error', 'Your cart is empty.');
+        flash_set('error', t($cartCopy, 'cart_empty'));
         redirect_to('cart.php');
     }
     if ($method === 'farmer_delivery' && mb_strlen($address) < 5) {
-        flash_set('error', 'Please provide a delivery address for farmer delivery.');
+        flash_set('error', t($cartCopy, 'address_required'));
         redirect_to('cart.php');
     }
     if (mb_strlen($address) > FIELD_LIMITS['delivery_address']) {
-        flash_set('error', 'Delivery address is too long (max ' . FIELD_LIMITS['delivery_address'] . ' characters).');
+        flash_set('error', sprintf(t($cartCopy, 'address_too_long'), FIELD_LIMITS['delivery_address']));
         redirect_to('cart.php');
     }
     if (mb_strlen($note) > FIELD_LIMITS['buyer_note']) {
-        flash_set('error', 'Note is too long (max ' . FIELD_LIMITS['buyer_note'] . ' characters).');
+        flash_set('error', sprintf(t($cartCopy, 'note_too_long'), FIELD_LIMITS['buyer_note']));
         redirect_to('cart.php');
     }
 
@@ -60,7 +62,7 @@ try {
         $max = $listing['maximum_order_qty'] === null ? null : (float) $listing['maximum_order_qty'];
         if ($quantity < $min || ($max !== null && $quantity > $max) || $quantity > (float) $listing['available_quantity']) {
             $pdo->rollBack();
-            flash_set('error', 'One or more items fail order limits: ' . $listing['name'] . '. Please review your cart.');
+            flash_set('error', sprintf(t($cartCopy, 'limits_failed'), $listing['name']));
             redirect_to('cart.php');
         }
 
@@ -100,13 +102,13 @@ try {
     $pdo->commit();
 
     if ($created === 0) {
-        flash_set('error', 'No valid items in cart.');
+        flash_set('error', t($cartCopy, 'no_valid_items'));
         redirect_to('cart.php');
     }
-    flash_set('success', $created . ' order' . ($created > 1 ? 's' : '') . ' placed.');
+    flash_set('success', sprintf(t($cartCopy, 'orders_placed'), $created, $created > 1 ? 's' : ''));
     redirect_to($firstOrderId ? 'order.php?id=' . $firstOrderId : 'dashboard.php#orders');
 } catch (Throwable $e) {
     $pdo->rollBack();
-    flash_set('error', 'Checkout failed. Please try again.');
+    flash_set('error', t($cartCopy, 'checkout_failed'));
     redirect_to('cart.php');
 }

@@ -397,6 +397,61 @@ return [
         ],
     ],
 
+    // Cart flow messages. These lived as hardcoded English inside
+    // cart_add / cart_update / cart_checkout, so a Tagalog user saw English
+    // for every cart and checkout message. Interpolated strings follow the
+    // existing %1$s positional convention already used in this file.
+    'cart' => [
+        'en' => [
+            'login_required' => 'Log in or create an account to add items to your cart.',
+            'buyer_only' => 'Log in as a buyer to add items to your cart.',
+            'invalid_qty' => 'Enter a valid quantity.',
+            'not_found' => 'Listing not found or not available.',
+            'own_listing' => 'You cannot add your own listing to the cart.',
+            'min_order' => 'Minimum order is %1$s %2$s.',
+            'max_order' => 'Maximum order is %1$s %2$s.',
+            'only_available' => 'Only %1$s %2$s available.',
+            'added' => 'Added to cart',
+            'add_failed' => 'Could not add to cart. Please try again.',
+            'item_removed' => 'Item removed from cart.',
+            'cart_cleared' => 'Cart cleared.',
+            'qty_range' => 'Quantity must be between %1$s and %2$s %3$s.',
+            'cart_updated' => 'Cart updated.',
+            'cart_empty' => 'Your cart is empty.',
+            'address_required' => 'Please provide a delivery address for farmer delivery.',
+            'address_too_long' => 'Delivery address is too long (max %1$s characters).',
+            'note_too_long' => 'Note is too long (max %1$s characters).',
+            'limits_failed' => 'One or more items fail order limits: %1$s. Please review your cart.',
+            'no_valid_items' => 'No valid items in cart.',
+            'orders_placed' => '%1$s order%2$s placed.',
+            'checkout_failed' => 'Checkout failed. Please try again.',
+        ],
+        'tl' => [
+            'login_required' => 'Mag-log in o gumawa ng account para magdagdag ng gamit sa cart.',
+            'buyer_only' => 'Mag-log in bilang buyer para magdagdag ng gamit sa cart.',
+            'invalid_qty' => 'Maglagay ng wastong dami.',
+            'not_found' => 'Hindi nahanap o hindi available ang listing.',
+            'own_listing' => 'Hindi mo maaaring idagdag ang sarili mong listing sa cart.',
+            'min_order' => 'Ang minimum na order ay %1$s %2$s.',
+            'max_order' => 'Ang maximum na order ay %1$s %2$s.',
+            'only_available' => 'Available lang %1$s %2$s.',
+            'added' => 'Naidagdag sa cart',
+            'add_failed' => 'Hindi naidagdag sa cart. Pakisubukan muli.',
+            'item_removed' => 'Natanggal ang gamit sa cart.',
+            'cart_cleared' => 'Na-clear ang cart.',
+            'qty_range' => 'Ang dami ay dapat nasa pagitan ng %1$s at %2$s %3$s.',
+            'cart_updated' => 'Na-update ang cart.',
+            'cart_empty' => 'Walang laman ang cart.',
+            'address_required' => 'Mangyaring magbigay ng delivery address para sa farmer delivery.',
+            'address_too_long' => 'Masyadong mahaba ang delivery address (max %1$s na karakter).',
+            'note_too_long' => 'Masyadong mahaba ang note (max %1$s na karakter).',
+            'limits_failed' => 'May isa o higit na gamit na lumalampas sa mga limit ng order: %1$s. Pakisuri ang cart mo.',
+            'no_valid_items' => 'Walang wastong gamit sa cart.',
+            'orders_placed' => '%1$s na order ang na-place.',
+            'checkout_failed' => 'Nabigo ang checkout. Pakisubukan muli.',
+        ],
+    ],
+
     'nav' => [
         'en' => [
             'home' => 'Home',

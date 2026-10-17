@@ -95,7 +95,8 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
 
     <script src="<?= e(asset('assets/js/motion.min.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/swipe.min.js')) ?>" defer></script>
-    <script src="<?= e(asset('assets/js/cart-ajax.js')) ?>" defer></script>
+    <script src="<?= e(asset('assets/js/toast.js')) ?>" defer></script>
+<script src="<?= e(asset('assets/js/cart-ajax.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/save-ajax.js')) ?>" defer></script>
     <script>
     (function () {

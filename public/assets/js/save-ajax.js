@@ -46,6 +46,11 @@
         try { data = JSON.parse(text); } catch (err) { data = null; }
         if (data && data.ok) {
           toggleSaved(btn, !!data.saved);
+          // Server copy only; an English fallback here would surface untranslated
+          // text on a Tagalog page.
+          if (data.message && window.animalToast) {
+            window.animalToast(data.message, { type: 'success' });
+          }
         } else if (data && data.redirect) {
           window.location.href = data.redirect;
         } else {

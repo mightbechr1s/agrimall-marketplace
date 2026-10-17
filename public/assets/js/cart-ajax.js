@@ -70,8 +70,15 @@
               swapButtonText(btn, data.message || 'Added to cart', 1400);
             }
           }
+          // Only ever show what the server said. An English fallback here would put
+          // untranslated text on a Tagalog page: getting the copy right is the
+          // server's job, not the toast's.
+          if (!btn && data.message && window.animalToast) {
+            window.animalToast(data.message, { type: 'success' });
+          }
         } else if (data && data.message) {
           swapButtonText(btn, data.message, 2600);
+          if (window.animalToast) window.animalToast(data.message, { type: 'error' });
         } else {
           form.submit();
           return;
