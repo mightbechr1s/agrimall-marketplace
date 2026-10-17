@@ -13,6 +13,7 @@
     "test:http": "powershell -ExecutionPolicy Bypass -File tests/http_test.ps1",
     "test:e2e": "powershell -ExecutionPolicy Bypass -File tests/e2e_test.ps1",
     "test:panels": "powershell -ExecutionPolicy Bypass -File tests/panels_test.ps1",
+    "test:layout": "powershell -ExecutionPolicy Bypass -File tests/layout_test.ps1",
     "dev": "php -S 127.0.0.1:8000 -t public public/router.php"
   },
   "devDependencies": {
