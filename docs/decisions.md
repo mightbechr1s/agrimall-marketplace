@@ -1,0 +1,319 @@
+# Engineering Decisions
+
+Decisions taken in this project that **are not traceable to a requirement** in
+`docs/SRS.md`.
+
+If a decision can be justified by pointing at an SRS clause, it belongs in
+`docs/traceability-matrix.md` instead, and it does. This file exists for the
+other category: measures chosen because the system would degrade badly if the
+assumptions behind it stopped holding — scale limits, environment differences,
+and failure modes that produce no visible symptom.
+
+Those measures are foresight, not requirement compliance. They are listed openly
+here, with their limits, so they can be argued with rather than discovered.
+
+**Current scale, for calibration.** The development database holds 34 listings,
+11 users (3 farmers, 7 buyers, 1 administrator) and 13 orders. Every ceiling
+below is far above that. That is the point of what follows: these are judgements
+about what happens when the numbers stop being small, made now because
+retrofitting them is expensive and removing them is cheap.
+
+## Capacity summary
+
+| Concern | Ceiling | Current use | Where it bites |
+|---|---:|---:|---|
+| Listings per page (My Listings) | 12 | up to 12 shown | 13+ listings for one farmer |
+| Saved listings per page | 12 | up to 12 shown | 13+ saved |
+| Order history per page (farmer/buyer) | 15 | up to 15 shown | 16+ orders |
+| Sitemap URLs per file | 50,000 | 38 in 1 file | 50,001st listing |
+| Sitemap files | 50 | 1 | 2.5 millionth listing |
+| Report export rows | 2,000 | export renders in full | 2,001st matching row |
+| Report filter options | 100 | all options listed | 101st farmer or buyer |
+
+---
+
+## Part 1 — Scale decisions
+
+### D-01 Paginate every floodable list
+
+**Context.** My Listings, Saved Listings and order history all rendered every
+row. Nothing in the requirements caps how much data one account may accumulate,
+and a single account is the cheapest way for a page to become slow: the query,
+the render and the response all grow together, with no ceiling anywhere.
+
+**Decision.** Page all three, at 12 / 12 / 15 rows. Totals come from a separate
+`COUNT(*)` query, never from counting the rows that were fetched.
+
+**Why.** The counting detail is the part that matters. `count($page)` is the
+obvious way to show "showing 1-12 of N" and it is silently wrong: it reports N
+as at most the page size, so the panel totals and the "new this week" figures on
+the dashboard quietly stop agreeing with the database. A separate count costs
+one cheap query and stays correct at any size.
+
+**Limits — when to revisit.**
+- Page size is a fixed constant, not user-adjustable. Deliberate: a size picker
+  is a feature nobody asked for, and 12/15 is a layout decision.
+- Offset-based pagination degrades on very deep pages (`OFFSET 50000` makes the
+  database walk 50,000 rows). Correct for this application; a keyset cursor
+  would be needed if one account could accumulate tens of thousands of orders.
+- No test exercises the second page against a large dataset. The totals
+  behaviour was verified by forcing multiple pages with a temporarily lowered
+  page size and confirming the counts did not change with zero database writes.
+
+**Evidence.** `public/dashboard.php` — `$listingsPerPage = 12`,
+`$ordersPerPage = 15`, `$savedPerPage = 12`, and the `$countSince` closure for
+the weekly counts.
+
+### D-02 Split the sitemap into numbered files behind an index
+
+**Context.** One `<urlset>` cannot be paginated. Crawlers do not follow
+`?page=` links inside XML, and the sitemaps.org protocol caps a single file at
+50,000 URLs and 50 MB. A listing-per-URL sitemap has to grow by adding files.
+
+**Decision.** `/sitemap.xml` returns a `<sitemapindex>`; listing URLs live in
+`/sitemap-N.xml`. `SITEMAP_MAX_URLS = 50000`, the chunk count is computed as
+`ceil(total / 50000)` with a floor of 1, and the router maps `/sitemap-N.xml`
+for N in 1..50.
+
+**Why.** The chunk count is computed, not fixed. Emitting 50 children
+unconditionally would have been simpler and would have advertised 49 empty
+sitemaps to every crawler. Today the index advertises exactly one child.
+
+**Limits — when to revisit.**
+- 50 files × 50,000 URLs is a hard ceiling of 2.5 million listings. Past that
+  the sitemap silently stops covering new listings, because the chunk count is
+  capped at 50 and the router only maps 1..50. This is the one limit here that
+  fails *quietly*, which is why it is written down. Revisit before a listing
+  count reaches ~2 million, or make the router range dynamic.
+- Chunk 1 also carries the static pages, so chunk boundaries are not uniform
+  across files.
+- `lastmod` is the listing's own `created_at`, not a content-change timestamp;
+  listings have no edit history to derive a truer value from.
+
+**Evidence.** `public/sitemap.php`, `public/router.php`. Measured today:
+`/sitemap.xml` → 1 child; `/sitemap-1.xml` → 38 URLs (34 listings plus 4
+static pages).
+
+### D-03 Cap report exports at 2,000 rows, and disclose the truncation
+
+**Context.** The admin report export builds one PDF in memory. Rows are
+unbounded, so the export's cost is attacker-adjacent: an administrator can
+request a very large document and the server will try to produce all of it.
+
+**Decision.** `REPORT_EXPORT_MAX_ROWS = 2000`. When the fetch returns exactly
+the cap, the PDF carries a note: *"Showing the first 2000 matching rows. Narrow
+the filters to export a complete set."*
+
+**Why.** The disclosure is the whole point. A cap that truncates silently is
+worse than no cap, because the reader cannot tell an incomplete export from a
+complete one — and an auditor who exports "the sales report" has no reason to
+suspect rows were dropped. Truncation the reader can see is a limitation;
+truncation they cannot see is a defect.
+
+**Limits — when to revisit.**
+- 2,000 is a guess about a plausible report size, not a measurement. Nobody has
+  profiled PDF generation, so the cost per row is unknown.
+- A PDF is a snapshot with no continuation. Beyond 2,000 rows the supported
+  answer is "narrow the filters", not "page 2". If real report volumes exceed
+  this, CSV export with a row cap per file would serve better than a larger cap.
+- The note only appears when the row count *reaches* the cap, so a report of
+  1,999 rows and a complete 2,000-row report are visually identical — which is
+  correct, but worth knowing.
+
+**Evidence.** `public/admin_reports.php` (`REPORT_EXPORT_MAX_ROWS`,
+`$exportNote`). Verified by temporarily lowering the cap so a real export hit
+it, then restoring: at cap 2000 the PDF was 1,958 bytes with no note; at cap 5
+it was 1,384 bytes **with** the note. No database writes were involved.
+
+### D-04 Cap filter dropdowns at 100 options
+
+**Context.** The report filter dropdowns were populated from the full set of
+farmers and buyers. Both tables grow with the marketplace, and the dropdown
+renders server-side on every report page load.
+
+**Decision.** `REPORT_FILTER_MAX_OPTIONS = 100`, applied to the two queries
+that populate farmer and buyer filters.
+
+**Why.** Same reasoning as the export cap, but with a worse failure mode: past
+100 farmers the dropdown silently cannot represent them, so an administrator
+cannot filter by the 101st. That is a real functional limit, accepted because
+100 named options is already beyond what a usable `<select>` offers.
+
+**Limits — when to revisit.**
+- **This is the weakest decision in this file.** Past 100 farmers the dropdown
+  is not just slow, it is incomplete, and nothing in the UI says so. The honest
+  fix is a searchable type-ahead backed by an indexed query, not a bigger cap.
+  If the marketplace is expected to pass 100 farmers, do that instead of
+  raising this number.
+- Truncation here is not disclosed in the UI, unlike D-03.
+
+**Evidence.** `public/admin_reports.php` (`REPORT_FILTER_MAX_OPTIONS`).
+
+### D-05 Resolve filter labels with indexed lookups
+
+**Context.** Report rows carried role and entity id, and each row's display
+label was resolved by scanning the user table. Repeated per row, that is
+O(rows × users).
+
+**Decision.** A single `report_entity_label(PDO, role, id)` helper performs an
+indexed lookup, called from 6 sites.
+
+**Why.** Same shape as D-01's counting rule: the naive version is not slow in
+testing because the tables are small, and it degrades silently on the two
+axes that actually grow together — rows and users.
+
+**Limits — when to revisit.** The helper takes a PDO handle and issues one
+query per call, so it is still N queries for N rows. It is a large improvement
+over a full table scan per row and a small one over a prepared-statement cache;
+a batch lookup would be the next step if report volume grew.
+
+---
+
+## Part 2 — Robustness decisions
+
+These are not about scale. Each fixes a class of failure that produces **no
+visible symptom**, which is why it survived review until it was measured.
+
+### D-06 Create the upload directory instead of assuming it
+
+**Context.** `public/uploads/listings/` was not in version control — git does
+not track empty directories, and only the sibling `.htaccess` was committed. So
+every fresh clone had nowhere to write an upload.
+
+**Why it matters.** `move_uploaded_file()` to a missing directory emits a
+warning; the bootstrap's error handler promotes warnings to exceptions; the
+result is a 500 on **every upload**. And it passed unit testing, because nothing
+in the unit suite writes to the filesystem. Only an end-to-end upload — logging
+in, posting a file through the form — found it.
+
+**Decision.** `listing_upload_dir()` creates the directory on first use, and
+`.gitignore` carries the `!public/uploads/listings/` exception so a clone also
+gets the directory. Belt and braces: either mechanism alone is sufficient.
+
+**Limits.** The directory is created with the process umask, so on a shared
+host the mode is whatever PHP's umask allows. A stricter mode belongs in the
+deploy config.
+
+### D-07 Validate uploads without requiring `ext/fileinfo`
+
+**Context.** Both upload paths called `finfo_open()` unguarded. `ext/fileinfo`
+is not always present — the PHP 8.5 build on this machine lacks it — and an
+unguarded call to a missing function is an uncatchable `Error`. Uploads were
+fatally broken on any such host, and `npm test` itself failed because of it.
+
+**Decision.** `getimagesize()` is mandatory: it parses the image container and
+reports both the decoded type and the dimensions, so it is simultaneously the
+allow-list check and the proof of decodability. `finfo` is retained only as an
+optional cross-check, behind `function_exists()`, and a disagreement between the
+sniff and the decoded container is treated as a rejection.
+
+**Why.** Two independent signals are better than one, but only one of them is
+portable. Making the portable one mandatory and the fragile one optional means
+the security property survives the environment changing.
+
+**Limits.** No maximum pixel-count or dimension check exists, so a
+decompression-bomb image is still accepted. `getimagesize()` reads only the
+header, so it cannot detect that. `FR-VAL-005` is open on exactly this point.
+
+### D-08 Treat an unset `base_url` as normal rather than exceptional
+
+**Context.** `config.example.php` shipped `base_url = 'https://your-domain.example'`
+and nothing validated it. `header.php` and `sitemap.php` each fell back to the
+request host when the value was empty, but `password_reset_deliver_local()` had
+**no fallback at all** — so the one consumer where the placeholder mattered most
+built links like `https://your-domain.example/reset.php?token=…`. Password reset
+was silently and entirely non-functional.
+
+**Decision.** One resolver, `app_base_url()`. A real configured value wins; an
+empty value *or* the old placeholder derives the host from the request. Default
+in the example config is now empty.
+
+**Why.** There is no domain worth hardcoding into a template, and an unset value
+that self-heals is strictly safer than a plausible-looking placeholder that
+ships. The two duplicated fallbacks are gone.
+
+**Limits.** Behind a reverse proxy that rewrites `Host`, request-derived URLs
+can be wrong. That is the case where `base_url` should be set explicitly.
+
+### D-09 Return a real 5xx on fatal errors
+
+**Context.** The bootstrap had a thorough `set_exception_handler`, but no
+`register_shutdown_function`. A fatal error — parse error, redeclared function,
+memory exhaustion — never throws, so it never reached that handler. With
+`display_errors = 0` the browser received an **empty body at HTTP 200**. A
+broken page and a working page were indistinguishable from outside.
+
+**Why it matters.** This is not hypothetical. It swallowed a real dashboard
+defect during development and cost several rounds of browser probing, because
+every page "returned 200" and nothing looked wrong.
+
+**Decision.** A shutdown handler inspects `error_get_last()`, writes the fatal
+to the same daily-rotated log as thrown exceptions, and serves the branded 500
+page. `render_fatal_page()` deliberately starts **no output buffer**: a buffer
+opened during shutdown is discarded, which produced a 3-byte body. The exception
+path's buffer flushed normally, so the two paths looked equivalent until
+measured.
+
+**Limits.** If output was already flushed, the status is corrected to 500 but
+the partial page cannot be replaced — appending a second document would corrupt
+the response.
+
+### D-10 Log the five optional queries that fail silently
+
+**Context.** Five `catch` blocks were empty: the saved-listings lookup in
+`browse.php`, the per-card saved check in `listing.php`, and the profile,
+cart-count and avatar queries in the layout partials. Each is a decorative
+query wrapped in a try/catch that degrades gracefully.
+
+**Why it matters.** Graceful degradation is right; *silent* degradation is not.
+A failing saved-listings query means the saved button renders in the wrong state
+and nothing anywhere records that it happened.
+
+**Decision.** All five now `error_log()` the failure while still degrading.
+There are now no empty `catch` blocks in PHP sources.
+
+**Limits.** The per-card check in `listing.php` runs inside a loop, so a
+persistent failure logs once per card on the page. Bounded by the page size.
+
+---
+
+## How these were verified
+
+Every claim above that could be measured, was, and each is reproducible:
+
+- **End-to-end, not just unit.** The missing upload directory (D-06) passed the
+  whole unit suite and was found only by logging in and posting a real file.
+- **Forced paths.** Caps and page sizes were proven to engage by temporarily
+  lowering them, confirming the behaviour, then restoring — never by assuming a
+  branch is reachable. D-03's disclosure was verified this way.
+- **Negative controls.** Rejection tests assert *which* check fired, not merely
+  that nothing was created. An earlier version asserted only "no listing was
+  created" and passed for the wrong reason, because the form failed for an
+  unrelated reason.
+- **Mutation testing.** Each regression guard was checked by reintroducing the
+  defect and confirming the test goes red. A green test that cannot fail proves
+  nothing.
+- **Two interpreters.** The suite runs on a `fileinfo`-present build (8.2) and a
+  `fileinfo`-absent build (8.5), because D-07's whole point is that the code
+  must not depend on an optional extension.
+
+Several assertions written during this work were themselves wrong and were
+corrected — including three that matched their own comments or could not
+distinguish a legitimate value from a bug. Those are noted in the commit history
+rather than hidden, because a test suite that never misfired would mean the
+tests were not really checking anything.
+
+## What this document does not cover
+
+**Unimplemented features are not decisions.** The traceability matrix currently
+records 216 requirements: 45 automated, 23 partial, 84 verified by inspection,
+and **64 gaps**. The gaps are dominated by genuinely missing functionality —
+administrator user search, activate/suspend, temporary passwords, the listing
+lifecycle states the SRS specifies, parts of the order state machine, category
+and unit administration, and retention holds — plus acceptance evidence that
+has not been produced (load test, responsive run, contrast audit, backup and
+restore drill).
+
+None of that is a judgement call recorded here. It is tracked, individually, in
+`docs/traceability-matrix.md`, which lists each gap against the requirement it
+belongs to rather than summarising them.
