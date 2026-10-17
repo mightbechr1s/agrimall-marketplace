@@ -903,6 +903,10 @@ function account_anonymize(int $userId): array
 
         // 6. Session and notification state cannot outlive the account; it only
         //    cascades on a physical delete, so clear it explicitly.
+        // Table and column names cannot be bound as parameters, so they are
+        // interpolated - which is only safe because this map is a literal in
+        // this file and nothing else may supply it. The allow-list assertion
+        // below keeps that true if the map is ever refactored to be dynamic.
         $tables = [
             'cart_items'         => 'buyer_id',
             'saved_listings'     => 'user_id',
@@ -911,7 +915,14 @@ function account_anonymize(int $userId): array
             'user_suspensions'   => 'user_id',
             'password_resets'    => 'user_id',
         ];
+        $allowedColumns = ['buyer_id', 'user_id'];
         foreach ($tables as $table => $column) {
+            // Identifiers are unbindable, so reject anything not exactly the
+            // known shape rather than trusting the call site.
+            if (!preg_match('/^[a-z_][a-z0-9_]*$/', $table)
+                || !in_array($column, $allowedColumns, true)) {
+                throw new RuntimeException('Refusing to clear unknown table: ' . $table);
+            }
             $pdo->prepare("DELETE FROM `$table` WHERE `$column` = :id")
                 ->execute(['id' => $userId]);
         }
@@ -934,9 +945,14 @@ function account_anonymize(int $userId): array
     return $summary;
 }
 
-function build_report_pdf(string $title, string $ref, array $filters, array $rows, ?array $totals): string
+function build_report_pdf(string $title, string $ref, array $filters, array $rows, ?array $totals, string $note = ''): string
 {
-    $lines = [$title . ' (' . $ref . ')', 'Generated: ' . date('Y-m-d H:i:s T'), 'Filters: ' . implode('; ', $filters), ''];
+    $lines = [$title . ' (' . $ref . ')', 'Generated: ' . date('Y-m-d H:i:s T'), 'Filters: ' . implode('; ', $filters)];
+    if ($note !== '') {
+        // Never truncate a capped export silently; say so on the document.
+        $lines[] = 'NOTE: ' . $note;
+    }
+    $lines[] = '';
     if ($rows) {
         foreach ($rows as $row) {
             $parts = [];

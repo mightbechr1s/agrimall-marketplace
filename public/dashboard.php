@@ -27,10 +27,17 @@ $recentActivity = [];
 if ($role === 'admin') {
     $pdo = DB::pdo();
     $weekAgo = date('Y-m-d H:i:s', strtotime('-7 days'));
-
-    $usersNew = (int) $pdo->query('SELECT COUNT(*) FROM users WHERE created_at >= "' . $weekAgo . '"')->fetchColumn();
-    $listingsNew = (int) $pdo->query('SELECT COUNT(*) FROM produce_listings WHERE created_at >= "' . $weekAgo . '"')->fetchColumn();
-    $ordersNew = (int) $pdo->query('SELECT COUNT(*) FROM orders WHERE created_at >= "' . $weekAgo . '"')->fetchColumn();
+    // Bound rather than concatenated. The value is server-derived today, but a
+    // parameter is what keeps this safe if that ever changes.
+    $countSince = function (string $table) use ($pdo, $weekAgo): int {
+        // $table is a literal from this file, never user input.
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM `$table` WHERE created_at >= :since");
+        $stmt->execute(['since' => $weekAgo]);
+        return (int) $stmt->fetchColumn();
+    };
+    $usersNew    = $countSince('users');
+    $listingsNew = $countSince('produce_listings');
+    $ordersNew   = $countSince('orders');
 
     $stats = [
         'Users' => [

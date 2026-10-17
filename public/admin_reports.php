@@ -4,6 +4,14 @@ require_role('admin');
 
 $pdo = DB::pdo();
 
+/** Cap on PDF export rows. Beyond this the file (and PHP memory) grows with
+ *  the dataset, so a flooded admin URL could exhaust the server. */
+const REPORT_EXPORT_MAX_ROWS = 2000;
+
+/** Cap on farmer/buyer filter dropdowns. A <select> gets one <option> per
+ *  account, so an uncapped list is unusable and ships the whole table in HTML. */
+const REPORT_FILTER_MAX_OPTIONS = 100;
+
 // Report whitelist (FR-REP-001,002,003,007,008,009; FR-REP-004 is the farmer-side summary).
 $reports = [
     'registration'   => ['title' => 'Registration Report',    'ref' => 'FR-REP-001'],
@@ -64,16 +72,48 @@ $orderStatuses = ['pending', 'delivery_fee_review', 'confirmed', 'preparing', 'r
 $verifyStatuses = ['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected'];
 $methods = ['pickup' => 'Pickup', 'farmer_delivery' => 'Farmer Delivery'];
 $cancelRoles = ['buyer' => 'Buyer', 'farmer' => 'Farmer', 'admin' => 'Admin'];
-$farmers = $pdo->query(
+$farmers = $pdo->prepare(
     'SELECT u.id, COALESCE(fp.farm_name, u.email) AS label
      FROM users u LEFT JOIN farmer_profiles fp ON fp.user_id = u.id
-     WHERE u.role = \'farmer\' ORDER BY label'
-)->fetchAll();
-$buyers = $pdo->query(
+     WHERE u.role = \'farmer\' ORDER BY label
+     LIMIT ' . REPORT_FILTER_MAX_OPTIONS
+);
+$farmers->execute();
+$farmers = $farmers->fetchAll();
+$buyers = $pdo->prepare(
     'SELECT u.id, COALESCE(bp.full_name, u.email) AS label
      FROM users u LEFT JOIN buyer_profiles bp ON bp.user_id = u.id
-     WHERE u.role = \'buyer\' ORDER BY label'
-)->fetchAll();
+     WHERE u.role = \'buyer\' ORDER BY label
+     LIMIT ' . REPORT_FILTER_MAX_OPTIONS
+);
+$buyers->execute();
+$buyers = $buyers->fetchAll();
+
+/**
+ * Label for a selected farmer/buyer, resolved with one indexed lookup.
+ *
+ * The dropdown lists above are capped, so scanning them would miss anyone past
+ * the cap; and the previous version looped the entire user table per report.
+ */
+function report_entity_label(PDO $pdo, string $role, string $id): ?string
+{
+    if ($id === '' || !ctype_digit($id)) {
+        return null;
+    }
+    $profileTable = $role === 'farmer' ? 'farmer_profiles' : 'buyer_profiles';
+    $nameColumn   = $role === 'farmer' ? 'farm_name' : 'full_name';
+    // $role is never user input here; it is one of two literals from this file.
+    if (!in_array($role, ['farmer', 'buyer'], true)) {
+        return null;
+    }
+    $sql = "SELECT COALESCE(p.$nameColumn, u.email)
+            FROM users u LEFT JOIN $profileTable p ON p.user_id = u.id
+            WHERE u.id = :id AND u.role = :role";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(['id' => (int) $id, 'role' => $role]);
+    $label = $stmt->fetchColumn();
+    return $label === false || $label === null ? null : (string) $label;
+}
 $reviewers = $pdo->query(
     'SELECT DISTINCT u.id, u.email FROM farmer_profiles fp
      JOIN users u ON u.id = fp.verified_by WHERE fp.verified_by IS NOT NULL ORDER BY u.email'
@@ -192,8 +232,7 @@ if ($type === 'registration') {
     $rows = $stmt->fetchAll();
     $catName = null;
     foreach ($categories as $c) { if ((string) $c['id'] === $category) $catName = $c['name']; }
-    $farmerName = null;
-    foreach ($farmers as $f) { if ((string) $f['id'] === $farmer) $farmerName = $f['label']; }
+    $farmerName = report_entity_label($pdo, 'farmer', (string) $farmer);
     $filters[] = 'Category: ' . ($catName ?? 'all');
     $filters[] = 'Farmer: ' . ($farmerName ?? 'all');
     $filters[] = 'Status: ' . ($status !== '' ? $status : 'all');
@@ -265,10 +304,8 @@ if ($type === 'registration') {
     }
     $stmt->execute();
     $rows = $stmt->fetchAll();
-    $farmerName = null;
-    foreach ($farmers as $f) { if ((string) $f['id'] === $farmer) $farmerName = $f['label']; }
-    $buyerName = null;
-    foreach ($buyers as $b) { if ((string) $b['id'] === $buyer) $buyerName = $b['label']; }
+    $farmerName = report_entity_label($pdo, 'farmer', (string) $farmer);
+    $buyerName = report_entity_label($pdo, 'buyer', (string) $buyer);
     $filters[] = 'Status: ' . ($status !== '' ? $status : 'all');
     $filters[] = 'Farmer: ' . ($farmerName ?? 'all');
     $filters[] = 'Buyer: ' . ($buyerName ?? 'all');
@@ -408,8 +445,7 @@ if ($type === 'registration') {
         . ($where ? ' WHERE ' . implode(' AND ', $where) : ''));
     $totalsStmt->execute($params);
     $totals = $totalsStmt->fetch();
-    $farmerName = null;
-    foreach ($farmers as $f) { if ((string) $f['id'] === $farmer) $farmerName = $f['label']; }
+    $farmerName = report_entity_label($pdo, 'farmer', (string) $farmer);
     $filters[] = 'Status: ' . ($status !== '' ? $status : 'all');
     $filters[] = 'Farmer: ' . ($farmerName ?? 'all');
     $filters[] = 'Method: ' . ($method !== '' ? ($methods[$method] ?? $method) : 'all');
@@ -485,10 +521,8 @@ if ($type === 'registration') {
     }
     $stmt->execute();
     $rows = $stmt->fetchAll();
-    $farmerName = null;
-    foreach ($farmers as $f) { if ((string) $f['id'] === $farmer) $farmerName = $f['label']; }
-    $buyerName = null;
-    foreach ($buyers as $b) { if ((string) $b['id'] === $buyer) $buyerName = $b['label']; }
+    $farmerName = report_entity_label($pdo, 'farmer', (string) $farmer);
+    $buyerName = report_entity_label($pdo, 'buyer', (string) $buyer);
     $filters[] = 'Cancelled by: ' . ($cRole !== '' ? ($cancelRoles[$cRole] ?? $cRole) : 'all');
     $filters[] = 'Stage: ' . ($stage !== '' ? $stage : 'all');
     $filters[] = 'Farmer: ' . ($farmerName ?? 'all');
@@ -504,14 +538,22 @@ if (!isset($filters) || empty($filters)) {
 
 
 if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
-    // Export the whole filtered set, not just the page on screen.
+    // Export the filtered set, but cap it. Fetching every matching row makes
+    // both PHP memory and the rendered PDF grow with the dataset, which turns
+    // this admin URL into a denial-of-service lever. The cap is disclosed in
+    // the PDF rather than silently truncating the file.
     $exportRows = $rows;
+    $exportNote = '';
     if (isset($baseSql)) {
-        $exportStmt = $pdo->prepare($baseSql);
+        $exportStmt = $pdo->prepare($baseSql . ' LIMIT ' . REPORT_EXPORT_MAX_ROWS);
         $exportStmt->execute($params);
         $exportRows = $exportStmt->fetchAll();
+        if (count($exportRows) >= REPORT_EXPORT_MAX_ROWS) {
+            $exportNote = 'Showing the first ' . REPORT_EXPORT_MAX_ROWS
+                . ' matching rows. Narrow the filters to export a complete set.';
+        }
     }
-    $pdf = build_report_pdf($reportTitle, $reportRef, $filters, $exportRows, $totals);
+    $pdf = build_report_pdf($reportTitle, $reportRef, $filters, $exportRows, $totals, $exportNote);
     header('Content-Type: application/pdf');
     header('Content-Disposition: attachment; filename="animal-' . strtolower($reportRef) . '.pdf"');
     header('Content-Length: ' . strlen($pdf));
