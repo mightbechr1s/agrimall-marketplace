@@ -12,6 +12,14 @@ config/config.php
 public/uploads/*
 !public/uploads/.gitkeep
 !public/uploads/.htaccess
+# Listing images live one level down. Keep that directory in the clone too: an
+# absent destination made move_uploaded_file() fail and every upload 500.
+# listing_upload_dir() also creates it at runtime, belt and braces.
+!public/uploads/listings/
+# Re-exclude its contents: the line above re-includes the directory, and without
+# this a stray uploaded image gets committed.
+public/uploads/listings/*
+!public/uploads/listings/.gitkeep
 
 # --- Runtime logs ---
 logs/*

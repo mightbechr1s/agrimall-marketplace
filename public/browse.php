@@ -44,7 +44,11 @@ if (current_user_id() && current_user_role() === 'buyer') {
         $savedStmt = DB::pdo()->prepare('SELECT listing_id FROM saved_listings WHERE user_id = :id');
         $savedStmt->execute(['id' => current_user_id()]);
         $savedIds = $savedStmt->fetchAll(PDO::FETCH_COLUMN);
-    } catch (Exception $e) {}
+    } catch (Exception $e) {
+        // Decorative query: degrade rather than break the page, but do not
+        // swallow it silently -- a failure here is invisible otherwise.
+        error_log('browse: saved-listings lookup failed: ' . $e->getMessage());
+    }
 }
 $role = function_exists('current_user_role') ? current_user_role() : null;
 $sidebarShell = (bool) current_user_id();

@@ -59,7 +59,11 @@ try {
         $userProfile = array_merge($userProfile, $uRow);
         $displayName = trim((string) ($uRow['profile_name'] ?? ''));
     }
-} catch (Exception $e) {}
+} catch (Exception $e) {
+    // Decorative query: degrade rather than break the page, but do not
+    // swallow it silently -- a failure here is invisible otherwise.
+    error_log('dashboard-layout: profile lookup failed: ' . $e->getMessage());
+}
 
 if ($displayName === '') {
     $displayName = explode('@', (string) $userProfile['email'])[0];

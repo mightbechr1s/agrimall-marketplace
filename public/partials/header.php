@@ -221,7 +221,11 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
                     $cc = DB::pdo()->prepare('SELECT COUNT(*) FROM cart_items WHERE buyer_id = :id');
                     $cc->execute(['id' => current_user_id()]);
                     $cartCount = (int) $cc->fetchColumn();
-                } catch (Exception $e) {}
+                } catch (Exception $e) {
+                    // Decorative query: degrade rather than break the page, but do not
+                    // swallow it silently -- a failure here is invisible otherwise.
+                    error_log('header: cart-count lookup failed: ' . $e->getMessage());
+                }
             }
             $cartUrl = current_user_id() ? 'cart.php' : login_url('cart.php');
           ?>
@@ -239,7 +243,11 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
                 $uStmt->execute(['id' => current_user_id()]);
                 $uRow = $uStmt->fetch();
                 if ($uRow) $userProfile = array_merge($userProfile, $uRow);
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+                // Decorative query: degrade rather than break the page, but do not
+                // swallow it silently -- a failure here is invisible otherwise.
+                error_log('header: avatar profile lookup failed: ' . $e->getMessage());
+            }
             $emailUser = explode('@', $userProfile['email'])[0];
             $initials = strtoupper(substr($emailUser, 0, 2));
             $nameUser = !empty($userProfile['name']) ? $userProfile['name'] : $emailUser;

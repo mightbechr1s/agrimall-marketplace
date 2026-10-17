@@ -371,6 +371,39 @@ foreach (array_merge(glob($repoRoot . '/public/*.php') ?: [], glob($repoRoot . '
 $check('only app_base_url() reads the raw base_url key', $rawReaders === ['functions.php (1)'], implode(', ', $rawReaders));
 
 // ---------------------------------------------------------------------------
+echo "\nNFR-SEC-011: a fatal error must be a 5xx, not an empty 200\n";
+// ---------------------------------------------------------------------------
+// set_exception_handler cannot see a fatal: a parse error, a redeclared
+// function or memory exhaustion ends the script without throwing. With
+// display_errors=0 the browser was handed an EMPTY BODY AT HTTP 200, so a broken
+// page and a working page looked identical from outside. Proven against a live
+// server by redeclaring a helper, which now yields HTTP 500 with the branded
+// error page while the detail goes to the daily log.
+
+$bootstrap = (string) file_get_contents($repoRoot . '/src/bootstrap.php');
+$check('bootstrap registers a shutdown handler', str_contains($bootstrap, 'register_shutdown_function'));
+$check(
+    'the shutdown handler treats E_ERROR as fatal',
+    preg_match('/\$fatalTypes\s*=\s*\[[^\]]*E_ERROR/', $bootstrap) === 1
+);
+$check('a fatal is written to the daily log', str_contains($bootstrap, 'log_fatal_to_daily'));
+// Bounded to the function body: a lazy [\s\S]*? still matches an ob_start()
+// anywhere later in the file, which is how this assertion passed wrongly once.
+$fnStart = strpos($bootstrap, 'function render_fatal_page');
+$fnBody = '';
+if ($fnStart !== false) {
+    $fnEnd = strpos($bootstrap, "\nfunction ", $fnStart + 10);
+    $fnBody = $fnEnd === false ? substr($bootstrap, $fnStart) : substr($bootstrap, $fnStart, $fnEnd - $fnStart);
+}
+$check('render_fatal_page exists', $fnStart !== false);
+$check(
+    'render_fatal_page starts no output buffer that shutdown discards',
+    !str_contains($fnBody, 'ob_start'),
+    'ob_start() inside render_fatal_page() yields a 3-byte body'
+);
+$check('production still hides errors from the browser', str_contains($bootstrap, "ini_set('display_errors', '0')"));
+
+// ---------------------------------------------------------------------------
 echo "\nNFR-SEC-001: no request superglobal reaches a SQL statement\n";
 // ---------------------------------------------------------------------------
 $superglobalHits = [];

@@ -38,6 +38,56 @@ if ($isProduction) {
     ini_set('display_errors', '1');
 }
 
+/**
+ * Render the 500 page and stop.
+ *
+ * Shared by the exception handler and the shutdown handler below so a fatal
+ * error is indistinguishable from a thrown one. Exits.
+ */
+function render_fatal_page(bool $isProduction): void
+{
+    if (!$isProduction) {
+        return;   // dev: PHP's own handler displays the error
+    }
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: text/html; charset=UTF-8');
+    }
+    $ref = substr(md5((string) microtime(true) . (string) random_bytes(4)), 0, 8);
+    $fiveHundred = __DIR__ . '/../public/500.php';
+    if (is_file($fiveHundred)) {
+        // No ob_start() here: a buffer opened during shutdown is discarded, which
+        // is why the fatal path was returning a 3-byte body. 500.php is
+        // self-contained and generates its own reference code, so it needs
+        // nothing from here.
+        require $fiveHundred;
+        exit;
+    }
+    echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>500 Server Error</title></head><body style="font-family:system-ui;padding:2rem;text-align:center"><h1>Server Error</h1><p>Reference: <code>' . $ref . '</code></p></body></html>';
+    exit;
+}
+
+/** Write a fatal error to the same daily-rotated log the exception path uses. */
+function log_fatal_to_daily(array $cfg, array $last): void
+{
+    $logPath = $cfg['app']['error_logging']['error_log'] ?? __DIR__ . '/../logs/error.log';
+    $logDir = dirname($logPath);
+    if (!is_dir($logDir)) {
+        @mkdir($logDir, 0755, true);
+    }
+    $dailyLog = (strpos($logPath, 'error.log') !== false)
+        ? $logDir . DIRECTORY_SEPARATOR . 'errors-' . date('Y-m-d') . '.log'
+        : $logPath;
+    error_log(sprintf(
+        "[%s] FATAL %d in %s:%d -- %s\n---\n",
+        date('Y-m-d H:i:s'),
+        (int) ($last['type'] ?? 0),
+        (string) ($last['file'] ?? '(unknown)'),
+        (int) ($last['line'] ?? 0),
+        (string) ($last['message'] ?? 'unknown')
+    ), 3, $dailyLog);
+}
+
 // ---- Exception handler (production -> 500.php; dev -> default)  ----
 set_exception_handler(function (Throwable $e) use ($config, $isProduction): void {
     // Always log full error + stack to a daily-rotated file.
@@ -69,22 +119,36 @@ set_exception_handler(function (Throwable $e) use ($config, $isProduction): void
     }
 
     if ($isProduction) {
-        if (!headers_sent()) {
-            http_response_code(500);
-            header('Content-Type: text/html; charset=UTF-8');
-        }
-        $ref = substr(md5((string) microtime(true) . (string) random_bytes(4)), 0, 8);
-        // Include 500.php with $ref; fall back to minimal HTML if it is missing.
-        $fiveHundred = __DIR__ . '/../public/500.php';
-        if (is_file($fiveHundred)) {
-            ob_start();
-            require $fiveHundred;
-            exit;
-        }
-        echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>500 Server Error</title></head><body style="font-family:system-ui;padding:2rem;text-align:center"><h1>Server Error</h1><p>Reference: <code>' . $ref . '</code></p></body></html>';
-        exit;
+        render_fatal_page(true);
     }
     // Dev: PHP's default handler displays the error (display_errors=1).
+});
+
+// ---- Shutdown handler: fatal errors never reach the exception handler ----
+// A parse error, "cannot redeclare function()", or memory exhaustion ends the
+// script without throwing. With display_errors=0 the browser was getting an
+// EMPTY BODY AT HTTP 200, which is how a real bug stayed invisible long enough
+// to be worth writing down. A 5xx is the honest answer.
+register_shutdown_function(function () use ($config, $isProduction): void {
+    $last = error_get_last();
+    if ($last === null) {
+        return;   // normal shutdown
+    }
+    $fatalTypes = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR];
+    if (!in_array((int) $last['type'], $fatalTypes, true)) {
+        return;   // a warning or notice: already handled by set_error_handler
+    }
+    log_fatal_to_daily($config, $last);
+    // Partial output already flushed? Replacing it would corrupt the response,
+    // but leaving HTTP 200 is worse, so at least correct the status.
+    $sent = ob_get_level() > 0 && (string) ob_get_contents() !== '';
+    if ($sent) {
+        if (!headers_sent()) {
+            http_response_code(500);
+        }
+        return;
+    }
+    render_fatal_page($isProduction);
 });
 
 // ---- Error handler (catches E_ERROR, E_WARNING, etc.)  ----

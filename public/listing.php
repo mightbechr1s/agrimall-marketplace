@@ -159,7 +159,11 @@ $fmtQty = function ($value, $symbol): string {
                             $sv = DB::pdo()->prepare('SELECT 1 FROM saved_listings WHERE user_id = :u AND listing_id = :l');
                             $sv->execute(['u' => current_user_id(), 'l' => $item['id']]);
                             $isSaved = (bool) $sv->fetchColumn();
-                        } catch (Throwable $e) {}
+                        } catch (Exception $e) {
+                            // Decorative query: degrade rather than break the page, but do not
+                            // swallow it silently -- a failure here is invisible otherwise.
+                            error_log('listing: saved-state lookup failed: ' . $e->getMessage());
+                        }
                         ?>
                         <div class="d-flex gap-2 mb-3">
                             <form method="post" action="cart_add.php" class="mb-0" data-buy-now="true">
