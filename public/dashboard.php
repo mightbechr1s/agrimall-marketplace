@@ -165,23 +165,44 @@ if ($role === 'admin') {
     $ls->execute();
     $farmerListings = $ls->fetchAll();
 
-    $os = $pdo->prepare('SELECT * FROM v_order_summary WHERE farmer_id = :id ORDER BY created_at DESC');
-    $os->execute(['id' => $userId]);
+    // Order history grows forever, so the table is paged and the totals come
+    // from COUNT queries. Counting the fetched page would silently corrupt the
+    // panel counts and the Total/Active/Completed stats below.
+    $ordersPerPage = 15;
+    $oc = $pdo->prepare('SELECT COUNT(*) FROM v_order_summary WHERE farmer_id = :id');
+    $oc->execute(['id' => $userId]);
+    $orderTotal = (int) $oc->fetchColumn();
+    $orderPages = max(1, (int) ceil($orderTotal / $ordersPerPage));
+    $orderPage = max(1, min($orderPages, (int) ($_GET['orders_page'] ?? 1)));
+    $os = $pdo->prepare('SELECT * FROM v_order_summary WHERE farmer_id = :id ORDER BY created_at DESC LIMIT :lim OFFSET :off');
+    $os->bindValue(':id', $userId, PDO::PARAM_INT);
+    $os->bindValue(':lim', $ordersPerPage, PDO::PARAM_INT);
+    $os->bindValue(':off', ($orderPage - 1) * $ordersPerPage, PDO::PARAM_INT);
+    $os->execute();
     $orders = $os->fetchAll();
 
 } else {
     // Buyer
     $pdo = DB::pdo();
-    $os = $pdo->prepare('SELECT * FROM v_order_summary WHERE buyer_id = :id ORDER BY created_at DESC');
-    $os->execute(['id' => $userId]);
+    $ordersPerPage = 15;
+    $oc = $pdo->prepare('SELECT COUNT(*) FROM v_order_summary WHERE buyer_id = :id');
+    $oc->execute(['id' => $userId]);
+    $orderTotal = (int) $oc->fetchColumn();
+    $oca = $pdo->prepare("SELECT COUNT(*) FROM v_order_summary
+                          WHERE buyer_id = :id AND status NOT IN ('completed','cancelled','rejected')");
+    $oca->execute(['id' => $userId]);
+    $activeOrders = (int) $oca->fetchColumn();
+    $orderPages = max(1, (int) ceil($orderTotal / $ordersPerPage));
+    $orderPage = max(1, min($orderPages, (int) ($_GET['orders_page'] ?? 1)));
+    $os = $pdo->prepare('SELECT * FROM v_order_summary WHERE buyer_id = :id ORDER BY created_at DESC LIMIT :lim OFFSET :off');
+    $os->bindValue(':id', $userId, PDO::PARAM_INT);
+    $os->bindValue(':lim', $ordersPerPage, PDO::PARAM_INT);
+    $os->bindValue(':off', ($orderPage - 1) * $ordersPerPage, PDO::PARAM_INT);
+    $os->execute();
     $orders = $os->fetchAll();
-    $activeOrders = 0;
-    foreach ($orders as $o) {
-        if (!in_array($o['status'], ['completed', 'cancelled', 'rejected'])) $activeOrders++;
-    }
     $stats = [
         'Total Orders' => [
-            'value' => count($orders),
+            'value' => $orderTotal,
             'trend' => '+7%',
             'icon' => 'bi-receipt',
             'variant' => 'info'
@@ -193,7 +214,7 @@ if ($role === 'admin') {
             'variant' => 'warning'
         ],
         'Completed' => [
-            'value' => count($orders) - $activeOrders,
+            'value' => $orderTotal - $activeOrders,
             'trend' => '+3%',
             'icon' => 'bi-check-circle',
             'variant' => 'success'
@@ -465,7 +486,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
     <div class="dash-panel" id="orders">
         <div class="dash-panel-header">
             <h2>Orders</h2>
-            <span class="dash-panel-count"><?= count($orders) ?> total</span>
+            <span class="dash-panel-count"><?= $orderTotal ?> total</span>
         </div>
         <?php if ($orders): ?>
         <div class="table-responsive">
@@ -519,6 +540,19 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 </tbody>
             </table>
         </div>
+            <?php
+            $page = $orderPage;
+            $totalPages = $orderPages;
+            $pageParam = 'orders_page';
+            $param = '';
+            $labels = [
+                'prev' => t($navCopy['ui'], 'pager_prev'),
+                'next' => t($navCopy['ui'], 'pager_next'),
+                'page' => t($navCopy['ui'], 'pager_page'),
+                'of'   => t($navCopy['ui'], 'pager_of'),
+            ];
+            include __DIR__ . '/partials/pager.php';
+            ?>
         <?php else: ?>
         <div class="empty-state">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon" aria-hidden="true">
@@ -613,7 +647,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                         <tfoot>
                             <tr>
                                 <th>Total</th>
-                                <th class="text-end"><?= count($orders) ?></th>
+                                <th class="text-end"><?= $orderTotal ?></th>
                                 <th class="text-end"><?= money(array_sum(array_map(function ($r) { return (float) $r['produce'] + (float) $r['fees']; }, $orderSummary))) ?></th>
                             </tr>
                         </tfoot>
@@ -664,7 +698,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
     <div class="dash-panel" id="orders">
         <div class="dash-panel-header">
             <h2>Order History</h2>
-            <span class="dash-panel-count"><?= count($orders) ?> orders</span>
+            <span class="dash-panel-count"><?= $orderTotal ?> orders</span>
         </div>
         <?php if ($orders): ?>
         <div class="table-responsive">
@@ -717,6 +751,19 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 </tbody>
             </table>
         </div>
+            <?php
+            $page = $orderPage;
+            $totalPages = $orderPages;
+            $pageParam = 'orders_page';
+            $param = '';
+            $labels = [
+                'prev' => t($navCopy['ui'], 'pager_prev'),
+                'next' => t($navCopy['ui'], 'pager_next'),
+                'page' => t($navCopy['ui'], 'pager_page'),
+                'of'   => t($navCopy['ui'], 'pager_of'),
+            ];
+            include __DIR__ . '/partials/pager.php';
+            ?>
         <?php else: ?>
         <div class="empty-state">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon" aria-hidden="true">

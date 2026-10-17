@@ -12,6 +12,11 @@ $requestPath = urldecode($requestPath);
 $specialRoutes = [
     '/sitemap.xml' => __DIR__ . '/sitemap.php',
 ];
+// Numbered child sitemaps behind the sitemap index (50k URLs per file).
+$specialRoutes += array_combine(
+    array_map(fn($n) => "/sitemap-$n.xml", range(1, 50)),
+    array_fill(0, 50, __DIR__ . '/sitemap.php')
+) ?: [];
 
 // Serve an SVG favicon for the default /favicon.ico request
 if ($requestPath === '/favicon.ico') {
