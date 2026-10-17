@@ -387,18 +387,20 @@ $check(
     preg_match('/\$fatalTypes\s*=\s*\[[^\]]*E_ERROR/', $bootstrap) === 1
 );
 $check('a fatal is written to the daily log', str_contains($bootstrap, 'log_fatal_to_daily'));
-// Bounded to the function body: a lazy [\s\S]*? still matches an ob_start()
-// anywhere later in the file, which is how this assertion passed wrongly once.
+// Bounded to the function body, with comments stripped: a lazy [\s\S]*? still
+// matches an ob_start() anywhere later in the file, and an unstripped body still
+// matches the very comment that explains why there is none.
 $fnStart = strpos($bootstrap, 'function render_fatal_page');
-$fnBody = '';
+$fnCode = '';
 if ($fnStart !== false) {
     $fnEnd = strpos($bootstrap, "\nfunction ", $fnStart + 10);
     $fnBody = $fnEnd === false ? substr($bootstrap, $fnStart) : substr($bootstrap, $fnStart, $fnEnd - $fnStart);
+    $fnCode = (string) preg_replace(['~/\*.*?\*/~s', '~//[^\n]*~'], '', $fnBody);
 }
 $check('render_fatal_page exists', $fnStart !== false);
 $check(
     'render_fatal_page starts no output buffer that shutdown discards',
-    !str_contains($fnBody, 'ob_start'),
+    !str_contains($fnCode, 'ob_start'),
     'ob_start() inside render_fatal_page() yields a 3-byte body'
 );
 $check('production still hides errors from the browser', str_contains($bootstrap, "ini_set('display_errors', '0')"));
