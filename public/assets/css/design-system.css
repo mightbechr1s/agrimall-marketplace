@@ -23,6 +23,10 @@
   --text: #231F20;
   --text-soft: #6E6355;
   --borders: #E7DFCE;
+  /* WCAG 1.4.11 wants 3:1 on UI component boundaries so a field is locatable,
+     but card separators are decorative and stay soft. This is the lightest warm
+     tone clearing 3:1 on paper (3.59), canvas (3.36) and canvas-deep (3.07). */
+  --field-border: #98855F;
   --danger: #B4572F;
   --danger-fill: #B4572F;
   --success: #2E7D32;
@@ -93,6 +97,8 @@
   --text: #E8E8E6;
   --text-soft: #A3A3A3;
   --borders: rgba(255, 255, 255, 0.10);
+  /* Dark field borders already measure 15.52:1, so they keep the soft token. */
+  --field-border: var(--borders);
   --danger: #E57373;
   /* Darker red for filled danger buttons: white text needs 4.5:1, which the
      light --danger tint cannot give on dark surfaces. */
@@ -866,6 +872,7 @@ h1, h2, h3, h4, h5, h6,
   color: var(--gold-ink);
   font-weight: 700;
   font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
   font-size: 0.95rem;
   padding: 0 0.9rem;
   border-radius: 8px !important;
@@ -1618,6 +1625,7 @@ h1, h2, h3, h4, h5, h6,
 .stat-value {
   font-family: var(--font-display);
   font-optical-sizing: auto;
+  font-variant-numeric: tabular-nums;
   font-size: clamp(1.5rem, 2.6vw, 2rem);
   font-weight: 620;
   line-height: 1.1;
@@ -1713,9 +1721,10 @@ h1, h2, h3, h4, h5, h6,
 /* Bootstrap form plumbing — soft fields */
 .form-control,
 .form-select,
-.input-group-text {
+.input-group-text,
+.form-check-input {
   border-radius: var(--radius-sm) !important;
-  border-color: var(--borders) !important;
+  border-color: var(--field-border) !important;
   background-color: var(--paper) !important;
   color: var(--text) !important;
 }
@@ -2233,7 +2242,7 @@ h1, h2, h3, h4, h5, h6,
 }
 .auth-card .form-control,
 .auth-card .form-select {
-  border: 1px solid var(--borders) !important;
+  border: 1px solid var(--field-border) !important;
   border-radius: var(--radius-sm) !important;
   background: var(--paper) !important;
   color: var(--text) !important;
@@ -3497,7 +3506,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 :root[data-theme="dark"] .form-select,
 :root[data-theme="dark"] .form-check-input {
   background-color: var(--paper);
-  border-color: var(--borders);
+  border-color: var(--field-border);
   color: var(--text);
 }
 :root[data-theme="dark"] .form-control::placeholder {
