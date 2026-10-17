@@ -145,7 +145,7 @@ require __DIR__ . '/partials/header.php';
 ?>
 <main id="main-content" class="auth-wrap">
     <div class="auth-left">
-        <div class="auth-left-content">
+        <div class="auth-left-content" aria-hidden="true">
             <h2><?= $l($copy['auth'], 'reg_title') ?></h2>
             <p><?= $l($copy['auth'], 'reg_sub') ?></p>
         </div>

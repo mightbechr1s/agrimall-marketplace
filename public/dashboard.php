@@ -194,7 +194,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
 
     <div class="row g-4 mb-4" data-reveal="stagger">
         <?php foreach ($stats as $label => $data): ?>
-            <div class="col-6 col-lg-3">
+            <div class="col-12 col-sm-6 col-lg-3">
 <div class="stat-card stat-card--<?= e($data['variant'] ?? 'info') ?>" data-reveal="stagger">
                     <div class="stat-content">
                         <div class="stat-icon"><i class="bi <?= e($data['icon']) ?>" aria-hidden="true"></i></div>
@@ -370,7 +370,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
 
     <div class="row g-4 mb-4" data-reveal="stagger">
         <?php foreach ($stats as $label => $data): ?>
-            <div class="col-6 col-lg-4">
+            <div class="col-12 col-sm-6 col-lg-4">
 <div class="stat-card stat-card--<?= e($data['variant'] ?? 'info') ?>" data-reveal="stagger">
                     <div class="stat-content">
                         <div class="stat-icon"><i class="bi <?= e($data['icon']) ?>" aria-hidden="true"></i></div>
@@ -604,7 +604,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
 
     <div class="row g-4 mb-4" data-reveal="stagger">
         <?php foreach ($stats as $label => $data): ?>
-            <div class="col-6 col-lg-4">
+            <div class="col-12 col-sm-6 col-lg-4">
                 <div class="stat-card stat-card--<?= e($data['variant'] ?? 'info') ?>" data-reveal="stagger">
                     <div class="stat-content">
                         <div class="stat-icon"><i class="bi <?= e($data['icon']) ?>" aria-hidden="true"></i></div>
