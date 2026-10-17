@@ -19,6 +19,7 @@
   "FR-AUTH-018": { "status": "manual", "note": "src/bootstrap.php sets the 30-minute inactivity lifetime; no automated assertion" },
   "FR-AUTH-019": { "status": "automated", "evidence": ["http::login is rate limited after 5 attempts"] },
   "FR-AUTH-020": { "status": "gap", "note": "temporary password generation and one-time display are not implemented" },
+    "FR-AUTH-022": { "status": "automated", "evidence": ["http::a used reset link is reported as invalid", "http::replaying the used link leaves the password unchanged"] },
   "FR-AUTH-021": { "status": "gap", "note": "temporary password invalidation rules are not implemented" },
 
   "FR-PROF-001": { "status": "automated", "evidence": ["http::name change persists to the database"] },
@@ -189,10 +190,10 @@
   "FR-VAL-002": { "status": "automated", "evidence": ["http::an UPDATE to another column leaves the reset expiry untouched", "http::the token is still expired after that UPDATE", "http::reset.php still refuses a token that was updated after expiry"], "note": "the reset-expiry case proves a stored validity value is not rewritten by unrelated updates; listing snapshots have no equivalent assertion" },
   "FR-VAL-003": { "status": "automated", "evidence": ["valid::decimal string", "valid::leading decimal point", "valid::trailing decimal point", "valid::explicit plus sign", "valid::surrounding whitespace", "valid::native int", "valid::native float", "valid::negative rejected for money", "http::set_fee accepts a fee within range", "http::the database still accepts a legal price"] },
   "FR-VAL-004": { "status": "gap", "note": "no case-insensitive uniqueness assertion for email, category or unit names" },
-  "FR-VAL-005": { "status": "gap", "note": "no megapixel or dimension check exists anywhere in the upload path" },
+  "FR-VAL-005": { "status": "partial", "evidence": ["security::FR-VAL-005 side limit is 6000", "security::FR-VAL-005 pixel limit is 20 megapixels", "security::an image wider than 6000 px is rejected", "security::a 25 megapixel image is rejected even though each side is legal", "security::an image exactly at both limits is accepted", "security::the rejected 25 MP payload is itself a tiny file"], "note": "the 20 megapixel and 6,000 px limits are enforced on the decoded header before any pixels are allocated; the 1,600 px display image is NOT generated, because ext/gd is absent from both local interpreters" },
   "FR-VAL-006": { "status": "partial", "evidence": ["http::confirm refuses when stock is insufficient (1 available, 2 ordered)"], "note": "stock is validated before confirmation; no assertion covers the delivery-fee path" },
 
-  "NFR-SEC-001": { "status": "manual", "note": "src/DB.php sets ATTR_EMULATE_PREPARES false and queries use bound parameters" },
+  "NFR-SEC-001": { "status": "automated", "evidence": ["security::no */*/* appears on a SQL line", "security::account anonymization allow-lists its interpolated identifiers"] },
   "NFR-SEC-002": { "status": "automated", "evidence": ["http::invalid csrf token cannot change the name", "http::login page renders and exposes csrf", "e2e::login page renders and exposes csrf"] },
   "NFR-SEC-003": { "status": "automated", "evidence": ["pdf::parentheses survive escaping", "pdf::backslashes survive escaping", "pdf::unbalanced parens do not truncate the stream"] },
   "NFR-SEC-004": { "status": "manual", "note": "password_hash in register.php and password_verify at public/login.php:40" },
@@ -200,9 +201,9 @@
   "NFR-SEC-006": { "status": "automated", "evidence": ["http::an expired remember-me token does not sign anyone in", "http::an expired remember-me token is cleared from the database", "http::an unexpired remember-me token does sign the user in"], "note": "remember-me token lifetime is asserted; the regeneration call at public/login.php:46 is verified by inspection only" },
   "NFR-SEC-007": { "status": "automated", "evidence": ["panels::* is refused *", "http::admin account page hides the name form", "http::a logged-out search miss does not offer the dashboard", "http::account page is reachable while logged in"] },
   "NFR-SEC-008": { "status": "automated", "evidence": ["http::login is rate limited after 5 attempts", "http::rate_limits exists after schema.sql + migrations"] },
-  "NFR-SEC-009": { "status": "manual", "note": "finfo MIME check and the 5 MB limit at public/create_listing.php" },
+  "NFR-SEC-009": { "status": "automated", "evidence": ["security::a genuine PNG is accepted", "security::a PNG that decodes to 0x0 is rejected", "security::a truncated PNG is rejected despite valid magic bytes", "security::a plain text file renamed .png is rejected", "security::no finfo_open() call is unguarded", "security::listing_upload_dir() returns an existing directory", "security::no upload site hand-builds the upload filesystem path"] },
   "NFR-SEC-010": { "status": "manual", "note": "uploads are written to a dedicated non-executable directory" },
-  "NFR-SEC-011": { "status": "manual", "note": "public/500.php renders a safe message instead of a stack trace" },
+  "NFR-SEC-011": { "status": "automated", "evidence": ["security::user-facing message hides SQLSTATE", "security::user-facing message hides the table name", "security::no unsanctioned catch routes an exception message to the user", "security::a fatal is written to the daily log", "security::bootstrap registers a shutdown handler", "security::the shutdown handler treats E_ERROR as fatal", "security::production still hides errors from the browser", "security::render_fatal_page starts no output buffer that shutdown discards"] },
   "NFR-SEC-012": { "status": "automated", "evidence": ["panels::the audit log shows the approval just made"] },
   "NFR-SEC-013": { "status": "manual", "note": "docs/nginx-hardening.conf redirects HTTP to HTTPS" },
   "NFR-SEC-014": { "status": "manual", "note": "security headers are emitted from src/bootstrap.php; no production-mode header assertion" },
@@ -253,5 +254,5 @@
   "NFR-TEST-002": { "status": "gap", "note": "no 360, 768 and 1366 pixel acceptance run is recorded" },
   "NFR-TEST-003": { "status": "gap", "note": "no load test simulates 20 concurrent users" },
   "NFR-TEST-004": { "status": "partial", "evidence": ["http::invalid csrf token cannot change the name", "panels::* is refused *", "pdf::parentheses survive escaping"], "note": "CSRF and authorization are covered; no explicit XSS or SQL injection suite" },
-  "NFR-TEST-005": { "status": "gap", "note": "no test asserts HTTPS redirection, HSTS, CSP or X-Content-Type-Options" }
+  "NFR-TEST-005": { "status": "partial", "evidence": ["security::live response sends X-Content-Type-Options: nosniff", "security::live response sends X-Frame-Options: DENY", "security::the CSP forbids framing", "security::the CSP restricts form targets", "security::live response sends Referrer-Policy", "security::live response sends Permissions-Policy", "security::HTML is not cached", "security::HSTS is sent on HTTPS in production", "security::the session cookie is Secure in production", "security::the session cookie is HttpOnly", "security::the session cookie is SameSite=Lax"], "note": "CSP, nosniff, frame-embedding protection, Referrer-Policy, Permissions-Policy and no-store are asserted against a live response; HSTS and the Secure cookie attribute exist only on the HTTPS production branch, which a local HTTP server cannot exercise, so those three are asserted at the source" }
 }

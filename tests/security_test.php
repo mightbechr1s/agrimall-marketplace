@@ -406,6 +406,112 @@ $check(
 $check('production still hides errors from the browser', str_contains($bootstrap, "ini_set('display_errors', '0')"));
 
 // ---------------------------------------------------------------------------
+echo "\nFR-VAL-005: declared image size is bounded before anything decodes it\n";
+// ---------------------------------------------------------------------------
+// A PNG header is 24 bytes and states its own dimensions, so a tiny file can
+// claim to be enormous. getimagesize() reads that header without decoding pixels,
+// which makes it the right place to refuse: nothing downstream has to allocate
+// the result first. The image type is the same as the hollow case above, so only
+// the IHDR dimensions differ.
+
+/** A PNG whose IHDR declares the given dimensions, with no image data. */
+$pngClaiming = function (int $w, int $h): string {
+    $ihdr = pack('N2', $w, $h) . "\x08\x06\x00\x00\x00";
+    return "\x89PNG\r\n\x1a\n" . "\x00\x00\x00\x0dIHDR" . $ihdr;
+};
+
+if (!defined('IMAGE_MAX_SIDE') || !defined('IMAGE_MAX_PIXELS')) {
+    fwrite(STDERR, "FATAL: IMAGE_MAX_SIDE / IMAGE_MAX_PIXELS are not defined\n");
+    exit(2);
+}
+$check('FR-VAL-005 side limit is 6000', IMAGE_MAX_SIDE === 6000, (string) IMAGE_MAX_SIDE);
+$check('FR-VAL-005 pixel limit is 20 megapixels', IMAGE_MAX_PIXELS === 20000000, (string) IMAGE_MAX_PIXELS);
+
+file_put_contents($tmpDir . 'sec_wide.png', $pngClaiming(9000, 100));
+$wide = validate_uploaded_image($asUpload($tmpDir . 'sec_wide.png'));
+$check('an image wider than 6000 px is rejected', $wide['ok'] === false, json_encode($wide));
+$check('the rejection names the size, not the type', ($wide['reason'] ?? '') === 'too_large', json_encode($wide));
+
+file_put_contents($tmpDir . 'sec_mega.png', $pngClaiming(5000, 5000));   // 25 MP, each side legal
+$mega = validate_uploaded_image($asUpload($tmpDir . 'sec_mega.png'));
+$check('a 25 megapixel image is rejected even though each side is legal', $mega['ok'] === false, json_encode($mega));
+$check('the megapixel rejection is distinguished from the side limit', ($mega['reason'] ?? '') === 'too_many_pixels', json_encode($mega));
+
+// A large-but-legal image must still be accepted, or the limit is a blanket
+// rejection wearing a numeric disguise.
+file_put_contents($tmpDir . 'sec_ok_big.png', $pngClaiming(6000, 3000));   // 18 MP, 6000 px side
+$big = validate_uploaded_image($asUpload($tmpDir . 'sec_ok_big.png'));
+$check('an image exactly at both limits is accepted', $big['ok'] === true, json_encode($big));
+$check('the accepted image reports its real dimensions', ($big['width'] ?? 0) === 6000 && ($big['height'] ?? 0) === 3000, json_encode($big));
+$check('the rejected 25 MP payload is itself a tiny file', filesize($tmpDir . 'sec_mega.png') < 100, filesize($tmpDir . 'sec_mega.png') . ' bytes');
+
+foreach (['sec_wide.png', 'sec_mega.png', 'sec_ok_big.png'] as $f) {
+    @unlink($tmpDir . $f);
+}
+
+// ---------------------------------------------------------------------------
+echo "\nNFR-TEST-005: the production security headers are actually sent\n";
+// ---------------------------------------------------------------------------
+// Asserted against a live response where the header is observable over plain
+// HTTP, and against the source where it only exists on the HTTPS branch, which a
+// local server cannot exercise. Saying which is which matters more than
+// pretending all seven were observed the same way.
+
+$baseUrl = getenv('ANIMAL_TEST_BASE_URL') ?: 'http://127.0.0.1:8000';
+$liveHeaders = null;
+$ctx = stream_context_create(['http' => ['method' => 'GET', 'timeout' => 10, 'ignore_errors' => true]]);
+if (@file_get_contents($baseUrl . '/index.php', false, $ctx) !== false) {
+    foreach ($http_response_header ?? [] as $line) {
+        if (str_contains($line, ':')) {
+            [$k, $v] = explode(':', $line, 2);
+            $liveHeaders[strtolower(trim($k))] = trim($v);
+        }
+    }
+}
+if ($liveHeaders === null) {
+    echo "  SKIPPED: no dev server at $baseUrl, so headers were not observed live.\n";
+    echo "           The static checks below still run.\n";
+} else {
+    $check('live response sends X-Content-Type-Options: nosniff', ($liveHeaders['x-content-type-options'] ?? '') === 'nosniff', $liveHeaders['x-content-type-options'] ?? '(absent)');
+    $check('live response sends X-Frame-Options: DENY', ($liveHeaders['x-frame-options'] ?? '') === 'DENY', $liveHeaders['x-frame-options'] ?? '(absent)');
+    $csp = $liveHeaders['content-security-policy'] ?? '';
+    $check('live response sends a Content-Security-Policy', str_contains($csp, "default-src 'self'"), $csp);
+    $check('the CSP forbids framing', str_contains($csp, "frame-ancestors 'none'"));
+    $check('the CSP restricts form targets', str_contains($csp, "form-action 'self'"));
+    $check('live response sends Referrer-Policy', ($liveHeaders['referrer-policy'] ?? '') === 'strict-origin-when-cross-origin', $liveHeaders['referrer-policy'] ?? '(absent)');
+    $check('live response sends Permissions-Policy', ($liveHeaders['permissions-policy'] ?? '') === 'camera=(), microphone=(), geolocation=()', $liveHeaders['permissions-policy'] ?? '(absent)');
+    $check('HTML is not cached', str_contains($liveHeaders['cache-control'] ?? '', 'no-store'), $liveHeaders['cache-control'] ?? '(absent)');
+}
+
+// HTTPS-only behaviour cannot be exercised by a local HTTP server, so it is
+// asserted at the source: the branch must exist and be gated on production.
+$bootSrc = (string) file_get_contents($repoRoot . '/src/bootstrap.php');
+$check('HSTS is sent on HTTPS in production', str_contains($bootSrc, 'Strict-Transport-Security') && str_contains($bootSrc, "'HTTPS'] !== 'off'"));
+// Cookie transport is a separate config key, not derived from 'env': 'env' also
+// controls whether PHP diagnostics reach the browser, and deriving Secure from it
+// meant a production-mode config served over plain http issued a cookie that
+// nothing would store. The safe direction has to be the default.
+$bootCookie = (string) preg_replace(['~/\*.*?\*/~s', '~//[^\n]*~'], '', $bootSrc);
+$check(
+    'the session cookie defaults to Secure when the key is absent',
+    str_contains($bootCookie, "!array_key_exists('secure_cookies'")
+        && str_contains($bootCookie, "\$config['app']['secure_cookies']"),
+    'secure must default to true when secure_cookies is unset'
+);
+$check(
+    'cookie transport is no longer derived from env',
+    !preg_match('/\'secure\'\s*=>\s*\$isProduction/', $bootCookie),
+    'deriving Secure from env over plain http caused 70 pre-existing failures'
+);
+$check('the session cookie is HttpOnly', str_contains($bootCookie, "'httponly' => true"));
+$check('the session cookie is SameSite=Lax', str_contains($bootCookie, "'samesite' => 'Lax'"));
+
+// The shipped example must state the safe default explicitly rather than rely
+// on the fallback.
+$example = (string) file_get_contents($repoRoot . '/config/config.example.php');
+$check("config.example.php sets 'secure_cookies' => true", (bool) preg_match("/'secure_cookies'\s*=>\s*true/", $example));
+
+// ---------------------------------------------------------------------------
 echo "\nNFR-SEC-001: no request superglobal reaches a SQL statement\n";
 // ---------------------------------------------------------------------------
 $superglobalHits = [];

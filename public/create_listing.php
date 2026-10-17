@@ -125,7 +125,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $imageCheck = validate_uploaded_image($file);
         $mimeType = $imageCheck['mime'] ?? '';
         if (!$imageCheck['ok']) {
-            $errors[] = $l($copy['lf'], 'err_img_primary_type');
+            // A rejected-by-size image is not a file-type problem. Telling a
+            // farmer their perfectly valid JPEG is the wrong format sends them off
+            // to convert something that did not need converting.
+            $bySize = in_array($imageCheck['reason'] ?? '', ['too_large', 'too_many_pixels'], true);
+            $errors[] = $l($copy['lf'], $bySize ? 'err_img_primary_dimensions' : 'err_img_primary_type');
         } elseif ($file['size'] > 5 * 1024 * 1024) { // 5MB
             $errors[] = $l($copy['lf'], 'err_img_primary_large');
         } else {
@@ -166,7 +170,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $imageCheck = validate_uploaded_image($file);
                 $mimeType = $imageCheck['mime'] ?? '';
                 if (!$imageCheck['ok']) {
-                    $errors[] = $l($copy['lf'], 'err_img_gallery_type');
+                    // A rejected-by-size image is not a file-type problem. Telling a
+                    // farmer their perfectly valid JPEG is the wrong format sends them off
+                    // to convert something that did not need converting.
+                    $bySize = in_array($imageCheck['reason'] ?? '', ['too_large', 'too_many_pixels'], true);
+                    $errors[] = $l($copy['lf'], $bySize ? 'err_img_gallery_dimensions' : 'err_img_gallery_type');
                 } elseif ($file['size'] > 5 * 1024 * 1024) { // 5MB
                     $errors[] = $l($copy['lf'], 'err_img_gallery_large');
                 } else {

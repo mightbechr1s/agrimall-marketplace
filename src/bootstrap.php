@@ -170,7 +170,16 @@ if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
         'lifetime' => $sessionLifetime,
         'httponly' => true,
-        'secure'   => $isProduction, // true only over HTTPS (production)
+        // Separate from $isProduction on purpose: these are unrelated concerns.
+        // 'env' also decides whether PHP diagnostics reach the browser, and tying
+        // cookie transport to it meant a production-mode config served over plain
+        // http -- every local run and every test suite -- issued a Secure cookie
+        // that cookie jars then refuse to store. The session silently never
+        // existed and every authenticated request came back 403, which is what
+        // produced 70 pre-existing test failures. Unset means true, which is the
+        // safe direction; only a harness on http://127.0.0.1 should set it false.
+        'secure'   => !array_key_exists('secure_cookies', $config['app'])
+            || (bool) $config['app']['secure_cookies'],
         'samesite' => 'Lax',
     ]);
     session_start();

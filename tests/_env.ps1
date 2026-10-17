@@ -92,3 +92,30 @@ function Repair-AnimalConfigSwap {
   [System.IO.File]::WriteAllText($Cfg, $fixed)
   return $true
 }
+
+function Disable-AnimalSecureCookies {
+  <#
+    Suites serve plain http on 127.0.0.1. A Secure session cookie is not stored
+    over http by PowerShell's cookie jar, so the session never existed and every
+    authenticated request came back 403 -- 70 failures across two suites that had
+    nothing to do with cookies. Turning it off here, and only here, keeps the
+    shipped default (true) correct for every real deployment.
+
+    An older local config may predate the 'secure_cookies' key entirely, so an
+    absent key is inserted rather than assumed.
+  #>
+  param([Parameter(Mandatory)][string]$Cfg)
+
+  if (-not (Test-Path -LiteralPath $Cfg)) { return $false }
+  $text = [System.IO.File]::ReadAllText($Cfg)
+
+  if ($text -match "('secure_cookies'\s*=>\s*)(true|false)") {
+    $out = $text -replace "('secure_cookies'\s*=>\s*)(true|false)", "`$1false"
+  } else {
+    # Insert beside the sibling session setting so the intent stays local.
+    $out = $text -replace "('session_lifetime_minutes'\s*=>\s*\d+,)", "`$1`r`n        'secure_cookies' => false, // harness only: plain http on 127.0.0.1"
+  }
+  if ($out -eq $text) { return $false }
+  [System.IO.File]::WriteAllText($Cfg, $out)
+  return $true
+}

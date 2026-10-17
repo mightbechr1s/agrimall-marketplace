@@ -100,6 +100,13 @@ function listing_upload_dir(): string
     return $dir;
 }
 
+/** FR-VAL-005: a decoded image may not exceed 20 megapixels or 6,000 px a side.
+ *  A file of a couple of hundred bytes can declare 40,000 x 40,000 in its header;
+ *  without this, whatever decodes it later pays for the expansion rather than the
+ *  farmer who uploaded it. */
+const IMAGE_MAX_SIDE = 6000;
+const IMAGE_MAX_PIXELS = 20000000;
+
 /**
  * Validate an uploaded file as an image (NFR-SEC-009).
  *
@@ -142,6 +149,16 @@ function validate_uploaded_image(array $file): array
         return ['ok' => false];
     }
 
+    // FR-VAL-005: reject by declared size before anything decodes the pixels.
+    $width = (int) $info[0];
+    $height = (int) $info[1];
+    if ($width > IMAGE_MAX_SIDE || $height > IMAGE_MAX_SIDE) {
+        return ['ok' => false, 'reason' => 'too_large'];
+    }
+    if (($width * $height) > IMAGE_MAX_PIXELS) {
+        return ['ok' => false, 'reason' => 'too_many_pixels'];
+    }
+
     // Optional second opinion. A disagreement means the bytes say one thing and
     // the decoded container says another, which is exactly what a polyglot looks
     // like, so it is rejected.
@@ -161,8 +178,8 @@ function validate_uploaded_image(array $file): array
     return [
         'ok' => true,
         'mime' => $decodedMime,
-        'width' => (int) $info[0],
-        'height' => (int) $info[1],
+        'width' => $width,
+        'height' => $height,
     ];
 }
 

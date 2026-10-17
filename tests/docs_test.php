@@ -111,6 +111,41 @@ $check(
 $srs = (string) file_get_contents($repoRoot . '/docs/SRS.md');
 $check('decisions.md does not restate requirements the matrix already owns', str_contains($doc, 'traceability-matrix.md'));
 
+// ---- decisions.md must not quote stale coverage figures ------------------
+// The coverage paragraph in decisions.md restates the traceability matrix. Those
+// numbers change only when traceability.json is deliberately edited, so they are
+// safe to assert -- and leaving them unchecked is how they went stale once
+// already, quietly claiming 45 automated when the matrix said 49.
+$map = json_decode((string) file_get_contents($repoRoot . '/tests/traceability.json'), true);
+if (is_array($map)) {
+    $counts = array_count_values(array_column($map, 'status'));
+    $docNumbers = [];
+    if (preg_match(
+        '/records (\d+) requirements: (\d+) automated, (\d+) partial, (\d+) verified by inspection,\s*and \*\*(\d+) gaps\*\*/',
+        $doc,
+        $m
+    )) {
+        $docNumbers = ['total' => $m[1], 'automated' => $m[2], 'partial' => $m[3], 'manual' => $m[4], 'gap' => $m[5]];
+    }
+    $check('decisions.md states the coverage figures', $docNumbers !== [], 'the coverage paragraph was not found');
+    $expected = [
+        'total' => (string) count($map),
+        'automated' => (string) ($counts['automated'] ?? 0),
+        'partial' => (string) ($counts['partial'] ?? 0),
+        'manual' => (string) ($counts['manual'] ?? 0),
+        'gap' => (string) ($counts['gap'] ?? 0),
+    ];
+    foreach ($expected as $key => $value) {
+        $check(
+            "decisions.md $key matches traceability.json ($value)",
+            ($docNumbers[$key] ?? null) === $value,
+            'document says ' . var_export($docNumbers[$key] ?? null, true)
+        );
+    }
+} else {
+    $check('tests/traceability.json parses', false, 'could not decode');
+}
+
 echo "\nassertions passed: $pass\n";
 echo 'assertions failed: ' . count($fail) . "\n";
 

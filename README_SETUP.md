@@ -66,6 +66,18 @@ XAMPP defaults are already inside the example (`127.0.0.1`, port `3306`,
 user `root`, empty password), so no editing is needed for a local setup.
 Only edit it for a different DB or a production `base_url`.
 
+Two settings are worth knowing about before you blame something else:
+
+- **`'secure_cookies' => true`** (the default) marks the session cookie
+  `Secure`, which browsers refuse to store over plain `http`. Browsers special-case
+  `localhost` so the app works, but command-line HTTP clients will silently fail to
+  keep a session. The bundled test suites turn it off for the duration of a run and
+  restore it afterwards; do the same by hand only if you script against the app
+  over `http://127.0.0.1`.
+- **`'env' => 'production'`** hides PHP errors from the browser, which is the safe
+  default. `'development'` shows them and is only worth switching on while
+  debugging.
+
 ---
 
 ## 4. Start the local stack (MySQL + PHP dev server)
@@ -254,6 +266,7 @@ npm test                # syntax, i18n, validation, PDF, security, doc drift
 npm run test:http       # HTTP flows against a throwaway database
 npm run test:panels     # sidebar links, role gating, admin workflows
 npm run test:e2e        # browser smoke test
+npm run test:toast      # toast behaviour in a real browser (needs `npm run dev` up)
 ```
 
 ---

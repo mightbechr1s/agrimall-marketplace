@@ -20,6 +20,18 @@ const SUITES = [
     'e2e'    => ['path' => 'tests/e2e/smoke.js',    're' => ["/(?ms)\bok\s*\(\s*'((?:[^']|'')*)'/"]],
     'valid'  => ['path' => 'tests/validation.php',  're' => ["/(?ms)\\\$check\s*\(\s*'((?:[^']|'')*)'/"]],
     'pdf'    => ['path' => 'tests/pdf_test.php',    're' => ["/(?ms)\\\$ok\s*\(\s*'((?:[^']|'')*)'/"]],
+    // Registered because these two suites existed but were not listed here, so
+    // every assertion in them was invisible to this matrix: a requirement proved
+    // by tests/security_test.php still read as "manual".
+    //
+    // 'optional' marks a suite that also carries engineering invariants which map
+    // to no requirement. The base_url resolver, the fatal-error shutdown path and
+    // the doc-drift guard are not SRS clauses, and inventing requirements to
+    // absorb them would be dishonest traceability. Every *mapped* assertion is
+    // still verified to exist; only the reverse direction is waived, and only for
+    // these two.
+    'security' => ['path' => 'tests/security_test.php', 're' => ["/(?ms)\\\$check\s*\(\s*'((?:[^']|'')*)'/"], 'optional' => true],
+    'docs'   => ['path' => 'tests/docs_test.php',    're' => ["/(?ms)\\\$check\s*\(\s*'((?:[^']|'')*)'/"], 'optional' => true],
 ];
 
 /** Non-automated dispositions must carry a note in tests/traceability.json saying what to inspect instead. */
@@ -126,6 +138,7 @@ $errors  = [];
 $reqIds  = array_column($reqs, 'id');
 $reqById = array_column($reqs, null, 'id');
 $usedLabels = [];
+$unmappedOptional = [];
 
 foreach ($map as $id => $entry) {
     if (!in_array($id, $reqIds, true)) {
@@ -160,12 +173,18 @@ foreach ($map as $id => $entry) {
     }
 }
 
-// reverse coverage: every discovered assertion must trace back to a requirement
+// reverse coverage: every discovered assertion must trace back to a requirement,
+// unless its suite is marked 'optional' (see the note on those entries above)
 foreach ($labels as $suite => $set) {
     foreach ($set as $label => $info) {
-        if (empty($usedLabels[$suite][$label])) {
-            $errors[] = "assertion not mapped to any requirement: $suite::\"$label\" ({$info['file']})";
+        if (!empty($usedLabels[$suite][$label])) {
+            continue;
         }
+        if (!empty(SUITES[$suite]['optional'] ?? false)) {
+            $unmappedOptional[SUITES[$suite]['path'] . '::' . $label] = true;
+            continue;
+        }
+        $errors[] = "assertion not mapped to any requirement: $suite::\"$label\" ({$info['file']})";
     }
 }
 

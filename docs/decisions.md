@@ -306,8 +306,8 @@ tests were not really checking anything.
 ## What this document does not cover
 
 **Unimplemented features are not decisions.** The traceability matrix currently
-records 216 requirements: 45 automated, 23 partial, 84 verified by inspection,
-and **64 gaps**. The gaps are dominated by genuinely missing functionality —
+records 217 requirements: 49 automated, 25 partial, 81 verified by inspection,
+and **62 gaps**. The gaps are dominated by genuinely missing functionality —
 administrator user search, activate/suspend, temporary passwords, the listing
 lifecycle states the SRS specifies, parts of the order state machine, category
 and unit administration, and retention holds — plus acceptance evidence that
@@ -317,3 +317,9 @@ restore drill).
 None of that is a judgement call recorded here. It is tracked, individually, in
 `docs/traceability-matrix.md`, which lists each gap against the requirement it
 belongs to rather than summarising them.
+
+By effort the open work clusters into roughly ten groups, of which the cheapest is
+pure evidence: nine requirements whose behaviour exists but has no assertion. The
+most expensive is the listing lifecycle, where the SRS specifies four status values
+and the implementation uses a different five — a divergence that is either a
+documentation fix or a data migration, depending on which direction is chosen.

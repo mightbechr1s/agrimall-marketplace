@@ -23,6 +23,14 @@ return [
           'base_url' => '',
         'timezone' => 'Asia/Manila',
         'session_lifetime_minutes' => 30,
+        // Transport security for the session cookie. True is correct for any real
+        // deployment, and is the default when this key is absent. Set it false ONLY
+        // when serving plain http on 127.0.0.1: browsers and HTTP clients refuse to
+        // store a Secure cookie over http, so the session silently fails to exist
+        // and every authenticated request is rejected. Deliberately NOT derived
+        // from 'env' -- that setting controls whether PHP diagnostics reach the
+        // browser, which is an unrelated concern.
+        'secure_cookies' => true,
         'env' => 'production',      // 'development' | 'production'
         // Local-only password reset delivery. Leave false in production: with
         // no mail transport configured, a true value would print a live reset
