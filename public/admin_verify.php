@@ -34,16 +34,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $row = $stmt->fetch();
 
             if (!$row) {
-                throw new RuntimeException('Farmer application not found.');
+                throw new UserFacingException('Farmer application not found.');
             }
             if ($row['verification_status'] !== 'pending') {
-                throw new RuntimeException('This application has already been reviewed.');
+                throw new UserFacingException('This application has already been reviewed.');
             }
             if ($action === 'reject' && $reason === '') {
-                throw new RuntimeException('A reason is required when rejecting an application.');
+                throw new UserFacingException('A reason is required when rejecting an application.');
             }
             if (mb_strlen($reason) > FIELD_LIMITS['reason']) {
-                throw new RuntimeException('Reason is too long (max ' . FIELD_LIMITS['reason'] . ' characters).');
+                throw new UserFacingException('Reason is too long (max ' . FIELD_LIMITS['reason'] . ' characters).');
             }
 
             if ($action === 'approve') {
@@ -69,9 +69,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $pdo->commit();
             flash_set('success', $flash);
-        } catch (Throwable $e) {
+        } catch (UserFacingException $e) {
             $pdo->rollBack();
             flash_set('error', $e->getMessage());
+        } catch (Throwable $e) {
+            // Unexpected: its text can name tables, columns or SQL, so log it
+            // and show only a reference the user can quote to support.
+            $pdo->rollBack();
+            flash_set('error', generic_error_message(app_log_exception($e, 'admin_verify')));
         }
     } else {
         flash_set('error', 'Invalid request.');

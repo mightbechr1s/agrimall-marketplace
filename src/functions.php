@@ -30,6 +30,58 @@ const FIELD_LIMITS = [
 /** Upper bound for a farmer-set delivery fee, in PHP. */
 const MAX_DELIVERY_FEE = 1000000;
 
+/**
+ * An error whose message was written for a person, not a developer.
+ *
+ * Only these messages are ever shown to a user. Anything else reaching a
+ * catch block is assumed to be an infrastructure failure (PDO, TypeError, a
+ * bug) whose text can carry SQL, table names or file paths, so it is logged
+ * server-side and replaced with a generic message plus a support reference.
+ */
+class UserFacingException extends RuntimeException
+{
+}
+
+/**
+ * Record an unexpected exception in full on the server and return a short
+ * reference code the user can quote to support. The detail never reaches the
+ * page. Same daily rotation and 14-day prune as bootstrap's own handler.
+ */
+function app_log_exception(Throwable $e, string $context = ''): string
+{
+    $logDir = __DIR__ . '/../logs';
+    if (!is_dir($logDir)) {
+        @mkdir($logDir, 0755, true);
+    }
+    $ref = substr(bin2hex(random_bytes(4)), 0, 8);
+    $msg = sprintf(
+        "[%s] ref=%s%s%s in %s:%d\n%s\nStack trace:\n%s\n---\n",
+        date('Y-m-d H:i:s'),
+        $ref,
+        $context !== '' ? ' ' . $context : '',
+        get_class($e),
+        $e->getFile(),
+        $e->getLine(),
+        $e->getMessage(),
+        $e->getTraceAsString()
+    );
+    @error_log($msg, 3, $logDir . DIRECTORY_SEPARATOR . 'errors-' . date('Y-m-d') . '.log');
+
+    $cutoff = time() - 14 * 86400;
+    foreach (glob($logDir . DIRECTORY_SEPARATOR . 'errors-*.log') ?: [] as $f) {
+        if (@filemtime($f) < $cutoff) {
+            @unlink($f);
+        }
+    }
+    return $ref;
+}
+
+/** Shown instead of an unexpected exception's own text. */
+function generic_error_message(string $ref): string
+{
+    return 'Something went wrong on our side. Please try again. Reference: ' . $ref;
+}
+
 /** Upper sanity bound for any submitted quantity, in PHP. */
 const MAX_QUANTITY = 1000000;
 

@@ -34,7 +34,7 @@ try {
     $stmt->execute(['id' => $orderId]);
     $order = $stmt->fetch();
     if (!$order) {
-        throw new RuntimeException('Order not found.');
+        throw new UserFacingException('Order not found.');
     }
 
     $oldStatus = $order['status'];
@@ -44,25 +44,25 @@ try {
         case 'confirm':
             // Farmer confirms order — sets delivery fee if farmer_delivery
             if ($role !== 'farmer' || $order['farmer_id'] !== $userId) {
-                throw new RuntimeException('Only the assigned farmer can confirm this order.');
+                throw new UserFacingException('Only the assigned farmer can confirm this order.');
             }
             if (!in_array($oldStatus, ['pending', 'delivery_fee_review'], true)) {
-                throw new RuntimeException('Order cannot be confirmed from status: ' . $oldStatus);
+                throw new UserFacingException('Order cannot be confirmed from status: ' . $oldStatus);
             }
             // Re-read and lock the listing: pending orders can outlive expiry (FR-LIST-033).
             $listingStmt = $pdo->prepare('SELECT * FROM produce_listings WHERE id = :id FOR UPDATE');
             $listingStmt->execute(['id' => (int) $order['listing_id']]);
             $listing = $listingStmt->fetch();
             if (!$listing) {
-                throw new RuntimeException('The listing for this order no longer exists.');
+                throw new UserFacingException('The listing for this order no longer exists.');
             }
             if (listing_is_expired($listing)) {
-                throw new RuntimeException('This listing has expired, so the order can no longer be confirmed.');
+                throw new UserFacingException('This listing has expired, so the order can no longer be confirmed.');
             }
             if ($order['delivery_method'] === 'farmer_delivery') {
                 $fee = number_in($_POST['delivery_fee'] ?? null, 0, MAX_DELIVERY_FEE);
                 if ($fee === null) {
-                    throw new RuntimeException('Enter a delivery fee between 0 and ' . MAX_DELIVERY_FEE . '.');
+                    throw new UserFacingException('Enter a delivery fee between 0 and ' . MAX_DELIVERY_FEE . '.');
                 }
                 $pdo->prepare('UPDATE orders SET delivery_fee = :fee WHERE id = :id')
                     ->execute(['fee' => $fee, 'id' => $orderId]);
@@ -82,14 +82,14 @@ try {
         case 'set_fee':
             // Farmer sets delivery fee while in delivery_fee_review
             if ($role !== 'farmer' || $order['farmer_id'] !== $userId) {
-                throw new RuntimeException('Only the assigned farmer can set delivery fee.');
+                throw new UserFacingException('Only the assigned farmer can set delivery fee.');
             }
             if ($oldStatus !== 'delivery_fee_review') {
-                throw new RuntimeException('Fee can only be set in delivery_fee_review.');
+                throw new UserFacingException('Fee can only be set in delivery_fee_review.');
             }
             $fee = number_in($_POST['delivery_fee'] ?? null, 0, MAX_DELIVERY_FEE);
             if ($fee === null) {
-                throw new RuntimeException('Enter a delivery fee between 0 and ' . MAX_DELIVERY_FEE . '.');
+                throw new UserFacingException('Enter a delivery fee between 0 and ' . MAX_DELIVERY_FEE . '.');
             }
             $pdo->prepare('UPDATE orders SET delivery_fee = :fee WHERE id = :id')
                 ->execute(['fee' => $fee, 'id' => $orderId]);
@@ -101,10 +101,10 @@ try {
         case 'reject':
             // Farmer rejects order (pending or delivery_fee_review)
             if ($role !== 'farmer' || $order['farmer_id'] !== $userId) {
-                throw new RuntimeException('Only the assigned farmer can reject this order.');
+                throw new UserFacingException('Only the assigned farmer can reject this order.');
             }
             if (!in_array($oldStatus, ['pending', 'delivery_fee_review'], true)) {
-                throw new RuntimeException('Order cannot be rejected from status: ' . $oldStatus);
+                throw new UserFacingException('Order cannot be rejected from status: ' . $oldStatus);
             }
             $newStatus = 'rejected';
             $ts = date('Y-m-d H:i:s');
@@ -118,10 +118,10 @@ try {
         case 'prepare':
             // Farmer starts preparing (confirmed -> preparing)
             if ($role !== 'farmer' || $order['farmer_id'] !== $userId) {
-                throw new RuntimeException('Only the assigned farmer can prepare this order.');
+                throw new UserFacingException('Only the assigned farmer can prepare this order.');
             }
             if ($oldStatus !== 'confirmed') {
-                throw new RuntimeException('Order must be confirmed before preparing.');
+                throw new UserFacingException('Order must be confirmed before preparing.');
             }
             $newStatus = 'preparing';
             $ts = date('Y-m-d H:i:s');
@@ -133,10 +133,10 @@ try {
         case 'ready':
             // Farmer marks ready (preparing -> ready_for_pickup OR out_for_delivery)
             if ($role !== 'farmer' || $order['farmer_id'] !== $userId) {
-                throw new RuntimeException('Only the assigned farmer can mark this order ready.');
+                throw new UserFacingException('Only the assigned farmer can mark this order ready.');
             }
             if ($oldStatus !== 'preparing') {
-                throw new RuntimeException('Order must be in preparing state.');
+                throw new UserFacingException('Order must be in preparing state.');
             }
             if ($order['delivery_method'] === 'pickup') {
                 $newStatus = 'ready_for_pickup';
@@ -155,10 +155,10 @@ try {
         case 'ship':
             // Farmer marks out_for_delivery -> ship (alias) or admin/farmer moves ready_for_pickup -> out_for_delivery
             if ($role !== 'farmer' || $order['farmer_id'] !== $userId) {
-                throw new RuntimeException('Only the assigned farmer can ship this order.');
+                throw new UserFacingException('Only the assigned farmer can ship this order.');
             }
             if ($oldStatus !== 'ready_for_pickup' && $oldStatus !== 'out_for_delivery') {
-                throw new RuntimeException('Order not ready to ship.');
+                throw new UserFacingException('Order not ready to ship.');
             }
             $newStatus = 'out_for_delivery';
             $ts = date('Y-m-d H:i:s');
@@ -178,10 +178,10 @@ try {
                 $canComplete = true;
             }
             if (!$canComplete) {
-                throw new RuntimeException('Only the buyer (pickup) or farmer (delivery) can complete this order.');
+                throw new UserFacingException('Only the buyer (pickup) or farmer (delivery) can complete this order.');
             }
             if (!in_array($oldStatus, ['ready_for_pickup', 'out_for_delivery'], true)) {
-                throw new RuntimeException('Order must be ready or out for delivery to complete.');
+                throw new UserFacingException('Order must be ready or out for delivery to complete.');
             }
             $newStatus = 'completed';
             $ts = date('Y-m-d H:i:s');
@@ -196,19 +196,19 @@ try {
             // Admin cancels (any)
             if ($role === 'buyer' && $order['buyer_id'] === $userId) {
                 if (!in_array($oldStatus, ['pending', 'delivery_fee_review', 'confirmed', 'preparing'], true)) {
-                    throw new RuntimeException('Buyer can only cancel before ready/shipped.');
+                    throw new UserFacingException('Buyer can only cancel before ready/shipped.');
                 }
             } elseif ($role === 'farmer' && $order['farmer_id'] === $userId) {
                 if (!in_array($oldStatus, ['confirmed', 'preparing'], true)) {
-                    throw new RuntimeException('Farmer can only cancel after confirm, before ready.');
+                    throw new UserFacingException('Farmer can only cancel after confirm, before ready.');
                 }
             } elseif ($role === 'admin') {
                 // Admin can cancel anything except completed/rejected/cancelled
                 if (in_array($oldStatus, ['completed', 'rejected', 'cancelled'], true)) {
-                    throw new RuntimeException('Cannot cancel order in status: ' . $oldStatus);
+                    throw new UserFacingException('Cannot cancel order in status: ' . $oldStatus);
                 }
             } else {
-                throw new RuntimeException('Not authorized to cancel this order.');
+                throw new UserFacingException('Not authorized to cancel this order.');
             }
             $newStatus = 'cancelled';
             $ts = date('Y-m-d H:i:s');
@@ -225,7 +225,7 @@ try {
             break;
 
         default:
-            throw new RuntimeException('Unknown action: ' . $action);
+            throw new UserFacingException('Unknown action: ' . $action);
     }
 
     // Log status transition
@@ -241,8 +241,14 @@ try {
     flash_set('success', 'Order status updated to ' . $newStatus . '.');
     redirect_to('/order.php?id=' . $orderId);
 
-} catch (Throwable $e) {
+} catch (UserFacingException $e) {
     $pdo->rollBack();
     flash_set('error', $e->getMessage());
+    redirect_to('/order.php?id=' . $orderId);
+} catch (Throwable $e) {
+    // Unexpected: its text can name tables, columns or SQL, so log it and
+    // show only a reference the user can quote to support.
+    $pdo->rollBack();
+    flash_set('error', generic_error_message(app_log_exception($e, 'order_action')));
     redirect_to('/order.php?id=' . $orderId);
 }

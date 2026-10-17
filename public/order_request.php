@@ -31,39 +31,39 @@ try {
     $stmt->execute(['id' => $listingId]);
     $listing = $stmt->fetch();
     if (!$listing) {
-        throw new RuntimeException('Listing not found.');
+        throw new UserFacingException('Listing not found.');
     }
     if ($listing['status'] !== 'active') {
-        throw new RuntimeException('This listing is not available for ordering.');
+        throw new UserFacingException('This listing is not available for ordering.');
     }
     if (listing_is_expired($listing)) {
-        throw new RuntimeException('This listing has expired and can no longer be ordered.');
+        throw new UserFacingException('This listing has expired and can no longer be ordered.');
     }
     if ((int) $listing['farmer_id'] === current_user_id()) {
-        throw new RuntimeException('You cannot order your own listing.');
+        throw new UserFacingException('You cannot order your own listing.');
     }
     if ($listingId <= 0 || $quantity === null) {
-        throw new RuntimeException('Enter a valid quantity.');
+        throw new UserFacingException('Enter a valid quantity.');
     }
     $min = (float) $listing['minimum_order_qty'];
     $max = $listing['maximum_order_qty'] === null ? null : (float) $listing['maximum_order_qty'];
     if ($quantity < $min) {
-        throw new RuntimeException('Minimum order is ' . qty_str($listing['minimum_order_qty']) . ' ' . e($listing['unit_symbol']) . '.');
+        throw new UserFacingException('Minimum order is ' . qty_str($listing['minimum_order_qty']) . ' ' . e($listing['unit_symbol']) . '.');
     }
     if ($max !== null && $quantity > $max) {
-        throw new RuntimeException('Maximum order is ' . qty_str($listing['maximum_order_qty']) . ' ' . e($listing['unit_symbol']) . '.');
+        throw new UserFacingException('Maximum order is ' . qty_str($listing['maximum_order_qty']) . ' ' . e($listing['unit_symbol']) . '.');
     }
     if ($quantity > (float) $listing['available_quantity']) {
-        throw new RuntimeException('Only ' . qty_str($listing['available_quantity']) . ' ' . e($listing['unit_symbol']) . ' available.');
+        throw new UserFacingException('Only ' . qty_str($listing['available_quantity']) . ' ' . e($listing['unit_symbol']) . ' available.');
     }
     if ($method === 'farmer_delivery' && mb_strlen($address) < 5) {
-        throw new RuntimeException('Please provide a delivery address for farmer delivery.');
+        throw new UserFacingException('Please provide a delivery address for farmer delivery.');
     }
     if (mb_strlen($address) > FIELD_LIMITS['delivery_address']) {
-        throw new RuntimeException('Delivery address is too long (max ' . FIELD_LIMITS['delivery_address'] . ' characters).');
+        throw new UserFacingException('Delivery address is too long (max ' . FIELD_LIMITS['delivery_address'] . ' characters).');
     }
     if (mb_strlen($note) > FIELD_LIMITS['buyer_note']) {
-        throw new RuntimeException('Note is too long (max ' . FIELD_LIMITS['buyer_note'] . ' characters).');
+        throw new UserFacingException('Note is too long (max ' . FIELD_LIMITS['buyer_note'] . ' characters).');
     }
 
     $reference = order_ref();
@@ -97,8 +97,14 @@ try {
     $pdo->commit();
     flash_set('success', 'Order request sent to the farm.');
     redirect_to('/order.php?id=' . $orderId);
-} catch (Throwable $e) {
+} catch (UserFacingException $e) {
     $pdo->rollBack();
     flash_set('error', $e->getMessage());
+    redirect_to('/listing.php?id=' . $listingId);
+} catch (Throwable $e) {
+    // Unexpected: its text can name tables, columns or SQL, so log it and
+    // show only a reference the user can quote to support.
+    $pdo->rollBack();
+    flash_set('error', generic_error_message(app_log_exception($e, 'order_request')));
     redirect_to('/listing.php?id=' . $listingId);
 }

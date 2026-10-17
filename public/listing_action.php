@@ -38,23 +38,23 @@ try {
     $stmt->execute(['id' => $listingId]);
     $listing = $stmt->fetch();
     if (!$listing) {
-        throw new RuntimeException('Listing not found.');
+        throw new UserFacingException('Listing not found.');
     }
     if ((int) $listing['farmer_id'] !== $userId) {
-        throw new RuntimeException('You can only manage your own listings.');
+        throw new UserFacingException('You can only manage your own listings.');
     }
 
     switch ($action) {
         case 'pause':
             if ($listing['status'] !== 'active') {
-                throw new RuntimeException('Only an active listing can be paused.');
+                throw new UserFacingException('Only an active listing can be paused.');
             }
             $newStatus = 'paused';
             break;
 
         case 'resume':
             if ($listing['status'] !== 'paused') {
-                throw new RuntimeException('Only a paused listing can be resumed.');
+                throw new UserFacingException('Only a paused listing can be resumed.');
             }
             $newStatus = 'active';
             break;
@@ -64,13 +64,13 @@ try {
             // ON DELETE RESTRICT, and deleting would also cascade away its
             // stock history. Archived rows are kept for the order trail.
             if ($listing['status'] === 'archived') {
-                throw new RuntimeException('This listing is already archived.');
+                throw new UserFacingException('This listing is already archived.');
             }
             $newStatus = 'archived';
             break;
 
         default:
-            throw new RuntimeException('Unknown action: ' . $action);
+            throw new UserFacingException('Unknown action: ' . $action);
     }
 
     $pdo->prepare('UPDATE produce_listings SET status = :status WHERE id = :id')
@@ -80,8 +80,14 @@ try {
     flash_set('success', 'Listing is now ' . str_replace('_', ' ', $newStatus) . '.');
     redirect_to($returnTo);
 
-} catch (Throwable $e) {
+} catch (UserFacingException $e) {
     $pdo->rollBack();
     flash_set('error', $e->getMessage());
+    redirect_to($returnTo);
+} catch (Throwable $e) {
+    // Unexpected: its text can name tables, columns or SQL, so log it and
+    // show only a reference the user can quote to support.
+    $pdo->rollBack();
+    flash_set('error', generic_error_message(app_log_exception($e, 'listing_action')));
     redirect_to($returnTo);
 }
