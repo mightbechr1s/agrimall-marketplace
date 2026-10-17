@@ -184,6 +184,10 @@ if ($sidebarShell) {
             </div>
             <div class="body">
               <div class="badges-top">
+                <?php if (listing_is_expired($item)): ?>
+                  <?php // FR-LIST-033: expired produce stays visible in the catalogue, but must be presented as expired. ?>
+                  <span class="badge text-bg-warning" data-testid="expired-badge"><?= $l($copy['listing'], 'expired_badge') ?></span>
+                <?php endif; ?>
                 <span class="badge badge-fresh">Picked Today</span>
                 <span class="badge badge-location"><i class="bi bi-geo-alt"></i><?php echo e($item['farm_name']); ?> · <?php echo e($item['province']); ?></span>
               </div>
