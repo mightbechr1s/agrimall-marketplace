@@ -7,7 +7,9 @@ const puppeteer = require('puppeteer-core');
 const { AxePuppeteer } = require('@axe-core/puppeteer');
 const fs = require('fs');
 
-const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:8009';
+// Must match the documented dev server (package.json "dev"). It was 8009, so
+// running this without BASE_URL scanned nothing and wrote an empty report.
+const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:8000';
 const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 
 const PAGES = [

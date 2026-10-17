@@ -25,6 +25,11 @@ public/uploads/listings/*
 logs/*
 !logs/.gitkeep
 
+# --- Generated accessibility report ---
+# Written by tests/axe-audit.js on every run. A committed copy goes stale
+# immediately and reads as evidence for a run nobody can reproduce.
+tests/axe-report.json
+
 # --- Editors & OS junk ---
 .vscode/
 .idea/

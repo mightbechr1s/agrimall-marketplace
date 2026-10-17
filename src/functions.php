@@ -485,15 +485,6 @@ function rate_limit_check(string $key, int $maxAttempts = 5, int $windowSeconds 
     return false;
 }
 
-/** Short preview of a block of text for card teasers. */
-function preview(?string $text, int $length = 110): string
-{
-    if ($text === null || $text === '') {
-        return '';
-    }
-    return strlen($text) > $length ? substr($text, 0, $length - 3) . '...' : $text;
-}
-
 /**
  * Colour family for a status value, so the same status reads the same way on
  * every page: settled, in progress, waiting, stopped, or dormant.

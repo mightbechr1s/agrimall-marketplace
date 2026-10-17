@@ -250,11 +250,28 @@ live database, and which of them are safe to run twice.
 
 ```powershell
 npm install             # once, for the browser test
-npm test                # syntax, i18n parity, validation, PDF structure
+npm test                # syntax, i18n, validation, PDF, security, doc drift
 npm run test:http       # HTTP flows against a throwaway database
 npm run test:panels     # sidebar links, role gating, admin workflows
 npm run test:e2e        # browser smoke test
 ```
+
+---
+
+## 15. Where the documentation lives
+
+| Document | Read it for |
+|---|---|
+| `docs/SRS.md` | What the system is required to do. The single source of truth for requirements. |
+| `docs/traceability-matrix.md` | Whether each requirement is met, and by what evidence. **Generated** - do not edit by hand; regenerate with `php tools\gen_traceability.php`. |
+| `docs/decisions.md` | Measures taken that no requirement covers, and their limits. Read this before proposing a larger scale. |
+| `docs/reviewer-guide.md` | How to review changes here, and the traps that have already fooled us. |
+| `docs/nginx-hardening.conf` | Suggested production web-server configuration. |
+
+If you change a constant that `docs/decisions.md` quotes (a page size, an export
+cap, the sitemap chunking), `npm test` will fail until the document is updated.
+That is intentional: the document is a claim about the code, and drift in either
+direction is a defect.
 
 - Leave `npm run dev` running if you like. Each suite starts its own `php -S` on
   a free port and stops only the server it started.
