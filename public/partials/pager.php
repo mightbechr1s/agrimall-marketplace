@@ -3,6 +3,9 @@
  * Shared pagination control.
  * Expects: $page (int, 1-based), $totalPages (int), $param (string, extra query params WITHOUT leading ? or &).
  * Optional: $labels (array) with keys 'prev', 'next', 'page', 'of' for localization.
+ * Optional: $pageParam (string) query-string key holding the page number. Defaults
+ *   to 'page'. Pages needing two independent pagers pass distinct keys
+ *   ('listings_page', 'saved_page') so one section's paging never moves the other.
  * Renders nothing when $totalPages <= 1.
  */
 if (!isset($page, $totalPages)) {
@@ -13,6 +16,7 @@ $totalPages = max(1, (int)$totalPages);
 if ($totalPages <= 1) {
     return;
 }
+$pageParam = $pageParam ?? 'page';
 $param = $param ?? '';
 $paramPrefix = $param !== '' ? '&' . $param : '';
 $labels = $labels ?? [
@@ -22,16 +26,19 @@ $labels = $labels ?? [
     'of'   => 'of',
 ];
 
-/** Build page URL preserving all other query params. */
-function pager_href(int $p, string $paramPrefix): string
-{
-    return '?page=' . $p . $paramPrefix;
+/** Build page URL preserving all other query params. Guarded: a page with two
+    pagers includes this partial twice and would otherwise fatal on redeclare. */
+if (!function_exists('pager_href')) {
+    function pager_href(int $p, string $pageParam, string $paramPrefix): string
+    {
+        return '?' . $pageParam . '=' . $p . $paramPrefix;
+    }
 }
 ?>
 <nav aria-label="Pagination" class="d-flex justify-content-center gap-1 flex-wrap my-4" role="navigation">
     <!-- Previous -->
     <?php if ($page > 1): ?>
-        <a href="<?= e(pager_href($page - 1, $paramPrefix)) ?>" class="btn btn-outline btn-sm" aria-label="<?= e($labels['prev']) ?> page">
+        <a href="<?= e(pager_href($page - 1, $pageParam, $paramPrefix)) ?>" class="btn btn-outline btn-sm" aria-label="<?= e($labels['prev']) ?> page">
             <i class="bi bi-chevron-left" aria-hidden="true"></i>
             <span class="d-none d-sm-inline"><?= e($labels['prev']) ?></span>
         </a>
@@ -68,7 +75,7 @@ function pager_href(int $p, string $paramPrefix): string
                 <?= (int)$p ?>
             </button>
         <?php else: ?>
-            <a href="<?= e(pager_href((int)$p, $paramPrefix)) ?>" class="btn btn-outline btn-sm" aria-label="<?= e($labels['page']) ?> <?= (int)$p ?>">
+            <a href="<?= e(pager_href((int)$p, $pageParam, $paramPrefix)) ?>" class="btn btn-outline btn-sm" aria-label="<?= e($labels['page']) ?> <?= (int)$p ?>">
                 <?= (int)$p ?>
             </a>
         <?php endif; ?>
@@ -76,7 +83,7 @@ function pager_href(int $p, string $paramPrefix): string
 
     <!-- Next -->
     <?php if ($page < $totalPages): ?>
-        <a href="<?= e(pager_href($page + 1, $paramPrefix)) ?>" class="btn btn-outline btn-sm" aria-label="<?= e($labels['next']) ?> page">
+        <a href="<?= e(pager_href($page + 1, $pageParam, $paramPrefix)) ?>" class="btn btn-outline btn-sm" aria-label="<?= e($labels['next']) ?> page">
             <span class="d-none d-sm-inline"><?= e($labels['next']) ?></span>
             <i class="bi bi-chevron-right" aria-hidden="true"></i>
         </a>

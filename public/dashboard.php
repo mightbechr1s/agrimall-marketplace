@@ -132,6 +132,21 @@ if ($role === 'admin') {
         ],
     ];
 
+    // My Listings is the farmer's own catalogue and grows without bound, so it is
+    // paged: a farmer with hundreds of listings must not render hundreds of cards.
+    $listingsPerPage = 12;
+    $listingsCountStmt = $pdo->prepare(
+        'SELECT COUNT(*)
+         FROM produce_listings pl
+         JOIN produce_categories pc ON pl.category_id = pc.id
+         JOIN quantity_units qu ON pl.unit_id = qu.id
+         WHERE pl.farmer_id = :id AND pl.status <> \'archived\''
+    );
+    $listingsCountStmt->execute(['id' => $userId]);
+    $listingsTotal = (int) $listingsCountStmt->fetchColumn();
+    $listingsPages = max(1, (int) ceil($listingsTotal / $listingsPerPage));
+    $listingsPage = max(1, min($listingsPages, (int) ($_GET['listings_page'] ?? 1)));
+
     $ls = $pdo->prepare(
         'SELECT pl.*, pc.name AS category_name, qu.symbol AS unit_symbol,
                 (SELECT li.image_path FROM listing_images li
@@ -141,9 +156,13 @@ if ($role === 'admin') {
          JOIN produce_categories pc ON pl.category_id = pc.id
          JOIN quantity_units qu ON pl.unit_id = qu.id
          WHERE pl.farmer_id = :id AND pl.status <> \'archived\'
-         ORDER BY pl.created_at DESC'
+         ORDER BY pl.created_at DESC
+         LIMIT :lim OFFSET :off'
     );
-    $ls->execute(['id' => $userId]);
+    $ls->bindValue(':id', $userId, PDO::PARAM_INT);
+    $ls->bindValue(':lim', $listingsPerPage, PDO::PARAM_INT);
+    $ls->bindValue(':off', ($listingsPage - 1) * $listingsPerPage, PDO::PARAM_INT);
+    $ls->execute();
     $farmerListings = $ls->fetchAll();
 
     $os = $pdo->prepare('SELECT * FROM v_order_summary WHERE farmer_id = :id ORDER BY created_at DESC');
@@ -417,6 +436,19 @@ require __DIR__ . '/partials/dashboard-layout.php';
               ?>
             <?php endforeach; ?>
         </div>
+            <?php
+            $page = $listingsPage;
+            $totalPages = $listingsPages;
+            $pageParam = 'listings_page';
+            $param = isset($_GET['saved_page']) ? 'saved_page=' . (int) $_GET['saved_page'] : '';
+            $labels = [
+                'prev' => t($navCopy['ui'], 'pager_prev'),
+                'next' => t($navCopy['ui'], 'pager_next'),
+                'page' => t($navCopy['ui'], 'pager_page'),
+                'of'   => t($navCopy['ui'], 'pager_of'),
+            ];
+            include __DIR__ . '/partials/pager.php';
+            ?>
         <?php else: ?>
         <div class="empty-state">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon" aria-hidden="true">
@@ -547,7 +579,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                         <tfoot>
                             <tr>
                                 <th>Total</th>
-                                <th class="text-end"><?= count($farmerListings) ?></th>
+                                <th class="text-end"><?= $listingsTotal ?></th>
                                 <th class="text-end"><?= rtrim(rtrim(number_format(array_sum(array_map(function ($r) { return (float) $r['available_quantity']; }, $farmerListings)), 2), '0'), '.') ?></th>
                             </tr>
                         </tfoot>
@@ -763,21 +795,33 @@ require __DIR__ . '/partials/dashboard-layout.php';
             <h2>Saved Listings</h2>
         </div>
         <?php
+        // Saved listings accumulate without bound, so this list is paged too.
+        $savedPerPage = 12;
+        $savedWhere = 'FROM saved_listings sl
+             JOIN produce_listings pl ON sl.listing_id = pl.id
+             JOIN farmer_profiles fp ON pl.farmer_id = fp.user_id
+             JOIN quantity_units qu ON pl.unit_id = qu.id
+             JOIN produce_categories pc ON pl.category_id = pc.id
+             WHERE sl.user_id = :user AND pl.status = \'active\'';
+        $savedCountStmt = DB::pdo()->prepare('SELECT COUNT(*) ' . $savedWhere);
+        $savedCountStmt->execute(['user' => current_user_id()]);
+        $savedTotal = (int) $savedCountStmt->fetchColumn();
+        $savedPages = max(1, (int) ceil($savedTotal / $savedPerPage));
+        $savedPage = max(1, min($savedPages, (int) ($_GET['saved_page'] ?? 1)));
+
         $savedStmt = DB::pdo()->prepare(
             'SELECT sl.listing_id, pl.name, pl.price_per_unit, pl.description, fp.farm_name, qu.symbol,
                     (SELECT li.image_path FROM listing_images li
                       WHERE li.listing_id = pl.id AND li.is_primary = 1
                       ORDER BY li.sort_order LIMIT 1) AS primary_image,
-                    pc.name AS category_name, sl.created_at
-             FROM saved_listings sl
-             JOIN produce_listings pl ON sl.listing_id = pl.id
-             JOIN farmer_profiles fp ON pl.farmer_id = fp.user_id
-             JOIN quantity_units qu ON pl.unit_id = qu.id
-             JOIN produce_categories pc ON pl.category_id = pc.id
-             WHERE sl.user_id = :user AND pl.status = \'active\'
-             ORDER BY sl.created_at DESC'
+                    pc.name AS category_name, sl.created_at ' . $savedWhere . '
+             ORDER BY sl.created_at DESC
+             LIMIT :lim OFFSET :off'
         );
-        $savedStmt->execute(['user' => current_user_id()]);
+        $savedStmt->bindValue(':user', current_user_id(), PDO::PARAM_INT);
+        $savedStmt->bindValue(':lim', $savedPerPage, PDO::PARAM_INT);
+        $savedStmt->bindValue(':off', ($savedPage - 1) * $savedPerPage, PDO::PARAM_INT);
+        $savedStmt->execute();
         $savedListings = $savedStmt->fetchAll();
         ?>
         <?php if (!$savedListings): ?>
@@ -810,6 +854,19 @@ require __DIR__ . '/partials/dashboard-layout.php';
                     ?>
                 <?php endforeach; ?>
             </div>
+            <?php
+            $page = $savedPage;
+            $totalPages = $savedPages;
+            $pageParam = 'saved_page';
+            $param = isset($_GET['listings_page']) ? 'listings_page=' . (int) $_GET['listings_page'] : '';
+            $labels = [
+                'prev' => t($navCopy['ui'], 'pager_prev'),
+                'next' => t($navCopy['ui'], 'pager_next'),
+                'page' => t($navCopy['ui'], 'pager_page'),
+                'of'   => t($navCopy['ui'], 'pager_of'),
+            ];
+            include __DIR__ . '/partials/pager.php';
+            ?>
         <?php endif; ?>
     </div>
 
