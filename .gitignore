@@ -43,11 +43,6 @@ Thumbs.db
 .impeccable/
 node_modules/
 
-# --- Environment secrets ---
-.env
-.env.*
-!.env.example
-
 # --- PHP specifics ---
 *.log
 
