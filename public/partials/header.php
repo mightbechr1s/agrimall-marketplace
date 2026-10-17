@@ -5,14 +5,8 @@ $currentLocale = function_exists('locale_current') ? locale_current() : 'en';
 $isIndex = basename($_SERVER['SCRIPT_NAME'] ?? '') === 'index.php';
 
 // Build canonical URL and hreflang alternates
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
-$baseUrl = rtrim($config['app']['base_url'] ?? '', '/');
-// Fallback: empty base_url would emit wrong-host canonical and relative og/twitter images (crawlers reject).
-if ($baseUrl === '') {
-    $baseUrl = "{$protocol}://{$host}";
-}
+$baseUrl = app_base_url();
 $canonicalUrl = $baseUrl . $requestUri;
 $canonicalUrl = strtok($canonicalUrl, '?'); // strip query for canonical
 ?>

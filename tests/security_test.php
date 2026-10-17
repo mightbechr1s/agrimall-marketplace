@@ -316,6 +316,61 @@ foreach ($uploadPages as $page) {
 $check('no upload site hand-builds the upload filesystem path', $handRolled === [], implode(', ', $handRolled));
 
 // ---------------------------------------------------------------------------
+echo "\nbase_url: a placeholder must not silently break password reset\n";
+// ---------------------------------------------------------------------------
+// config.example.php shipped base_url = 'https://your-domain.example'. Nothing
+// validated it, so the app deployed happily with every password-reset link
+// pointing at a dead domain -- and password reset simply did not work, with no
+// error anywhere. app_base_url() must treat the placeholder as unset and derive
+// the host from the request instead.
+
+if (!function_exists('app_base_url')) {
+    fwrite(STDERR, "FATAL: app_base_url() is not defined\n");
+    exit(2);
+}
+
+$probeBaseUrl = function (string $configured, string $host = 'shop.example.test:8080', string $https = 'on') use ($check) {
+    $GLOBALS['config'] = ['app' => ['base_url' => $configured]];
+    $_SERVER['HTTP_HOST'] = $host;
+    // Set every call: an earlier version left this alone and silently reset it,
+    // so the http case could never actually be observed.
+    $_SERVER['HTTPS'] = $https;
+    return app_base_url();
+};
+
+$check('a real configured base_url wins', $probeBaseUrl('https://animal.ph/') === 'https://animal.ph', $probeBaseUrl('https://animal.ph/'));
+$check('an empty base_url derives https from the request', $probeBaseUrl('') === 'https://shop.example.test:8080', $probeBaseUrl(''));
+$check(
+    'the shipped placeholder is treated as unset, not deployed',
+    $probeBaseUrl('https://your-domain.example') === 'https://shop.example.test:8080',
+    $probeBaseUrl('https://your-domain.example')
+);
+
+$check('plain http is derived as http', $probeBaseUrl('', 'shop.example.test:8080', '') === 'http://shop.example.test:8080', $probeBaseUrl('', 'shop.example.test:8080', ''));
+$check("HTTPS=off is derived as http too", $probeBaseUrl('', 'shop.example.test:8080', 'off') === 'http://shop.example.test:8080', $probeBaseUrl('', 'shop.example.test:8080', 'off'));
+
+// The concrete harm: the reset link must point at the host that was asked for.
+$probeBaseUrl('https://your-domain.example');
+$resolved = app_base_url();
+$resetLink = $resolved . '/reset.php?token=abc123';
+$check(
+    'a password-reset link under the placeholder points at the real host',
+    str_contains($resetLink, 'shop.example.test:8080/reset.php?token=abc123')
+        && !str_contains($resetLink, 'your-domain.example'),
+    $resetLink
+);
+
+// No page may read the raw key and build its own URL any more.
+$rawReaders = [];
+foreach (array_merge(glob($repoRoot . '/public/*.php') ?: [], glob($repoRoot . '/public/partials/*.php') ?: [], glob($repoRoot . '/src/*.php') ?: []) as $file) {
+    $code = preg_replace(['~/\*.*?\*/~s', '~//[^\n]*~'], '', (string) file_get_contents($file));
+    if (preg_match_all("/\\\$config\['app'\]\['base_url'\]/", (string) $code, $m)) {
+        $rawReaders[] = basename($file) . ' (' . count($m[0]) . ')';
+    }
+}
+$check('only app_base_url() reads the raw base_url key', $rawReaders === ['functions.php (1)'], implode(', ', $rawReaders));
+
+// ---------------------------------------------------------------------------
 echo "\nNFR-SEC-001: no request superglobal reaches a SQL statement\n";
 // ---------------------------------------------------------------------------
 $superglobalHits = [];

@@ -811,6 +811,31 @@ function local_reset_links_enabled(): bool
 }
 
 /**
+ * Absolute base URL for canonical links, sitemap entries and password-reset
+ * links.
+ *
+ * A configured base_url wins when it is a real value. An empty one -- or the
+ * placeholder that ships in config.example.php -- falls back to the current
+ * request, because the placeholder is silently destructive: it makes every
+ * password-reset link point at https://your-domain.example/reset.php?token=...
+ * and password reset stops working entirely, with no error anywhere. Deriving
+ * the host from the request is correct on localhost, on the PHP dev server and
+ * on whatever host the deployment actually uses, so an unset value is a safe
+ * default rather than a broken one.
+ */
+function app_base_url(): string
+{
+    global $config;
+    $configured = trim((string) ($config['app']['base_url'] ?? ''));
+    if ($configured !== '' && !str_contains($configured, 'your-domain.example')) {
+        return rtrim($configured, '/');
+    }
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    return $scheme . '://' . $host;
+}
+
+/**
  * Deliver a password reset link over the local-only channel: there is no
  * mailer, so the raw token goes to logs/security.log and, when
  * local_reset_links_enabled() allows, is returned for display. Null when the
@@ -819,7 +844,7 @@ function local_reset_links_enabled(): bool
 function password_reset_deliver_local(int $userId, string $rawToken): ?string
 {
     global $config;
-    $base = rtrim((string) ($config['app']['base_url'] ?? ''), '/');
+    $base = app_base_url();
     $link = $base . '/reset.php?token=' . rawurlencode($rawToken);
 
     security_event_log('password_reset_link_issued', [

@@ -13,7 +13,14 @@ return [
     ],
     'app' => [
         'name' => 'AniMAL',
-        'base_url' => 'https://your-domain.example', // Production: replace with your actual domain (e.g. https://animal.example)
+          // Leave empty: app_base_url() derives the host from the incoming request,
+          // which is correct on localhost, on `php -S`, and on whatever host you
+          // deploy to. Set this only if you need a fixed canonical host (e.g.
+          // behind a proxy that rewrites Host): 'https://animal.example'.
+          // A placeholder value is NOT safe here: it was shipped as
+          // https://your-domain.example and silently turned every password-reset
+          // link into a dead URL. app_base_url() now treats that string as unset.
+          'base_url' => '',
         'timezone' => 'Asia/Manila',
         'session_lifetime_minutes' => 30,
         'env' => 'production',      // 'development' | 'production'

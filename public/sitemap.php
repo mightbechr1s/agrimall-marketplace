@@ -15,15 +15,9 @@ declare(strict_types=1);
 require __DIR__ . '/../src/bootstrap.php';
 
 $config = $GLOBALS['config'] ?? require __DIR__ . '/../config/config.php';
-$baseUrl = $config['app']['base_url'] ?? '';
-
-// Empty base_url: derive from the current request (dev server)
-if (empty($baseUrl)) {
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
-    $baseUrl = $scheme . '://' . $host;
-}
-$baseUrl = rtrim($baseUrl, '/');
+// One resolver for every consumer; falls back to the request host when
+// base_url is unset or still the shipped placeholder.
+$baseUrl = app_base_url();
 
 /** Protocol maximum URLs per sitemap file. */
 const SITEMAP_MAX_URLS = 50000;
