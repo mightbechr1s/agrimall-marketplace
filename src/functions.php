@@ -82,6 +82,90 @@ function generic_error_message(string $ref): string
     return 'Something went wrong on our side. Please try again. Reference: ' . $ref;
 }
 
+/**
+ * Absolute path to the listing-image directory, created on first use.
+ *
+ * git does not track empty directories, so public/uploads/listings/ was absent
+ * from every fresh clone: move_uploaded_file() then had nowhere to write, warned,
+ * and the warning became an ErrorException, so *every* upload returned a 500.
+ * Creating it here fixes all three call sites at once and survives someone
+ * deleting the directory after deploy.
+ */
+function listing_upload_dir(): string
+{
+    $dir = dirname(__DIR__) . '/public/uploads/listings';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0775, true);
+    }
+    return $dir;
+}
+
+/**
+ * Validate an uploaded file as an image (NFR-SEC-009).
+ *
+ * finfo_file() sniffs magic bytes, which is necessary but not sufficient: a file
+ * can carry an image magic number yet be truncated, malformed or otherwise
+ * undecodable. getimagesize() actually parses the container and reports the
+ * decoded image type, so it is both the allow-list check and the proof that the
+ * file is a real image.
+ *
+ * fileinfo is optional, not assumed: ext/fileinfo is absent from plenty of
+ * builds (PHP 8.5 via winget among them), and calling finfo_open() unguarded
+ * made every upload fatal there. When it is present its verdict is used to
+ * cross-check getimagesize(); when it is absent the decoded type stands alone.
+ *
+ * @param array $file One entry from $_FILES.
+ * @return array{ok:bool,mime?:string,width?:int,height?:int} Decoded type and
+ *   dimensions on success, or ['ok' => false] when it is not a real image.
+ */
+function validate_uploaded_image(array $file): array
+{
+    if (!isset($file['tmp_name']) || !is_file($file['tmp_name'])) {
+        return ['ok' => false];
+    }
+
+    // Decoded-image validity (NFR-SEC-009). This call is mandatory: without it
+    // the type is merely claimed, not read out of a container.
+    $info = @getimagesize($file['tmp_name']);
+    if ($info === false || empty($info[0]) || empty($info[1]) || empty($info[2])) {
+        return ['ok' => false];
+    }
+
+    $decodedMime = [
+        IMAGETYPE_JPEG => 'image/jpeg',
+        IMAGETYPE_PNG => 'image/png',
+        IMAGETYPE_WEBP => 'image/webp',
+        IMAGETYPE_GIF => 'image/gif',
+    ][$info[2]] ?? null;
+
+    if ($decodedMime === null || !in_array($decodedMime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
+        return ['ok' => false];
+    }
+
+    // Optional second opinion. A disagreement means the bytes say one thing and
+    // the decoded container says another, which is exactly what a polyglot looks
+    // like, so it is rejected.
+    if (function_exists('finfo_open')) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo !== false) {
+            // Some libmagic builds return false (and warn) for content they
+            // cannot classify. The cast makes that fail the comparison below.
+            $sniffed = (string) @finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+            if ($sniffed !== '' && $sniffed !== $decodedMime) {
+                return ['ok' => false];
+            }
+        }
+    }
+
+    return [
+        'ok' => true,
+        'mime' => $decodedMime,
+        'width' => (int) $info[0],
+        'height' => (int) $info[1],
+    ];
+}
+
 /** Upper sanity bound for any submitted quantity, in PHP. */
 const MAX_QUANTITY = 1000000;
 

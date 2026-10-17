@@ -17,15 +17,14 @@ if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
 
 $file = $_FILES['image'];
 
-$allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
-$finfo = finfo_open(FILEINFO_MIME_TYPE);
-$mimeType = finfo_file($finfo, $file['tmp_name']);
-finfo_close($finfo);
-
-if (!in_array($mimeType, $allowedMimeTypes)) {
+// NFR-SEC-009 in one gate: content type, decoded-image validity, and a
+// filename extension derived from the decoded type rather than the upload's.
+$imageCheck = validate_uploaded_image($file);
+if (!$imageCheck['ok']) {
     http_response_code(400);
-    exit('Invalid file type. Only JPEG, PNG, and WebP images are allowed.');
+    exit('Invalid or corrupt image file. Only JPEG, PNG, and WebP images are allowed.');
 }
+$mimeType = $imageCheck['mime'];
 
 $maxFileSize = 5 * 1024 * 1024; // 5MB
 if ($file['size'] > $maxFileSize) {
@@ -40,7 +39,7 @@ $fileExtension = match($mimeType) {
     default => 'bin'
 };
 $filename = uniqid('listing_', true) . '.' . $fileExtension;
-$uploadPath = __DIR__ . '/uploads/listings/' . $filename;
+$uploadPath = listing_upload_dir() . '/' . $filename;
 
 if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
     http_response_code(500);

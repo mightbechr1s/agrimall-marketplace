@@ -122,12 +122,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $file = $_FILES['primary_image'];
 
         // Validate file type
-        $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mimeType = finfo_file($finfo, $file['tmp_name']);
-        finfo_close($finfo);
-
-        if (!in_array($mimeType, $allowedMimeTypes)) {
+        $imageCheck = validate_uploaded_image($file);
+        $mimeType = $imageCheck['mime'] ?? '';
+        if (!$imageCheck['ok']) {
             $errors[] = $l($copy['lf'], 'err_img_primary_type');
         } elseif ($file['size'] > 5 * 1024 * 1024) { // 5MB
             $errors[] = $l($copy['lf'], 'err_img_primary_large');
@@ -140,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 default => 'bin'
             };
             $filename = uniqid('listing_', true) . '.' . $fileExtension;
-            $uploadPath = __DIR__ . '/uploads/listings/' . $filename;
+            $uploadPath = listing_upload_dir() . '/' . $filename;
 
             if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
                 $primaryImage = '/uploads/listings/' . $filename;
@@ -166,12 +163,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
 
                 // Validate file type
-                $allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
-                $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                $mimeType = finfo_file($finfo, $file['tmp_name']);
-                finfo_close($finfo);
-
-                if (!in_array($mimeType, $allowedMimeTypes)) {
+                $imageCheck = validate_uploaded_image($file);
+                $mimeType = $imageCheck['mime'] ?? '';
+                if (!$imageCheck['ok']) {
                     $errors[] = $l($copy['lf'], 'err_img_gallery_type');
                 } elseif ($file['size'] > 5 * 1024 * 1024) { // 5MB
                     $errors[] = $l($copy['lf'], 'err_img_gallery_large');
@@ -184,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         default => 'bin'
                     };
                     $filename = uniqid('listing_gallery_', true) . '.' . $fileExtension;
-                    $uploadPath = __DIR__ . '/uploads/listings/' . $filename;
+                    $uploadPath = listing_upload_dir() . '/' . $filename;
 
                     if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
                         $galleryImages[] = '/uploads/listings/' . $filename;
