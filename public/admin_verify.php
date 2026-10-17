@@ -17,6 +17,11 @@ $idLabels = [
 // Decide a pending application
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
+$i18nAll = include __DIR__ . '/../src/i18n_copy.php';
+$ordersCopy = $i18nAll['orders'] ?? [];
+$listingActionsCopy = $i18nAll['listing_actions'] ?? [];
+$adminVerifyCopy = $i18nAll['admin_verify'] ?? [];
+$cartCopy = $i18nAll['cart'] ?? [];
 
     $action = $_POST['action'] ?? '';
     $reason = trim((string) ($_POST['reason'] ?? ''));
@@ -34,16 +39,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $row = $stmt->fetch();
 
             if (!$row) {
-                throw new UserFacingException('Farmer application not found.');
+                throw new UserFacingException(t($adminVerifyCopy, 'not_found'));
             }
             if ($row['verification_status'] !== 'pending') {
-                throw new UserFacingException('This application has already been reviewed.');
+                throw new UserFacingException(t($adminVerifyCopy, 'already_reviewed'));
             }
             if ($action === 'reject' && $reason === '') {
-                throw new UserFacingException('A reason is required when rejecting an application.');
+                throw new UserFacingException(t($adminVerifyCopy, 'reason_required'));
             }
             if (mb_strlen($reason) > FIELD_LIMITS['reason']) {
-                throw new UserFacingException('Reason is too long (max ' . FIELD_LIMITS['reason'] . ' characters).');
+                throw new UserFacingException(sprintf(t($adminVerifyCopy, 'reason_too_long'), FIELD_LIMITS['reason']));
             }
 
             if ($action === 'approve') {
@@ -79,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash_set('error', generic_error_message(app_log_exception($e, 'admin_verify')));
         }
     } else {
-        flash_set('error', 'Invalid request.');
+        flash_set('error', t($adminVerifyCopy, 'invalid_request'));
     }
     redirect_to('admin_verify.php?status=pending');
 }

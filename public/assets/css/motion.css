@@ -163,7 +163,17 @@
   .nav-links a,
   .mobile-nav-link,
   .locale-toggle a,
-  .pill {
+  .pill,
+  /* The icon controls are the most-pressed things on the page and were the
+     only interactives with no transition at all, so they snapped. */
+  .save-btn,
+  .cart-pill,
+  .notif-pill,
+  .profile-btn,
+  .theme-toggle,
+  .sidebar-icon-btn,
+  .locale-btn,
+  .btn-icon {
     transition: background-color var(--dur-short) var(--ease-standard),
                 border-color var(--dur-short) var(--ease-standard),
                 color var(--dur-short) var(--ease-standard),
@@ -195,6 +205,16 @@
   .pill:hover {
     border-color: var(--accent);
   }
+  /* Icon controls: colour only, no lift. A 40px tap target that jumps reads as
+     misfired rather than responsive. */
+  .save-btn:hover,
+  .cart-pill:hover,
+  .notif-pill:hover,
+  .profile-btn:hover,
+  .sidebar-icon-btn:hover,
+  .locale-btn:hover {
+    background: var(--canvas);
+  }
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -205,7 +225,15 @@
   .btn:active,
   .filter-pill:active,
   .card:active,
-  .sidebar-link:active {
+  .sidebar-link:active,
+  .save-btn:active,
+  .cart-pill:active,
+  .notif-pill:active,
+  .profile-btn:active,
+  .theme-toggle:active,
+  .sidebar-icon-btn:active,
+  .locale-btn:active,
+  .btn-icon:active {
     transform: scale(0.98);
     transition: transform var(--dur-micro) var(--ease-enter);
   }

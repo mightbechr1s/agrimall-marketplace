@@ -1,6 +1,6 @@
 <?php
 /**
- * Keeps docs/decisions.md honest about the numbers that are code, not data.
+ * Keeps docs/decisions.txt honest about the numbers that are code, not data.
  *
  * The capacity ceilings in that document (page sizes, export and dropdown caps,
  * sitemap chunking) are claims about constants in the source. If someone changes
@@ -16,9 +16,9 @@
 declare(strict_types=1);
 
 $repoRoot = dirname(__DIR__);
-$docPath = $repoRoot . '/docs/decisions.md';
+$docPath = $repoRoot . '/docs/decisions.txt';
 if (!is_file($docPath)) {
-    fwrite(STDERR, "FATAL: docs/decisions.md not found\n");
+    fwrite(STDERR, "FATAL: docs/decisions.txt not found\n");
     exit(2);
 }
 $doc = (string) file_get_contents($docPath);
@@ -52,7 +52,7 @@ $dash = $repoRoot . '/public/dashboard.php';
 $reports = $repoRoot . '/public/admin_reports.php';
 $sitemap = $repoRoot . '/public/sitemap.php';
 
-echo "docs/decisions.md: stated ceilings match the code\n";
+echo "docs/decisions.txt: stated ceilings match the code\n";
 
 // ---- D-01 pagination ------------------------------------------------------
 $pageSizes = [
@@ -65,19 +65,19 @@ foreach ($pageSizes as $row => [$file, $needle, $expected]) {
     preg_match('/' . preg_quote($needle, '/') . '(\d+)/', $src, $m);
     $code = $m[1] ?? null;
     $check("code $needle is $expected", $code === (string) $expected, "got " . var_export($code, true));
-    $check("decisions.md row '$row' says $expected", $docCell($row) === (string) $expected, 'row missing or stale');
+    $check("decisions.txt row '$row' says $expected", $docCell($row) === (string) $expected, 'row missing or stale');
 }
 
 // ---- D-02 sitemap ---------------------------------------------------------
 $maxUrls = $const($sitemap, 'SITEMAP_MAX_URLS');
 $check('SITEMAP_MAX_URLS is 50000', $maxUrls === '50000', var_export($maxUrls, true));
-$check('decisions.md sitemap row says 50000', $docCell('Sitemap URLs per file') === '50000');
+$check('decisions.txt sitemap row says 50000', $docCell('Sitemap URLs per file') === '50000');
 
 $router = (string) file_get_contents($repoRoot . '/public/router.php');
 preg_match('/range\(1,\s*(\d+)\)/', $router, $m);
 $maxFiles = $m[1] ?? null;
 $check('router maps 50 sitemap chunks', $maxFiles === '50', var_export($maxFiles, true));
-$check('decisions.md sitemap-files row says 50', $docCell('Sitemap files') === '50');
+$check('decisions.txt sitemap-files row says 50', $docCell('Sitemap files') === '50');
 
 // The prose ceiling must equal files x URLs, not merely sound plausible.
 if (preg_match('/([\d.]+) millionth listing/', $doc, $m)) {
@@ -85,17 +85,17 @@ if (preg_match('/([\d.]+) millionth listing/', $doc, $m)) {
     $real = (int) $maxFiles * (int) $maxUrls;
     $check("prose ceiling $stated equals $maxFiles files x $maxUrls URLs", $stated === $real, "arithmetic mismatch");
 } else {
-    $fail[] = 'the sitemap ceiling sentence is missing from decisions.md';
+    $fail[] = 'the sitemap ceiling sentence is missing from decisions.txt';
 }
 
 // ---- D-03 / D-04 report caps ---------------------------------------------
 $exportCap = $const($reports, 'REPORT_EXPORT_MAX_ROWS');
 $check('REPORT_EXPORT_MAX_ROWS is 2000', $exportCap === '2000', var_export($exportCap, true));
-$check('decisions.md export row says 2000', $docCell('Report export rows') === '2000');
+$check('decisions.txt export row says 2000', $docCell('Report export rows') === '2000');
 
 $filterCap = $const($reports, 'REPORT_FILTER_MAX_OPTIONS');
 $check('REPORT_FILTER_MAX_OPTIONS is 100', $filterCap === '100', var_export($filterCap, true));
-$check('decisions.md filter row says 100', $docCell('Report filter options') === '100');
+$check('decisions.txt filter row says 100', $docCell('Report filter options') === '100');
 
 // ---- truncation disclosure must stay coupled to the cap ------------------
 // If the note were removed, the cap would truncate silently, which is the exact
@@ -108,11 +108,11 @@ $check(
 );
 
 // ---- the document must not be an orphan ----------------------------------
-$srs = (string) file_get_contents($repoRoot . '/docs/SRS.md');
-$check('decisions.md does not restate requirements the matrix already owns', str_contains($doc, 'traceability-matrix.md'));
+$srs = (string) file_get_contents($repoRoot . '/docs/SRS.txt');
+$check('decisions.txt does not restate requirements the matrix already owns', str_contains($doc, 'traceability-matrix.txt'));
 
-// ---- decisions.md must not quote stale coverage figures ------------------
-// The coverage paragraph in decisions.md restates the traceability matrix. Those
+// ---- decisions.txt must not quote stale coverage figures ------------------
+// The coverage paragraph in decisions.txt restates the traceability matrix. Those
 // numbers change only when traceability.json is deliberately edited, so they are
 // safe to assert -- and leaving them unchecked is how they went stale once
 // already, quietly claiming 45 automated when the matrix said 49.
@@ -127,7 +127,7 @@ if (is_array($map)) {
     )) {
         $docNumbers = ['total' => $m[1], 'automated' => $m[2], 'partial' => $m[3], 'manual' => $m[4], 'gap' => $m[5]];
     }
-    $check('decisions.md states the coverage figures', $docNumbers !== [], 'the coverage paragraph was not found');
+    $check('decisions.txt states the coverage figures', $docNumbers !== [], 'the coverage paragraph was not found');
     $expected = [
         'total' => (string) count($map),
         'automated' => (string) ($counts['automated'] ?? 0),
@@ -137,7 +137,7 @@ if (is_array($map)) {
     ];
     foreach ($expected as $key => $value) {
         $check(
-            "decisions.md $key matches traceability.json ($value)",
+            "decisions.txt $key matches traceability.json ($value)",
             ($docNumbers[$key] ?? null) === $value,
             'document says ' . var_export($docNumbers[$key] ?? null, true)
         );
@@ -150,7 +150,7 @@ echo "\nassertions passed: $pass\n";
 echo 'assertions failed: ' . count($fail) . "\n";
 
 if ($fail === []) {
-    echo "OK: every ceiling in decisions.md matches the code\n";
+    echo "OK: every ceiling in decisions.txt matches the code\n";
     exit(0);
 }
 foreach ($fail as $f) {

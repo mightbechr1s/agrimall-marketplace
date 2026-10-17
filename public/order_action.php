@@ -7,18 +7,23 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit('Method not allowed.');
 }
 csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
+$i18nAll = include __DIR__ . '/../src/i18n_copy.php';
+$ordersCopy = $i18nAll['orders'] ?? [];
+$listingActionsCopy = $i18nAll['listing_actions'] ?? [];
+$adminVerifyCopy = $i18nAll['admin_verify'] ?? [];
+$cartCopy = $i18nAll['cart'] ?? [];
 
 $orderId = (int) ($_POST['order_id'] ?? 0);
 $action  = $_POST['action'] ?? '';
 $reason  = trim((string) ($_POST['reason'] ?? ''));
 
 if (!$orderId || !$action) {
-    flash_set('error', 'Invalid request.');
+    flash_set('error', t($ordersCopy, 'invalid_request'));
     redirect_to('/dashboard.php');
 }
 
 if (mb_strlen($reason) > FIELD_LIMITS['reason']) {
-    flash_set('error', 'Reason is too long (max ' . FIELD_LIMITS['reason'] . ' characters).');
+    flash_set('error', sprintf(t($ordersCopy, 'reason_too_long'), FIELD_LIMITS['reason']));
     redirect_to('order.php?id=' . $orderId);
 }
 
@@ -34,7 +39,7 @@ try {
     $stmt->execute(['id' => $orderId]);
     $order = $stmt->fetch();
     if (!$order) {
-        throw new UserFacingException('Order not found.');
+        throw new UserFacingException(t($ordersCopy, 'order_not_found'));
     }
 
     $oldStatus = $order['status'];
@@ -44,25 +49,25 @@ try {
         case 'confirm':
             // Farmer confirms order — sets delivery fee if farmer_delivery
             if ($role !== 'farmer' || $order['farmer_id'] !== $userId) {
-                throw new UserFacingException('Only the assigned farmer can confirm this order.');
+                throw new UserFacingException(t($ordersCopy, 'farmer_only_confirm'));
             }
             if (!in_array($oldStatus, ['pending', 'delivery_fee_review'], true)) {
-                throw new UserFacingException('Order cannot be confirmed from status: ' . $oldStatus);
+                throw new UserFacingException(sprintf(t($ordersCopy, 'cannot_confirm_status'), $oldStatus));
             }
             // Re-read and lock the listing: pending orders can outlive expiry (FR-LIST-033).
             $listingStmt = $pdo->prepare('SELECT * FROM produce_listings WHERE id = :id FOR UPDATE');
             $listingStmt->execute(['id' => (int) $order['listing_id']]);
             $listing = $listingStmt->fetch();
             if (!$listing) {
-                throw new UserFacingException('The listing for this order no longer exists.');
+                throw new UserFacingException(t($ordersCopy, 'listing_gone'));
             }
             if (listing_is_expired($listing)) {
-                throw new UserFacingException('This listing has expired, so the order can no longer be confirmed.');
+                throw new UserFacingException(t($ordersCopy, 'listing_expired'));
             }
             if ($order['delivery_method'] === 'farmer_delivery') {
                 $fee = number_in($_POST['delivery_fee'] ?? null, 0, MAX_DELIVERY_FEE);
                 if ($fee === null) {
-                    throw new UserFacingException('Enter a delivery fee between 0 and ' . MAX_DELIVERY_FEE . '.');
+                    throw new UserFacingException(sprintf(t($ordersCopy, 'fee_range'), MAX_DELIVERY_FEE));
                 }
                 $pdo->prepare('UPDATE orders SET delivery_fee = :fee WHERE id = :id')
                     ->execute(['fee' => $fee, 'id' => $orderId]);
@@ -82,14 +87,14 @@ try {
         case 'set_fee':
             // Farmer sets delivery fee while in delivery_fee_review
             if ($role !== 'farmer' || $order['farmer_id'] !== $userId) {
-                throw new UserFacingException('Only the assigned farmer can set delivery fee.');
+                throw new UserFacingException(t($ordersCopy, 'farmer_only_fee'));
             }
             if ($oldStatus !== 'delivery_fee_review') {
-                throw new UserFacingException('Fee can only be set in delivery_fee_review.');
+                throw new UserFacingException(t($ordersCopy, 'fee_wrong_status'));
             }
             $fee = number_in($_POST['delivery_fee'] ?? null, 0, MAX_DELIVERY_FEE);
             if ($fee === null) {
-                throw new UserFacingException('Enter a delivery fee between 0 and ' . MAX_DELIVERY_FEE . '.');
+                throw new UserFacingException(sprintf(t($ordersCopy, 'fee_range'), MAX_DELIVERY_FEE));
             }
             $pdo->prepare('UPDATE orders SET delivery_fee = :fee WHERE id = :id')
                 ->execute(['fee' => $fee, 'id' => $orderId]);
@@ -101,10 +106,10 @@ try {
         case 'reject':
             // Farmer rejects order (pending or delivery_fee_review)
             if ($role !== 'farmer' || $order['farmer_id'] !== $userId) {
-                throw new UserFacingException('Only the assigned farmer can reject this order.');
+                throw new UserFacingException(t($ordersCopy, 'farmer_only_reject'));
             }
             if (!in_array($oldStatus, ['pending', 'delivery_fee_review'], true)) {
-                throw new UserFacingException('Order cannot be rejected from status: ' . $oldStatus);
+                throw new UserFacingException(sprintf(t($ordersCopy, 'cannot_reject_status'), $oldStatus));
             }
             $newStatus = 'rejected';
             $ts = date('Y-m-d H:i:s');
@@ -118,10 +123,10 @@ try {
         case 'prepare':
             // Farmer starts preparing (confirmed -> preparing)
             if ($role !== 'farmer' || $order['farmer_id'] !== $userId) {
-                throw new UserFacingException('Only the assigned farmer can prepare this order.');
+                throw new UserFacingException(t($ordersCopy, 'farmer_only_prepare'));
             }
             if ($oldStatus !== 'confirmed') {
-                throw new UserFacingException('Order must be confirmed before preparing.');
+                throw new UserFacingException(t($ordersCopy, 'must_confirm_first'));
             }
             $newStatus = 'preparing';
             $ts = date('Y-m-d H:i:s');
@@ -133,10 +138,10 @@ try {
         case 'ready':
             // Farmer marks ready (preparing -> ready_for_pickup OR out_for_delivery)
             if ($role !== 'farmer' || $order['farmer_id'] !== $userId) {
-                throw new UserFacingException('Only the assigned farmer can mark this order ready.');
+                throw new UserFacingException(t($ordersCopy, 'farmer_only_ready'));
             }
             if ($oldStatus !== 'preparing') {
-                throw new UserFacingException('Order must be in preparing state.');
+                throw new UserFacingException(t($ordersCopy, 'must_be_preparing'));
             }
             if ($order['delivery_method'] === 'pickup') {
                 $newStatus = 'ready_for_pickup';
@@ -155,10 +160,10 @@ try {
         case 'ship':
             // Farmer marks out_for_delivery -> ship (alias) or admin/farmer moves ready_for_pickup -> out_for_delivery
             if ($role !== 'farmer' || $order['farmer_id'] !== $userId) {
-                throw new UserFacingException('Only the assigned farmer can ship this order.');
+                throw new UserFacingException(t($ordersCopy, 'farmer_only_ship'));
             }
             if ($oldStatus !== 'ready_for_pickup' && $oldStatus !== 'out_for_delivery') {
-                throw new UserFacingException('Order not ready to ship.');
+                throw new UserFacingException(t($ordersCopy, 'not_ready_to_ship'));
             }
             $newStatus = 'out_for_delivery';
             $ts = date('Y-m-d H:i:s');
@@ -178,10 +183,10 @@ try {
                 $canComplete = true;
             }
             if (!$canComplete) {
-                throw new UserFacingException('Only the buyer (pickup) or farmer (delivery) can complete this order.');
+                throw new UserFacingException(t($ordersCopy, 'wrong_completer'));
             }
             if (!in_array($oldStatus, ['ready_for_pickup', 'out_for_delivery'], true)) {
-                throw new UserFacingException('Order must be ready or out for delivery to complete.');
+                throw new UserFacingException(t($ordersCopy, 'must_be_ready_ship'));
             }
             $newStatus = 'completed';
             $ts = date('Y-m-d H:i:s');
@@ -196,19 +201,19 @@ try {
             // Admin cancels (any)
             if ($role === 'buyer' && $order['buyer_id'] === $userId) {
                 if (!in_array($oldStatus, ['pending', 'delivery_fee_review', 'confirmed', 'preparing'], true)) {
-                    throw new UserFacingException('Buyer can only cancel before ready/shipped.');
+                    throw new UserFacingException(t($ordersCopy, 'buyer_cancel_window'));
                 }
             } elseif ($role === 'farmer' && $order['farmer_id'] === $userId) {
                 if (!in_array($oldStatus, ['confirmed', 'preparing'], true)) {
-                    throw new UserFacingException('Farmer can only cancel after confirm, before ready.');
+                    throw new UserFacingException(t($ordersCopy, 'farmer_cancel_window'));
                 }
             } elseif ($role === 'admin') {
                 // Admin can cancel anything except completed/rejected/cancelled
                 if (in_array($oldStatus, ['completed', 'rejected', 'cancelled'], true)) {
-                    throw new UserFacingException('Cannot cancel order in status: ' . $oldStatus);
+                    throw new UserFacingException(sprintf(t($ordersCopy, 'cannot_cancel_status'), $oldStatus));
                 }
             } else {
-                throw new UserFacingException('Not authorized to cancel this order.');
+                throw new UserFacingException(t($ordersCopy, 'not_authorized_cancel'));
             }
             $newStatus = 'cancelled';
             $ts = date('Y-m-d H:i:s');
@@ -225,7 +230,7 @@ try {
             break;
 
         default:
-            throw new UserFacingException('Unknown action: ' . $action);
+            throw new UserFacingException(sprintf(t($ordersCopy, 'unknown_action'), $action));
     }
 
     // Log status transition
@@ -238,7 +243,7 @@ try {
     }
 
     $pdo->commit();
-    flash_set('success', 'Order status updated to ' . $newStatus . '.');
+    flash_set('success', sprintf(t($ordersCopy, 'status_updated'), $newStatus));
     redirect_to('/order.php?id=' . $orderId);
 
 } catch (UserFacingException $e) {

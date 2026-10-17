@@ -228,7 +228,7 @@ truth. Local-only files (`config/config.php`, `node_modules`, `logs/`,
 `public/uploads/`) are gitignored and survive a pull. Never edit `config.php`
 out of sync with `config.example.php`.
 
-`database/migrations/README.md` records which migrations are applied to the
+`database/migrations/README.txt` records which migrations are applied to the
 live database, and which of them are safe to run twice.
 
 ---
@@ -240,7 +240,7 @@ live database, and which of them are safe to run twice.
 | `src/functions.php` helpers (`e()`, `csrf_*`, `asset()`, `money()`, `audit_log()`) | Core security / i18n |
 | `public/assets/vendor/*` | Offline assets — no CDN fallback |
 | CSP header in `src/bootstrap.php` | Keeps site fully offline |
-| `database/migrations/*.sql` (already applied) | Schema adds — new migration + approval; see `database/migrations/README.md` for what is applied and which files are safe to re-run |
+| `database/migrations/*.sql` (already applied) | Schema adds — new migration + approval; see `database/migrations/README.txt` for what is applied and which files are safe to re-run |
 | `config/config.php` content | Local credentials; stay in sync with `config.example.php` |
 
 ---
@@ -275,13 +275,13 @@ npm run test:toast      # toast behaviour in a real browser (needs `npm run dev`
 
 | Document | Read it for |
 |---|---|
-| `docs/SRS.md` | What the system is required to do. The single source of truth for requirements. |
-| `docs/traceability-matrix.md` | Whether each requirement is met, and by what evidence. **Generated** - do not edit by hand; regenerate with `php tools\gen_traceability.php`. |
-| `docs/decisions.md` | Measures taken that no requirement covers, and their limits. Read this before proposing a larger scale. |
-| `docs/reviewer-guide.md` | How to review changes here, and the traps that have already fooled us. |
+| `docs/SRS.txt` | What the system is required to do. The single source of truth for requirements. |
+| `docs/traceability-matrix.txt` | Whether each requirement is met, and by what evidence. **Generated** - do not edit by hand; regenerate with `php tools\gen_traceability.php`. |
+| `docs/decisions.txt` | Measures taken that no requirement covers, and their limits. Read this before proposing a larger scale. |
+| `docs/reviewer-guide.txt` | How to review changes here, and the traps that have already fooled us. |
 | `docs/nginx-hardening.conf` | Suggested production web-server configuration. |
 
-If you change a constant that `docs/decisions.md` quotes (a page size, an export
+If you change a constant that `docs/decisions.txt` quotes (a page size, an export
 cap, the sitemap chunking), `npm test` will fail until the document is updated.
 That is intentional: the document is a claim about the code, and drift in either
 direction is a defect.

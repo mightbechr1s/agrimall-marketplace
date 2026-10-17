@@ -1,10 +1,10 @@
 # Engineering Decisions
 
 Decisions taken in this project that **are not traceable to a requirement** in
-`docs/SRS.md`.
+`docs/SRS.txt`.
 
 If a decision can be justified by pointing at an SRS clause, it belongs in
-`docs/traceability-matrix.md` instead, and it does. This file exists for the
+`docs/traceability-matrix.txt` instead, and it does. This file exists for the
 other category: measures chosen because the system would degrade badly if the
 assumptions behind it stopped holding — scale limits, environment differences,
 and failure modes that produce no visible symptom.
@@ -315,7 +315,7 @@ has not been produced (load test, responsive run, contrast audit, backup and
 restore drill).
 
 None of that is a judgement call recorded here. It is tracked, individually, in
-`docs/traceability-matrix.md`, which lists each gap against the requirement it
+`docs/traceability-matrix.txt`, which lists each gap against the requirement it
 belongs to rather than summarising them.
 
 By effort the open work clusters into roughly ten groups, of which the cheapest is

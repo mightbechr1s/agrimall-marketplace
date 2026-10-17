@@ -786,52 +786,51 @@ require __DIR__ . '/partials/dashboard-layout.php';
     <!-- Quick Browse -->
     <div class="dash-panel">
         <div class="dash-panel-header"><h2>Discover</h2></div>
-        <div class="horizontal-carousel overflow-hidden">
-            <div class="carousel-slide d-flex gap-3" id="discoverCarousel">
-                <!-- Carousel: JS-populated -->
-                <div class="carousel-item flex-shrink-0">
+        <div class="horizontal-carousel">
+                <!-- No wrapper element: .horizontal-carousel sizes its direct
+                     children, and a wrapper collapsed the cards to zero width. -->
+                <div class="carousel-item">
                     <div class="card h-100 ">
                         <div class="card-body p-3">
                             <h6 class="card-title mb-1">Organic Kale</h6>
                             <p class="card-text text-muted small">Fresh from Batangas</p>
                             <div class="d-flex justify-content-between align-items-center mt-2">
-                                <span class="fw-medium">₱85/bundle</span>
-                                <button class="btn btn-sm btn-outline-primary fast-add-btn">
+                                <span class="fw-medium">â‚±85/bundle</span>
+                                <a class="btn btn-sm btn-outline-primary" href="browse.php">
                                     <i class="bi bi-plus-lg me-1"></i>Add
-                                </button>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="carousel-item flex-shrink-0">
+                <div class="carousel-item">
                     <div class="card h-100 ">
                         <div class="card-body p-3">
                             <h6 class="card-title mb-1">Sweet Mangoes</h6>
                             <p class="card-text text-muted small">Ripe from Cebu</p>
                             <div class="d-flex justify-content-between align-items-center mt-2">
-                                <span class="fw-medium">₱120/kg</span>
-                                <button class="btn btn-sm btn-outline-primary fast-add-btn">
+                                <span class="fw-medium">â‚±120/kg</span>
+                                <a class="btn btn-sm btn-outline-primary" href="browse.php">
                                     <i class="bi bi-plus-lg me-1"></i>Add
-                                </button>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="carousel-item flex-shrink-0">
+                <div class="carousel-item">
                     <div class="card h-100 ">
                         <div class="card-body p-3">
                             <h6 class="card-title mb-1">Free-Range Eggs</h6>
                             <p class="card-text text-muted small">Daily from Pangasinan</p>
                             <div class="d-flex justify-content-between align-items-center mt-2">
-                                <span class="fw-medium">₱70/dozen</span>
-                                <button class="btn btn-sm btn-outline-primary fast-add-btn">
+                                <span class="fw-medium">â‚±70/dozen</span>
+                                <a class="btn btn-sm btn-outline-primary" href="browse.php">
                                     <i class="bi bi-plus-lg me-1"></i>Add
-                                </button>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
             <div class="carousel-controls mt-3">
                 <button class="btn btn-sm btn-outline-secondary me-2" id="prevSlide" aria-label="Previous items">
                     <i class="bi bi-chevron-left" aria-hidden="true"></i>
@@ -1035,7 +1034,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="drawer-section-content">
           <div class="drawer-row">
             <span class="drawer-row-label">Unit Price:</span>
-            <span class="drawer-row-value">₱${parseFloat(data.unitPrice || 0).toFixed(2)}</span>
+            <span class="drawer-row-value">â‚±${parseFloat(data.unitPrice || 0).toFixed(2)}</span>
           </div>
           <div class="drawer-row">
             <span class="drawer-row-label">Quantity:</span>
@@ -1043,11 +1042,11 @@ document.addEventListener('DOMContentLoaded', function () {
           </div>
           <div class="drawer-row">
             <span class="drawer-row-label">Delivery Fee:</span>
-            <span class="drawer-row-value">₱${parseFloat(data.deliveryFee || 0).toFixed(2)}</span>
+            <span class="drawer-row-value">â‚±${parseFloat(data.deliveryFee || 0).toFixed(2)}</span>
           </div>
           <div class="drawer-row">
             <span class="drawer-row-label">Total:</span>
-            <span class="drawer-row-value"><strong>₱${parseFloat(data.totalRaw || 0).toFixed(2)}</strong></span>
+            <span class="drawer-row-value"><strong>â‚±${parseFloat(data.totalRaw || 0).toFixed(2)}</strong></span>
           </div>
         </div>
       </div>

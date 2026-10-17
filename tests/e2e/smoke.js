@@ -43,10 +43,20 @@ function isRealError(text) {
   await page.setViewport({ width: 1280, height: 900 });
 
   const consoleErrors = [];
+  // Attribute each error to the page that produced it. This spec drives five
+  // pages in one session, so a bare "Identifier 'x' has already been declared"
+  // says nothing about which of them double-loaded a script.
+  const where = () => {
+    try { return new URL(page.url()).pathname; } catch { return '<no url>'; }
+  };
   page.on('console', (m) => {
-    if (m.type() === 'error' && isRealError(m.text())) consoleErrors.push(m.text());
+    if (m.type() === 'error' && isRealError(m.text())) {
+      consoleErrors.push(`${where()} console: ${m.text()}`);
+    }
   });
-  page.on('pageerror', (e) => consoleErrors.push(String(e.message || e)));
+  page.on('pageerror', (e) => {
+    consoleErrors.push(`${where()} pageerror: ${String(e.message || e)}`);
+  });
 
   const bodyText = () => page.evaluate(() => document.body.innerText);
   const csrfValue = () =>

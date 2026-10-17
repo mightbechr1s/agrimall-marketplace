@@ -2,8 +2,8 @@
 /**
  * Traceability matrix generator and validator.
  *
- * Reads docs/SRS.md and tests/traceability.json, verifies every evidence label
- * exists in its named suite, then writes docs/traceability-matrix.md. An unknown
+ * Reads docs/SRS.txt and tests/traceability.json, verifies every evidence label
+ * exists in its named suite, then writes docs/traceability-matrix.txt. An unknown
  * suite, assertion or requirement fails the build (a stale map is worse than none).
  *
  * Usage:
@@ -90,7 +90,7 @@ function discover_labels(): array
 /** @return array<int, array{id:string,kind:string,module:string,text:string}> */
 function parse_srs(): array
 {
-    $md  = read_file('docs/SRS.md');
+    $md  = read_file('docs/SRS.txt');
     $reqs = [];
     if (preg_match_all('/\*\*((?:FR|NFR)-[A-Z]+-\d+)\s*:\*\*\s*(.+?)(?=\r?\n|$)/u', $md, $m, PREG_SET_ORDER)) {
         foreach ($m as $hit) {
@@ -142,7 +142,7 @@ $unmappedOptional = [];
 
 foreach ($map as $id => $entry) {
     if (!in_array($id, $reqIds, true)) {
-        $errors[] = "$id is not a requirement in docs/SRS.md";
+        $errors[] = "$id is not a requirement in docs/SRS.txt";
         continue;
     }
     $status = $entry['status'] ?? '';
@@ -206,7 +206,7 @@ $out = [];
 $out[] = '# AniMAL Requirements Traceability Matrix';
 $out[] = '';
 $out[] = '> Generated file. Do not edit by hand. Source of truth for requirements is';
-$out[] = '> `docs/SRS.md`; source of truth for evidence mapping is';
+$out[] = '> `docs/SRS.txt`; source of truth for evidence mapping is';
 $out[] = '> `tests/traceability.json`. Regenerate with `php tools/gen_traceability.php`.';
 $out[] = '>';
 $out[] = '> The generator refuses to run if a mapped assertion does not exist in the suite it';
@@ -280,7 +280,7 @@ foreach (SUITES as $suite => $meta) {
 }
 $out[] = '';
 
-file_put_contents(REPO . '/docs/traceability-matrix.md', implode("\n", $out) . "\n");
+file_put_contents(REPO . '/docs/traceability-matrix.txt', implode("\n", $out) . "\n");
 
 fwrite(STDERR, "traceability map OK\n");
 fwrite(STDERR, "  requirements: $totals\n");

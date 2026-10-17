@@ -1,7 +1,7 @@
 <?php
-// Extract every requirement from docs/SRS.md into JSON for inspection.
+// Extract every requirement from docs/SRS.txt into JSON for inspection.
 declare(strict_types=1);
-$md = file_get_contents(__DIR__ . '/../docs/SRS.md');
+$md = file_get_contents(__DIR__ . '/../docs/SRS.txt');
 if ($md === false) { fwrite(STDERR, "cannot read SRS\n"); exit(1); }
 
 preg_match_all('/\*\*((?:FR|NFR)-[A-Z]+-\d+)\s*:\*\*\s*(.+?)(?=\r?\n|$)/u', $md, $m, PREG_SET_ORDER);

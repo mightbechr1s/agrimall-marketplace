@@ -7,6 +7,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit('Method not allowed.');
 }
 csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
+$i18nAll = include __DIR__ . '/../src/i18n_copy.php';
+$ordersCopy = $i18nAll['orders'] ?? [];
+$listingActionsCopy = $i18nAll['listing_actions'] ?? [];
+$adminVerifyCopy = $i18nAll['admin_verify'] ?? [];
+$cartCopy = $i18nAll['cart'] ?? [];
 
 $listingId = (int) ($_POST['listing_id'] ?? 0);
 $action    = $_POST['action'] ?? '';
@@ -18,12 +23,12 @@ $returnTo = is_safe_path((string) ($_POST['return_to'] ?? ''))
     : 'dashboard.php#listings';
 
 if (!$listingId || !$action) {
-    flash_set('error', 'Invalid request.');
+    flash_set('error', t($listingActionsCopy, 'invalid_request'));
     redirect_to('/dashboard.php');
 }
 
 if (current_user_role() !== 'farmer') {
-    flash_set('error', 'Only a farmer can manage listings.');
+    flash_set('error', t($listingActionsCopy, 'farmer_only'));
     redirect_to('/dashboard.php');
 }
 
@@ -38,23 +43,23 @@ try {
     $stmt->execute(['id' => $listingId]);
     $listing = $stmt->fetch();
     if (!$listing) {
-        throw new UserFacingException('Listing not found.');
+        throw new UserFacingException(t($listingActionsCopy, 'not_found'));
     }
     if ((int) $listing['farmer_id'] !== $userId) {
-        throw new UserFacingException('You can only manage your own listings.');
+        throw new UserFacingException(t($listingActionsCopy, 'own_only'));
     }
 
     switch ($action) {
         case 'pause':
             if ($listing['status'] !== 'active') {
-                throw new UserFacingException('Only an active listing can be paused.');
+                throw new UserFacingException(t($listingActionsCopy, 'must_be_active'));
             }
             $newStatus = 'paused';
             break;
 
         case 'resume':
             if ($listing['status'] !== 'paused') {
-                throw new UserFacingException('Only a paused listing can be resumed.');
+                throw new UserFacingException(t($listingActionsCopy, 'must_be_paused'));
             }
             $newStatus = 'active';
             break;
@@ -64,20 +69,20 @@ try {
             // ON DELETE RESTRICT, and deleting would also cascade away its
             // stock history. Archived rows are kept for the order trail.
             if ($listing['status'] === 'archived') {
-                throw new UserFacingException('This listing is already archived.');
+                throw new UserFacingException(t($listingActionsCopy, 'already_archived'));
             }
             $newStatus = 'archived';
             break;
 
         default:
-            throw new UserFacingException('Unknown action: ' . $action);
+            throw new UserFacingException(sprintf(t($listingActionsCopy, 'unknown_action'), $action));
     }
 
     $pdo->prepare('UPDATE produce_listings SET status = :status WHERE id = :id')
         ->execute(['status' => $newStatus, 'id' => $listingId]);
 
     $pdo->commit();
-    flash_set('success', 'Listing is now ' . str_replace('_', ' ', $newStatus) . '.');
+    flash_set('success', sprintf(t($listingActionsCopy, 'status_now'), str_replace('_', ' ', $newStatus)));
     redirect_to($returnTo);
 
 } catch (UserFacingException $e) {

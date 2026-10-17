@@ -2,9 +2,12 @@
 require __DIR__ . '/../src/bootstrap.php';
 require_login();
 
+$i18nAll = include __DIR__ . '/../src/i18n_copy.php';
+$ordersCopy = $i18nAll['orders'] ?? [];
+
 $orderId = (int) ($_GET['id'] ?? 0);
 if (!$orderId) {
-    flash_set('error', 'Invalid order.');
+    flash_set('error', t($ordersCopy, 'invalid_order'));
     redirect_to('/dashboard.php');
 }
 
@@ -17,7 +20,7 @@ $stmt = $pdo->prepare('SELECT * FROM v_order_summary WHERE id = :id');
 $stmt->execute(['id' => $orderId]);
 $order = $stmt->fetch();
 if (!$order) {
-    flash_set('error', 'Order not found.');
+    flash_set('error', t($ordersCopy, 'order_not_found'));
     redirect_to('/dashboard.php');
 }
 

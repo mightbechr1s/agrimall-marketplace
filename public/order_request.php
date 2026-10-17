@@ -8,6 +8,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit('Method not allowed.');
 }
 csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
+$i18nAll = include __DIR__ . '/../src/i18n_copy.php';
+$ordersCopy = $i18nAll['orders'] ?? [];
+$listingActionsCopy = $i18nAll['listing_actions'] ?? [];
+$adminVerifyCopy = $i18nAll['admin_verify'] ?? [];
+$cartCopy = $i18nAll['cart'] ?? [];
 
 $listingId = (int) ($_POST['listing_id'] ?? 0);
 $quantity  = number_in($_POST['quantity'] ?? null, 0.0001, MAX_QUANTITY);
@@ -31,39 +36,39 @@ try {
     $stmt->execute(['id' => $listingId]);
     $listing = $stmt->fetch();
     if (!$listing) {
-        throw new UserFacingException('Listing not found.');
+        throw new UserFacingException(t($ordersCopy, 'order_not_found'));
     }
     if ($listing['status'] !== 'active') {
-        throw new UserFacingException('This listing is not available for ordering.');
+        throw new UserFacingException(t($ordersCopy, 'listing_unavailable'));
     }
     if (listing_is_expired($listing)) {
-        throw new UserFacingException('This listing has expired and can no longer be ordered.');
+        throw new UserFacingException(t($ordersCopy, 'listing_expired_order'));
     }
     if ((int) $listing['farmer_id'] === current_user_id()) {
-        throw new UserFacingException('You cannot order your own listing.');
+        throw new UserFacingException(t($ordersCopy, 'own_listing_order'));
     }
     if ($listingId <= 0 || $quantity === null) {
-        throw new UserFacingException('Enter a valid quantity.');
+        throw new UserFacingException(t($cartCopy, 'invalid_qty'));
     }
     $min = (float) $listing['minimum_order_qty'];
     $max = $listing['maximum_order_qty'] === null ? null : (float) $listing['maximum_order_qty'];
     if ($quantity < $min) {
-        throw new UserFacingException('Minimum order is ' . qty_str($listing['minimum_order_qty']) . ' ' . e($listing['unit_symbol']) . '.');
+        throw new UserFacingException(sprintf(t($cartCopy, 'min_order'), qty_str($listing['minimum_order_qty']), e($listing['unit_symbol'])));
     }
     if ($max !== null && $quantity > $max) {
-        throw new UserFacingException('Maximum order is ' . qty_str($listing['maximum_order_qty']) . ' ' . e($listing['unit_symbol']) . '.');
+        throw new UserFacingException(sprintf(t($cartCopy, 'max_order'), qty_str($listing['maximum_order_qty']), e($listing['unit_symbol'])));
     }
     if ($quantity > (float) $listing['available_quantity']) {
-        throw new UserFacingException('Only ' . qty_str($listing['available_quantity']) . ' ' . e($listing['unit_symbol']) . ' available.');
+        throw new UserFacingException(sprintf(t($cartCopy, 'only_available'), qty_str($listing['available_quantity']), e($listing['unit_symbol'])));
     }
     if ($method === 'farmer_delivery' && mb_strlen($address) < 5) {
-        throw new UserFacingException('Please provide a delivery address for farmer delivery.');
+        throw new UserFacingException(t($cartCopy, 'address_required'));
     }
     if (mb_strlen($address) > FIELD_LIMITS['delivery_address']) {
-        throw new UserFacingException('Delivery address is too long (max ' . FIELD_LIMITS['delivery_address'] . ' characters).');
+        throw new UserFacingException(sprintf(t($cartCopy, 'address_too_long'), FIELD_LIMITS['delivery_address']));
     }
     if (mb_strlen($note) > FIELD_LIMITS['buyer_note']) {
-        throw new UserFacingException('Note is too long (max ' . FIELD_LIMITS['buyer_note'] . ' characters).');
+        throw new UserFacingException(sprintf(t($cartCopy, 'note_too_long'), FIELD_LIMITS['buyer_note']));
     }
 
     $reference = order_ref();
@@ -95,7 +100,7 @@ try {
     order_log_status($pdo, $orderId, null, $pdo->lastInsertId() || true ? ($method === 'farmer_delivery' ? 'delivery_fee_review' : 'pending') : 'pending', current_user_id(), 'buyer', $method === 'farmer_delivery' ? 'Awaiting farmer delivery-fee quote.' : 'Order requested.');
 
     $pdo->commit();
-    flash_set('success', 'Order request sent to the farm.');
+    flash_set('success', t($ordersCopy, 'request_sent'));
     redirect_to('/order.php?id=' . $orderId);
 } catch (UserFacingException $e) {
     $pdo->rollBack();

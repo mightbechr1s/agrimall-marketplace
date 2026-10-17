@@ -247,118 +247,6 @@ function initFilterButtons() {
   });
 }
 
-/* ── Toast system ─────────────────────────────────────────── */
-const toastRegistry = [];
-const toastRegion = document.getElementById('toast-region');
-
-function createToast(message, type = 'info', duration = 6000) {
-  if (toastRegistry.some(t => t.message === message && t.type === type)) return;
-  const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-  const toast = document.createElement('div');
-  toast.className = `toast-item toast-${type}`;
-  toast.setAttribute('role', 'status');
-  toast.setAttribute('aria-live', 'polite');
-  toast.innerHTML = `
-    <span class="toast-icon">${getToastIcon(type)}</span>
-    <span class="toast-message">${message}</span>
-  `;
-  toastRegion.appendChild(toast);
-  requestAnimationFrame(() => toast.classList.add('toast-visible'));
-  const timeoutId = setTimeout(() => dismissToast(toast, toastId), duration);
-  toast.addEventListener('mouseenter', () => {
-    clearTimeout(timeoutId);
-    toast.classList.add('toast-paused');
-  });
-  toast.addEventListener('mouseleave', () => {
-    toast.classList.remove('toast-paused');
-    const remaining = Math.max(0, duration - (Date.now() - toast._startTime));
-    toast._startTime = Date.now() - (duration - remaining);
-    toast._timeoutId = setTimeout(() => dismissToast(toast, toastId), remaining);
-  });
-  const toastInstance = {
-    id: toastId, element: toast, message: message, type: type,
-    timeoutId: timeoutId, _startTime: Date.now()
-  };
-  toastRegistry.push(toastInstance);
-  toast.addEventListener('transitionend', (e) => {
-    if (e.propertyName === 'opacity' && !toast.classList.contains('toast-visible')) {
-      toast.remove();
-      const index = toastRegistry.findIndex(t => t.id === toastId);
-      if (index !== -1) toastRegistry.splice(index, 1);
-    }
-  });
-  return toastId;
-}
-
-function dismissToast(toast, toastId) {
-  if (!toast || !toast.parentNode) return;
-  toast.classList.remove('toast-visible');
-  toast.classList.add('toast-exiting');
-}
-
-function getToastIcon(type) {
-  switch (type) {
-    case 'success': return '✓';
-    case 'error': return '✗';
-    case 'warning': return '⚠';
-    default: return 'ℹ';
-  }
-}
-
-window.showToast = function(message, type = 'info', duration = 6000) {
-  return createToast(message, type, duration);
-};
-
-/* ── Cart (localStorage) ─────────────────────────────────── */
-const CART_KEY = 'animal_cart';
-
-function getCart() {
-  try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; }
-  catch { return []; }
-}
-
-function saveCart(cart) {
-  localStorage.setItem(CART_KEY, JSON.stringify(cart));
-  updateCartPill(cart);
-}
-
-function updateCartPill(cart) {
-  const count = cart.reduce((sum, item) => sum + item.qty, 0);
-  const pill = document.querySelector('.cart-pill');
-  const countEl = document.querySelector('.cart-count');
-  if (countEl) countEl.textContent = count;
-  if (pill) {
-    pill.setAttribute('aria-label', 'Basket, ' + count + ' item' + (count !== 1 ? 's' : ''));
-  }
-}
-
-function addToCart(name, price, unit, farm) {
-  const cart = getCart();
-  const existing = cart.find(item => item.name === name);
-  if (existing) { existing.qty += 1; }
-  else { cart.push({ name, price, unit, farm, qty: 1 }); }
-  saveCart(cart);
-  showToast(name + ' added to basket', 'success', 3000);
-}
-
-function initCartButtons() {
-  document.querySelectorAll('.card .add, .card .add-to-basket').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const card = this.closest('.card');
-      if (!card) return;
-      const name = card.querySelector('h3') ? card.querySelector('h3').textContent.trim() : '';
-      const priceEl = card.querySelector('.price');
-      const price = priceEl ? priceEl.textContent.replace(/[^0-9.]/g, '') : '0';
-      const unitEl = priceEl ? priceEl.querySelector('small') : null;
-      const unit = unitEl ? unitEl.textContent.replace(/^\//, '').trim() : 'kg';
-      const farmEl = card.querySelector('.farm') || card.querySelector('.badge-location');
-      const farm = farmEl ? farmEl.textContent.trim() : '';
-      addToCart(name, price, unit, farm);
-    });
-  });
-  updateCartPill(getCart());
-}
-
 /* ── Carousel prev/next (dashboard) ──────────────────────── */
 function initCarouselControls() {
   const carousel = document.querySelector('.horizontal-carousel');
@@ -372,22 +260,6 @@ function initCarouselControls() {
   };
   if (prev) prev.addEventListener('click', () => scroll(-1));
   if (next) next.addEventListener('click', () => scroll(1));
-}
-
-/* ── Fast-add buttons (dashboard) ────────────────────────── */
-function initFastAddButtons() {
-  document.querySelectorAll('.fast-add-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const card = this.closest('.card, .carousel-item');
-      if (!card) return;
-      const name = card.querySelector('.card-title, h3, h6') ? (card.querySelector('.card-title') || card.querySelector('h3') || card.querySelector('h6')).textContent.trim() : '';
-      const priceEl = card.querySelector('.fw-medium, .price');
-      const price = priceEl ? priceEl.textContent.replace(/[^0-9.]/g, '') : '0';
-      const unitEl = priceEl ? priceEl.querySelector('small') : null;
-      const unit = unitEl ? unitEl.textContent.replace(/^\//, '').trim() : (priceEl ? priceEl.textContent.split('/').pop().trim() : 'kg');
-      addToCart(name, price, unit, '');
-    });
-  });
 }
 
 /* ── Stock toggle labels ──────────────────────────────────── */
@@ -711,18 +583,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initFlashAutoDismiss();
   initFaqToggle();
   initFilterButtons();
-  initCartButtons();
   initCarouselControls();
-  initFastAddButtons();
   initStockToggles();
   initNavScroll();
   initMobileMenu();
   initSidebar();
   initTocSpy();
   initSidebarSpy();
-
-  // Show any toasts already in markup
-  document.querySelectorAll('.toast-item').forEach(toast => {
-    toast.classList.add('toast-visible');
-  });
 });

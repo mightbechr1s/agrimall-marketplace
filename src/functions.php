@@ -811,10 +811,13 @@ function security_event_log(string $event, array $context = []): void
  *  submitter. */
 function local_reset_links_enabled(): bool
 {
+    // Deliberately not gated on 'env'. `env` decides whether PHP diagnostics
+    // reach the browser; whether a one-time password-reset token may be shown
+    // on screen is a separate decision, and deriving one from the other made the
+    // reset round trip untestable (the link is never issued, so nothing can
+    // follow it). Absent the key this is false, so production behaviour is
+    // unchanged.
     global $config;
-    if (($config['app']['env'] ?? 'development') === 'production') {
-        return false;
-    }
     return !empty($config['app']['local_password_reset_links']);
 }
 

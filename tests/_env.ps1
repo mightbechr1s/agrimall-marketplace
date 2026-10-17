@@ -119,3 +119,34 @@ function Disable-AnimalSecureCookies {
   [System.IO.File]::WriteAllText($Cfg, $out)
   return $true
 }
+
+
+function Enable-AnimalLocalResetLinks {
+  <#
+    There is no mail transport in this build, so password reset only works at all
+    when the link is displayed. It ships off, because a real deployment must not put
+    a one-time token on screen, which leaves the whole reset round trip untestable --
+    no link is issued, so nothing can follow it.
+
+    local_reset_links_enabled() used to gate on 'env' instead, but 'env' also decides
+    whether PHP diagnostics reach the browser. Two unrelated decisions, one switch:
+    the same conflation that lost the session cookie. Displaying the link is now its
+    own key, so 'env' is deliberately left alone here.
+
+    Restored with the rest of config in the suite's `finally`.
+  #>
+  param([Parameter(Mandatory)][string]$Cfg)
+
+  if (-not (Test-Path -LiteralPath $Cfg)) { return $false }
+  $text = [System.IO.File]::ReadAllText($Cfg)
+
+  if ($text -match "('local_password_reset_links'\s*=>\s*)(true|false)") {
+    $out = $text -replace "('local_password_reset_links'\s*=>\s*)(true|false)", "`$1true"
+  } else {
+    # An older local config may predate the key entirely.
+    $out = $text -replace "('env'\s*=>\s*'[a-z]+',\r?\n)", "`$1        'local_password_reset_links' => true, // harness only: no mail transport`r`n"
+  }
+  if ($out -eq $text) { return $false }
+  [System.IO.File]::WriteAllText($Cfg, $out)
+  return $true
+}

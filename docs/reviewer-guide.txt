@@ -9,9 +9,9 @@ share a shape. Knowing the shape is what lets a reviewer catch the next one. Whe
 a section names a specific trap, it is because it has already cost real time, not
 because it is interesting.
 
-For what the system *is*, see `docs/SRS.md`. For whether each requirement is met,
-see `docs/traceability-matrix.md`. For decisions not traceable to a requirement,
-see `docs/decisions.md`.
+For what the system *is*, see `docs/SRS.txt`. For whether each requirement is met,
+see `docs/traceability-matrix.txt`. For decisions not traceable to a requirement,
+see `docs/decisions.txt`.
 
 ---
 

@@ -232,7 +232,7 @@ if ($sidebarShell) {
                     </button>
                   </form>
                 <?php else: ?>
-                  <a class="add-to-basket btn-icon" href="browse.php" aria-label="Add to cart"><i class="bi bi-cart-plus" aria-hidden="true"></i></a>
+                  <a class="btn-icon" href="<?php echo e(login_url('listing.php?id=' . (int) $item['id'])); ?>" aria-label="Add to cart"><i class="bi bi-cart-plus" aria-hidden="true"></i></a>
                 <?php endif; ?>
               </div>
             </div>
@@ -325,8 +325,13 @@ if ($sidebarShell) {
    <a href="create_listing.php" class="btn btn-primary">Sell</a>
 </div>
 
-<?php if (!$sidebarShell): ?>
+<?php /* The marketplace is a public page that a signed-in visitor happens to be
+     viewing, so it keeps the public footer in both shells -- and the footer
+     already hides the seller link for signed-in visitors. The sidebar branch used
+     to swap it for dashboard-footer.php, which contains no <footer> element at
+     all, so the page had no contentinfo landmark and lost the farmers section.
+     Here it renders inside <main>, before dashboard-footer closes the layout. */ ?>
 <?php require __DIR__ . '/partials/footer.php'; ?>
-<?php else: ?>
+<?php if ($sidebarShell): ?>
 <?php require __DIR__ . '/partials/dashboard-footer.php'; ?>
 <?php endif; ?>

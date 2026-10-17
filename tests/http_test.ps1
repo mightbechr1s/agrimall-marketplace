@@ -29,6 +29,14 @@ function csrf($html) {
   if ($html -match 'name="csrf_token"\s+value="([^"]+)"') { return $Matches[1] }
   return $null
 }
+# Visible alert copy only. Matching the raw page for a word like "invalid" also
+# matches aria-invalid, novalidate and the form's own markup, so an assertion
+# built that way can pass without the error ever being rendered.
+function alerts($html) {
+  $m = [regex]::Matches($html, '(?is)<div[^>]*class="[^"]*\balert\b[^"]*"[^>]*>(.*?)</div>')
+  (($m | ForEach-Object { ($_.Groups[1].Value -replace '<[^>]+>', '' -replace '\s+', ' ').Trim() }) |
+    Where-Object { $_ }) -join ' | '
+}
 function get($url, $s) {
   try { (Invoke-WebRequest -Uri $url -WebSession $s -UseBasicParsing -TimeoutSec 20).Content }
   catch { "HTTPERR: $($_.Exception.Message)" }
@@ -64,6 +72,11 @@ try {
   # This harness speaks plain http, so a Secure cookie is never stored and no
   # session ever exists. Restored along with the rest of config in `finally`.
   if (Disable-AnimalSecureCookies $cfg) { 'secure session cookies disabled for this run' }
+  # There is no mail transport in this build, so password reset only works at all
+  # when the link is displayed. Off by default, because a real deployment must not
+  # put a one-time token on screen. Restored along with the rest of config in
+  # `finally`, like the cookie above.
+  if (Enable-AnimalLocalResetLinks $cfg) { 'local password reset links enabled for this run' }
   'config temporarily pointed at animal_marketplace_test'
 
   & $mysql -u root -e "DROP DATABASE IF EXISTS animal_marketplace_test; CREATE DATABASE animal_marketplace_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>&1 | Out-Null
@@ -100,10 +113,22 @@ try {
     ok 'the duplicate settings icon is gone' (-not ($d -match 'sidebar-icon-btn"\s+href="settings\.php"')) 'icon still present'
     ok 'settings is still reachable from the dropdown' ($d -match 'dropdown-item"\s+href="settings\.php"') 'dropdown link missing'
 
-    # The public header is a different partial from the dashboard one.
+    # browse.php swaps in the dashboard layout once there is a session
+    # (browse.php:55), so a signed-in fetch never renders the public header at all.
+    # These assertions used to look for .mobile-menu-actions in a page that has no
+    # such element for that session, so they could not pass for any markup. Each
+    # shell is now checked against the session that actually renders it, and the
+    # block is sliced out first so a match cannot come from elsewhere on the page.
     $p = get "$base/browse.php" $s
-    ok 'public header links to the account page' ($p -match 'dropdown-item"\s+href="account\.php"') 'no account link in the public header'
-    ok 'public header mobile drawer links to the account page' ($p -match 'mobile-menu-actions[\s\S]*?href="account\.php"') 'no account link in the mobile drawer'
+    $topbar = [regex]::Match($p, '(?s)class="sidebar-topbar-actions".*?</header>').Value
+    ok 'signed-in header links to the account page' ($p -match 'dropdown-item"\s+href="account\.php"') 'no account link in the signed-in header'
+    ok 'signed-in mobile top bar links to the account page' ($topbar -match 'href="account\.php"') 'no account link in the mobile top bar'
+
+    $anon = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+    $pub = get "$base/browse.php" $anon
+    $drawer = [regex]::Match($pub, '(?s)class="mobile-menu-actions".*?</div>').Value
+    ok 'signed-out mobile drawer offers the sign-in and seller entry points' (($drawer -match 'href="login\.php"') -and ($drawer -match 'href="register\.php"')) 'signed-out drawer contents wrong'
+    ok 'signed-out mobile drawer offers no account link' ($drawer -and -not ($drawer -match 'account\.php')) 'a signed-out visitor is offered the account page'
     $hard = [regex]::Matches($p, '.{70}(?:>Dashboard</a>|>Log out</a>).{40}')
     if ($hard.Count -gt 0) { [System.IO.File]::WriteAllText((Join-Path $tmp 'hardcoded.txt'), ($hard | ForEach-Object { $_.Value }) -join "`n---`n") }
     ok 'public header no longer hardcodes English nav labels' ($hard.Count -eq 0) "hardcoded label still present ($($hard.Count) match(es))"
@@ -260,10 +285,13 @@ try {
     $replayPost = post "$base/reset.php" $replaySess @{
         csrf_token       = csrf $replayForm
         token            = $token
-        password         = 'replayed123'
-        password_confirm = 'replayed123'
+        # Policy-valid on purpose: reset.php validates the password before it looks
+        # the token up, so a password the policy rejects would surface a policy
+        # alert and the token path would never be exercised.
+        password         = 'Replayed123'
+        password_confirm = 'Replayed123'
     }
-    ok 'the reset link is single use' (($replayPost -match 'expired|Expired|invalid|Invalid') -and ($replayPost -notmatch 'HTTPERR')) 'replaying a used token was accepted'
+    ok 'the reset link is single use' (((alerts $replayPost) -match 'Invalid or expired reset token|has expired') -and ($replayPost -notmatch 'HTTPERR')) "replaying a used token was not refused with an expiry error; alerts were: $(alerts $replayPost)"
     ok 'replaying the used link leaves the password unchanged' ((dbq "SELECT password_hash FROM users WHERE id=$($ids.resetOnly)") -eq $replayPwBefore) 'password changed through a replayed token'
   }
 
@@ -301,10 +329,10 @@ try {
     $expiredPost = post "$base/reset.php" $expiredSess @{
         csrf_token      = csrf $expiredForm
         token           = $expiredRaw
-        password        = 'hijacked123'
-        password_confirm = 'hijacked123'
+        password        = 'Hijacked123'
+        password_confirm = 'Hijacked123'
     }
-    ok 'posting the expired token is refused' ($expiredPost -match 'expired|Expired|invalid|Invalid') 'the POST was accepted'
+    ok 'posting the expired token is refused' ((alerts $expiredPost) -match 'Invalid or expired reset token|has expired') "the POST was not refused with an expiry error; alerts were: $(alerts $expiredPost)"
     ok 'posting the expired token leaves the password unchanged' ((dbq "SELECT password_hash FROM users WHERE id=$($ids.buyer)") -eq $pwBefore) 'password changed through an expired token'
     dbq "DELETE FROM password_resets WHERE token='$expiredHash'" | Out-Null
 
@@ -326,10 +354,10 @@ try {
     $driftPost = post "$base/reset.php" $driftSess @{
         csrf_token       = csrf $driftForm
         token            = $driftRaw
-        password         = 'drifted123'
-        password_confirm = 'drifted123'
+        password         = 'Drifted123'
+        password_confirm = 'Drifted123'
     }
-    ok 'reset.php still refuses a token that was updated after expiry' ($driftPost -match 'expired|Expired|invalid|Invalid') 'an updated-but-expired token was accepted'
+    ok 'reset.php still refuses a token that was updated after expiry' ((alerts $driftPost) -match 'Invalid or expired reset token|has expired') "an updated-but-expired token was not refused with an expiry error; alerts were: $(alerts $driftPost)"
     dbq "DELETE FROM password_resets WHERE token='$driftHash'" | Out-Null
 
     "`n--- login rate limiting ---"

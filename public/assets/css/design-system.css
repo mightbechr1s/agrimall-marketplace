@@ -166,6 +166,9 @@ h1, h2, h3, h4, h5, h6,
 .card, .panel, .dash-panel, .stat-card,
 .hero-card, .step-card, .feature-card {
   background: var(--paper) !important;
+  /* Bootstrap hardcodes .card { color: var(--bs-body-color) }, which does not
+     follow the theme, so card titles stayed #212529 on a #1E1E1E panel. */
+  color: var(--text) !important;
   border: 1px solid var(--borders) !important;
   border-radius: var(--radius-card) !important;
   box-shadow: var(--shadow-card) !important;
@@ -1781,6 +1784,10 @@ h1, h2, h3, h4, h5, h6,
 
 /* Horizontal carousel */
 .horizontal-carousel .carousel-item {
+  /* Bootstrap's .carousel-item is display:none unless .active, which hid every
+     card in this scroller. Scoped to .horizontal-carousel so the real Bootstrap
+     carousel in listing.php keeps its behaviour. */
+  display: block;
   scroll-snap-align: start;
   flex: 0 0 16rem;
   max-width: 78%;

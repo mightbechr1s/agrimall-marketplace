@@ -93,11 +93,19 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
     </div>
 </div>
 
+    <?php /* Emitted at most once per request. browse.php and dashboard.php render
+     this partial alongside dashboard-footer.php, and a classic script included
+     twice is evaluated twice: the second pass re-declares motion.min.js's
+     top-level `const prefersReducedMotion`, which is a SyntaxError that takes
+     the entire file down with it -- not just the duplicate. Whichever partial
+     renders first wins, so the set is the same either way. */ ?>
+<?php if (!defined('ANIMAL_ASSETS_EMITTED')): define('ANIMAL_ASSETS_EMITTED', true); ?>
     <script src="<?= e(asset('assets/js/motion.min.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/swipe.min.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/toast.js')) ?>" defer></script>
 <script src="<?= e(asset('assets/js/cart-ajax.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/save-ajax.js')) ?>" defer></script>
+<?php endif; ?>
     <script>
     (function () {
       const btn = document.getElementById('backToTop');

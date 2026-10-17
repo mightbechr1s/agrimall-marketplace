@@ -20,6 +20,12 @@ try {
   if (-not (Select-String -LiteralPath $cfg -Pattern 'animal_marketplace_test' -Quiet)) {
     throw 'config swap failed - refusing to continue'
   }
+  # This harness speaks plain http, so a Secure session cookie is never stored and
+  # no session exists. Without this the suite passes or fails depending on what
+  # secure_cookies happened to be in config.php when it started -- it inherits
+  # whatever a previously-run suite left behind rather than setting its own
+  # precondition. Restored along with the rest of config in `finally`.
+  if (Disable-AnimalSecureCookies $cfg) { 'secure session cookies disabled for this run' }
 
   & $mysql -u root -e "DROP DATABASE IF EXISTS animal_marketplace_test; CREATE DATABASE animal_marketplace_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>&1 | Out-Null
   (Get-Content (Join-Path $repo 'database\schema.sql') -Raw) -replace 'animal_marketplace', 'animal_marketplace_test' | & $mysql -u root 2>&1 | Out-Null
