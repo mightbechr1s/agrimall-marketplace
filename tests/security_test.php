@@ -167,17 +167,26 @@ file_put_contents($tmpDir . 'sec_ok.png', base64_decode(
 file_put_contents($tmpDir . 'sec_hollow.png', $sig . "\x00\x00\x00\x0dIHDR" . str_repeat("\x00", 13));
 // Signature plus an IHDR header that is cut off before its dimensions.
 file_put_contents($tmpDir . 'sec_trunc.png', $sig . "\x00\x00\x00\x0dIHDR" . "\x00\x00\x00\x10");
-// A PHP script named .png -- the classic polyglot. Host antivirus (Windows
-// Defender among others) classifies that exact payload as a webshell and
-// quarantines it on write, which would make this case pass for the WRONG reason:
-// validate_uploaded_image() would be rejecting a file that no longer exists.
-// So presence is checked first, and a quarantined payload is reported rather
-// than quietly counted as a pass.
-file_put_contents($tmpDir . 'sec_evil.png', "<?php system(\$_GET['c']); ?>\n");
-$polyglotSurvived = is_file($tmpDir . 'sec_evil.png');
+// The webshell polyglot (PHP source carrying an image extension) is OPT-IN.
+// Writing that payload makes Windows Defender classify it as
+// Trojan:PHP/Chopper and quarantine the file, so a routine `npm test` would trip
+// the host's antivirus and alarm whoever is running it. The rejection path it
+// exercises is the same one the harmless non-image below exercises, so the
+// default run uses that instead and the webshell case is opt-in via:
+//
+//     ANIMAL_TEST_WEBSHELL=1 npm run test:security
+$polyglotSurvived = false;
+if (getenv('ANIMAL_TEST_WEBSHELL') === '1') {
+    file_put_contents($tmpDir . 'sec_evil.png', "<?php system(\$_GET['c']); ?>\n");
+    $polyglotSurvived = is_file($tmpDir . 'sec_evil.png');
+    if (!$polyglotSurvived) {
+        echo "  note: the webshell payload was quarantined by host antivirus before\n";
+        echo "        it could be used, so that case cannot be proven on this machine.\n";
+    }
+}
 
 // A harmless non-image, so the "reject a file that is not an image at all" path
-// is still exercised when the webshell payload is unavailable.
+// is always exercised.
 file_put_contents($tmpDir . 'sec_text.png', "This is a plain text file, not an image.\n");
 
 $okReal = validate_uploaded_image($asUpload($tmpDir . 'sec_ok.png'));
@@ -220,11 +229,11 @@ $check('a plain text file renamed .png is rejected', $text['ok'] === false, json
 if ($polyglotSurvived) {
     $check('a PHP script renamed .png is rejected', $evil['ok'] === false, json_encode($evil));
 } else {
-    // Reported, not silently passed: the payload never made it to disk, so this
-    // case could not have proved anything either way.
-    echo "  SKIPPED: the webshell polyglot was quarantined by host antivirus before\n";
-    echo "           the test could use it. The plain-text case above covers the\n";
-    echo "           same rejection path.\n";
+    // Reported, not silently passed: opt-in only, because writing the payload
+    // trips host antivirus. The plain-text case above covers the same path.
+    echo "  SKIPPED: webshell polyglot is opt-in (ANIMAL_TEST_WEBSHELL=1) because\n";
+    echo "           writing it makes antivirus quarantine the file. The plain-text\n";
+    echo "           case above covers the same rejection path.\n";
 }
 
 // Every upload path must go through the single validating gate. Counting call
