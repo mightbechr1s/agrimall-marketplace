@@ -11,7 +11,7 @@ require __DIR__ . '/partials/header.php';
 
 <main id="main-content" class="flex-grow-1">
 <!-- Hero -->
-<section class="hero-section">
+<section class="hero-section" data-reveal>
     <div class="container">
         <div class="row align-items-center g-4">
             <div class="col-lg-7">

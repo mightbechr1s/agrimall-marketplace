@@ -209,6 +209,22 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
           <a href="notifications.php" class="notif-pill" aria-label="<?= e($notifLabel) ?>">
             <?php if ($unreadCount > 0): ?>
               <span class="notif-count"><?= $unreadCount ?></span>
+              <?php if ($unreadCount > 0): ?>
+              <script>
+                if (!sessionStorage.getItem('notif_toast_shown')) {
+                  sessionStorage.setItem('notif_toast_shown', '1');
+                  document.addEventListener('DOMContentLoaded', function () {
+                    if (window.animalToast) {
+                      var n = <?= (int) $unreadCount ?>;
+                      window.animalToast(
+                        'You have ' + n + ' unread notification' + (n > 1 ? 's' : ''),
+                        { type: 'info' }
+                      );
+                    }
+                  });
+                }
+              </script>
+              <?php endif; ?>
             <?php endif; ?>
             <i class="bi bi-bell" aria-hidden="true"></i>
           </a>
@@ -327,7 +343,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
     </nav>
     <?php if (current_user_id()): ?>
     <div class="mobile-menu-utils" style="display:flex;gap:0.5rem;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:0.5rem;">
-      <a href="notifications.php" class="notif-pill" aria-label="Notifications" style="width:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--paper);border:1px solid var(--borders);color:var(--text);">
+      <a href="notifications.php" class="notif-pill" aria-label="<?= e($notifLabel) ?>" style="width:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--paper);border:1px solid var(--borders);color:var(--text);">
         <?php $unreadCount = unread_notification_count((int) current_user_id()); ?>
         <?php if ($unreadCount > 0): ?><span class="notif-count" style="position:absolute;top:0;right:0;background:var(--danger);color:#fff;font-size:0.6rem;padding:0.1rem 0.35rem;border-radius:999px;"><?= $unreadCount ?></span><?php endif; ?>
         <i class="bi bi-bell" aria-hidden="true"></i>

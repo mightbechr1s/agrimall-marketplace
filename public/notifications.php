@@ -66,6 +66,15 @@ require __DIR__ . '/partials/dashboard-layout.php';
             <div class="alert alert-success" role="status">
                 <i class="bi bi-check-circle me-1"></i> <?= e($success) ?>
             </div>
+            <script>
+              // Mirror the flash as a toast so the feedback follows the user
+              // even after they navigate away from this page.
+              document.addEventListener('DOMContentLoaded', function () {
+                if (window.animalToast) {
+                  window.animalToast(<?= json_encode($success) ?>, { type: 'success' });
+                }
+              });
+            </script>
         <?php endif; ?>
 
         <?php if ($unread > 0): ?>
@@ -80,7 +89,11 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <?php endif; ?>
 
         <?php if (!$items): ?>
-            <p class="text-muted"><?= e($l($copy['notifications'], 'empty')) ?></p>
+            <?php $icon = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon"><path d="M3 1.5h10v13H3z"/><path d="M5 4.5h6M5 7.5h4M5 10.5h3"/></svg>'; ?>
+            <?php $title = $l($copy['notifications'], 'empty'); ?>
+            <?php $description = ''; ?>
+            <?php $actions = []; ?>
+            <?php include __DIR__ . '/empty-state.php'; ?>
         <?php else: ?>
             <ul class="list-group">
                 <?php foreach ($items as $item): ?>
