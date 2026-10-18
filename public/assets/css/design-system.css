@@ -7,7 +7,7 @@
 :root {
   --canvas: #FAF7F2;
   --canvas-deep: #F0EDE6;
-  --paper: #FFFFFF;
+  --paper: #FDFBF7;   /* warm off-white, never pure #FFFFFF */
   --primary: #1C4428;
   --primary-dark: #14351F;
   --primary-tint: rgba(28, 68, 40, 0.08);

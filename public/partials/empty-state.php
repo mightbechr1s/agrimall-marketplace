@@ -21,7 +21,7 @@ $actions = is_array($actions) ? array_values(array_filter($actions, 'is_array'))
 $sizes = ['sm' => 'empty-state--sm', 'md' => 'empty-state--md', 'lg' => 'empty-state--lg'];
 $sizeClass = $sizes[$size] ?? $sizes['md'];
 ?>
-<div class="empty-state text-center <?= e($class) ?> <?= e($sizeClass) ?>">
+<div class="empty-state text-center <?= e($class) ?> <?= e($sizeClass) ?>" data-reveal>
   <?php if ($icon): ?>
     <div class="empty-state-icon-wrapper mb-3">
       <?= $icon ?>

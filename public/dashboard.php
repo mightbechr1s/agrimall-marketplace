@@ -783,63 +783,62 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <?php endif; ?>
     </div>
 
-    <!-- Quick Browse -->
+    <!-- Quick Browse: real, live listings instead of hardcoded placeholders -->
     <div class="dash-panel">
-        <div class="dash-panel-header"><h2>Discover</h2></div>
-        <div class="horizontal-carousel">
-                <!-- No wrapper element: .horizontal-carousel sizes its direct
-                     children, and a wrapper collapsed the cards to zero width. -->
-                <div class="carousel-item">
-                    <div class="card h-100 ">
-                        <div class="card-body p-3">
-                            <h6 class="card-title mb-1">Organic Kale</h6>
-                            <p class="card-text text-muted small">Fresh from Batangas</p>
-                            <div class="d-flex justify-content-between align-items-center mt-2">
-                                <span class="fw-medium">â‚±85/bundle</span>
-                                <a class="btn btn-sm btn-outline-primary" href="browse.php">
-                                    <i class="bi bi-plus-lg me-1"></i>Add
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="carousel-item">
-                    <div class="card h-100 ">
-                        <div class="card-body p-3">
-                            <h6 class="card-title mb-1">Sweet Mangoes</h6>
-                            <p class="card-text text-muted small">Ripe from Cebu</p>
-                            <div class="d-flex justify-content-between align-items-center mt-2">
-                                <span class="fw-medium">â‚±120/kg</span>
-                                <a class="btn btn-sm btn-outline-primary" href="browse.php">
-                                    <i class="bi bi-plus-lg me-1"></i>Add
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="carousel-item">
-                    <div class="card h-100 ">
-                        <div class="card-body p-3">
-                            <h6 class="card-title mb-1">Free-Range Eggs</h6>
-                            <p class="card-text text-muted small">Daily from Pangasinan</p>
-                            <div class="d-flex justify-content-between align-items-center mt-2">
-                                <span class="fw-medium">â‚±70/dozen</span>
-                                <a class="btn btn-sm btn-outline-primary" href="browse.php">
-                                    <i class="bi bi-plus-lg me-1"></i>Add
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            <div class="carousel-controls mt-3">
-                <button class="btn btn-sm btn-outline-secondary me-2" id="prevSlide" aria-label="Previous items">
-                    <i class="bi bi-chevron-left" aria-hidden="true"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-secondary" id="nextSlide" aria-label="Next items">
-                    <i class="bi bi-chevron-right" aria-hidden="true"></i>
-                </button>
-            </div>
+        <div class="dash-panel-header">
+            <h2>Discover</h2>
+            <a href="browse.php" class="btn btn-sm btn-outline-secondary">Browse all</a>
         </div>
+        <div class="horizontal-carousel">
+            <?php
+              // Latest three active listings, by publication date. This is a
+              // "peek" surface, not a second marketplace.
+              $discoverStmt = $pdo->query(
+                  "SELECT pl.id, pl.name, pl.price_per_unit, qu.symbol AS unit_symbol, "
+                  . "pc.name AS category_name, fp.farm_name, fp.municipality_city "
+                  . "FROM produce_listings pl "
+                  . "JOIN produce_categories pc ON pc.id = pl.category_id "
+                  . "JOIN quantity_units qu ON qu.id = pl.unit_id "
+                  . "JOIN farmer_profiles fp ON fp.user_id = pl.farmer_id "
+                  . "WHERE pl.status = 'active' AND fp.verification_status = 'approved' "
+                  . "ORDER BY pl.published_at DESC LIMIT 3"
+              );
+              $discover = $discoverStmt ? $discoverStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+            ?>
+            <?php if (!$discover): ?>
+                <div class="text-muted small p-3">
+                    No listings yet. <a href="create_listing.php">Be the first to post one.</a>
+                </div>
+            <?php endif; ?>
+            <?php foreach ($discover as $d): ?>
+                <div class="carousel-item">
+                    <div class="card h-100">
+                        <div class="card-body p-3">
+                            <h6 class="card-title mb-1"><?= e($d['name']) ?></h6>
+                            <p class="card-text text-muted small">
+                                <?= e($d['farm_name']) ?> &middot; <?= e($d['municipality_city']) ?>
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span class="fw-medium"><?= money($d['price_per_unit']) ?> <small>/ <?= e($d['unit_symbol'] ?? 'kg') ?></small></span>
+                                <a class="btn btn-sm btn-outline-primary" href="listing.php?id=<?= (int) $d['id'] ?>">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        <div class="carousel-controls mt-3">
+            <button class="btn btn-sm btn-outline-secondary me-2" id="prevSlide" aria-label="Previous items">
+                <i class="bi bi-chevron-left" aria-hidden="true"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="nextSlide" aria-label="Next items">
+                <i class="bi bi-chevron-right" aria-hidden="true"></i>
+            </button>
+        </div>
+    </div>
+
     </div>
 
     <!-- Saved Listings -->
