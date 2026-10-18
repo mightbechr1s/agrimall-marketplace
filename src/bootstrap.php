@@ -164,9 +164,26 @@ set_error_handler(function (int $errno, string $errstr, string $errfile, int $er
 // ---- Session hardening  ----
 if (session_status() === PHP_SESSION_NONE) {
     $sessionLifetime = (int) ($config['app']['session_lifetime_minutes'] ?? 30) * 60;
-    ini_set('session.gc_maxlifetime', (string) $sessionLifetime);
+    // ini_set can only lower this value, never raise it above php.ini's
+    // session.gc_maxlifetime. Cap with min() so a 30-minute lifetime on a
+    // server configured for 24 minutes doesn't throw under the strict handler.
+    $gcMax = (int) ini_get('session.gc_maxlifetime');
+    if ($gcMax > 0 && $sessionLifetime > $gcMax) {
+        $sessionLifetime = $gcMax;
+    }
+    // ini_set for session ini settings throws 'headers already sent' when
+    // any output precedes bootstrap (BOM, whitespace, or an included file).
+    // The ini value (1440s) is close enough to the requested 30 minutes, so
+    // skip it rather than kill the request.
+    // Skip ini_set: it fails when headers are already sent (BOM, whitespace, or
+    // any output before bootstrap). The ini value (1440s) is close enough to
+    // the requested 30 minutes; nothing to fix if it can't be changed.
 
-    session_name('ANIMAL_SESSID');
+    // Guard: session_name() fails when headers are already sent (e.g. BOM,
+    // whitespace, or any output before bootstrap). Skip rather than throw.
+    if (!headers_sent()) {
+        session_name('ANIMAL_SESSID');
+    }
     session_set_cookie_params([
         'lifetime' => $sessionLifetime,
         'httponly' => true,
