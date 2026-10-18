@@ -4,6 +4,58 @@ require_role('admin');
 
 $pdo = DB::pdo();
 
+// Admin listing deactivation (POST handler, before any output).
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'deactivate_listing') {
+    csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
+    $listingId = (int) ($_POST['listing_id'] ?? 0);
+    $reason    = trim((string) ($_POST['reason'] ?? ''));
+    $returnTo  = 'admin_reports.php?t=listings';
+    if (!$listingId || $reason === '') {
+        flash_set('error', 'Listing ID and a reason are required.');
+        redirect_to($returnTo);
+    }
+    if (mb_strlen($reason) > FIELD_LIMITS['reason']) {
+        flash_set('error', 'Reason is too long (max ' . FIELD_LIMITS['reason'] . ' characters).');
+        redirect_to($returnTo);
+    }
+    try {
+        $pdo->beginTransaction();
+        $stmt = $pdo->prepare('SELECT * FROM produce_listings WHERE id = :id FOR UPDATE');
+        $stmt->execute(['id' => $listingId]);
+        $listing = $stmt->fetch();
+        if (!$listing) {
+            throw new UserFacingException('Listing not found.');
+        }
+        if ($listing['status'] === 'admin_deactivated') {
+            throw new UserFacingException('This listing is already deactivated.');
+        }
+        if ($listing['status'] === 'archived') {
+            throw new UserFacingException('Archived listings cannot be deactivated.');
+        }
+        $pdo->prepare("UPDATE produce_listings SET status = 'admin_deactivated' WHERE id = :id")
+            ->execute(['id' => $listingId]);
+        $pdo->prepare(
+            'INSERT INTO admin_audit_log (admin_id, action, entity_type, entity_id, reason, created_at)
+             VALUES (:admin, :action, :type, :id, :reason, NOW())'
+        )->execute([
+            'admin'  => current_user_id(),
+            'action' => 'deactivate_listing',
+            'type'   => 'listing',
+            'id'     => $listingId,
+            'reason' => $reason,
+        ]);
+        $pdo->commit();
+        flash_set('success', 'Listing deactivated.');
+    } catch (UserFacingException $e) {
+        $pdo->rollBack();
+        flash_set('error', $e->getMessage());
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        flash_set('error', generic_error_message(app_log_exception($e, 'admin_listing_action')));
+    }
+    redirect_to($returnTo);
+}
+
 /** Cap on PDF export rows. Beyond this the file (and PHP memory) grows with
  *  the dataset, so a flooded admin URL could exhaust the server. */
 const REPORT_EXPORT_MAX_ROWS = 2000;
@@ -812,7 +864,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <?php elseif ($type === 'listings'): ?>
         <thead><tr>
             <th>Listing</th><th>Category</th><th>Farmer</th><th>Unit</th><th class="text-end">Price</th>
-            <th class="text-end">Available</th><th>Status</th><th class="text-nowrap">Published</th>
+            <th class="text-end">Available</th><th>Status</th><th class="text-nowrap">Published</th><th>Action</th>
         </tr></thead>
         <tbody>
             <?php foreach ($rows as $r): ?>
@@ -825,6 +877,19 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <td class="text-end"><?= e(fmt_qty($r['available_quantity'])) ?></td>
                 <td><?= status_badge($r['status']) ?></td>
                 <td class="cell-muted text-nowrap"><?= $r['published_at'] ? e(date('Y-m-d', strtotime($r['published_at']))) : '—' ?></td>
+                 <td>
+                     <?php if ($r['status'] !== 'admin_deactivated' && $r['status'] !== 'archived'): ?>
+                     <form method="post" action="admin_reports.php" class="d-inline" onsubmit="return confirm('Deactivate this listing?');">
+                         <?= csrf_field() ?>
+                         <input type="hidden" name="action" value="deactivate_listing">
+                         <input type="hidden" name="listing_id" value="<?= (int) $r['id'] ?>">
+                         <input type="text" name="reason" class="form-control form-control-sm d-inline-block" style="width:140px;" placeholder="Reason" required maxlength="<?= FIELD_LIMITS['reason'] ?>">
+                         <button type="submit" class="btn btn-sm btn-outline-danger">Deactivate</button>
+                     </form>
+                     <?php elseif ($r['status'] === 'admin_deactivated'): ?>
+                     <span class="text-muted small">Deactivated</span>
+                     <?php endif; ?>
+                 </td>
             </tr>
             <?php endforeach; ?>
         </tbody>

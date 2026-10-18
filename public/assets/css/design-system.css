@@ -1,9 +1,9 @@
-/* ═══ AniMAL Design System — v3 Harvest Editorial ═════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â AniMAL Design System Ã¢â‚¬â€ v3 Harvest Editorial Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    Warm paper, forest green, harvest gold; Fraunces display (bundled, offline) + Source Sans body.
    Loaded LAST in header.php and dashboard-layout.php so these overrides beat
    styles.min.css / motion.min.css. */
 
-/* ── Tokens ─────────────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Tokens Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 :root {
   --canvas: #FAF7F2;
   --canvas-deep: #F0EDE6;
@@ -32,7 +32,7 @@
   --success: #2E7D32;
   --focus-ring: #B45309;
 
-  /* Status families — one palette for status chips and dashboard tiles, so a
+  /* Status families Ã¢â‚¬â€ one palette for status chips and dashboard tiles, so a
      status keeps its colour page to page and theme to theme. */
   --status-ok-ink: #1C6B3A;
   --status-ok-fill: rgba(31, 75, 50, 0.12);
@@ -79,7 +79,7 @@
   --breakpoint-sm: 640px;  --breakpoint-md: 768px;  --breakpoint-lg: 1024px;  --breakpoint-xl: 1280px;
 }
 
-/* ── Dark mode tokens ────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Dark mode tokens Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 :root[data-theme="dark"] {
   --canvas: #121212;
   --canvas-deep: #171717;
@@ -136,7 +136,7 @@
   --footer-text: #D9D9D6;
 }
 
-/* ── Base ───────────────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Base Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 body {
   background-color: var(--canvas);
   color: var(--text);
@@ -162,7 +162,7 @@ h1, h2, h3, h4, h5, h6,
   text-wrap: balance;
 }
 
-/* ── Warm containers — rounded, layered, lifted ──────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Warm containers Ã¢â‚¬â€ rounded, layered, lifted Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .card, .panel, .dash-panel, .stat-card,
 .hero-card, .step-card, .feature-card {
   background: var(--paper) !important;
@@ -194,7 +194,7 @@ h1, h2, h3, h4, h5, h6,
   }
 }
 
-/* ── Nav / overlay surfaces — warm translucent glass ─── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Nav / overlay surfaces Ã¢â‚¬â€ warm translucent glass Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .nav {
   background: color-mix(in srgb, var(--paper) 88%, transparent) !important;
   backdrop-filter: blur(12px);
@@ -247,7 +247,7 @@ h1, h2, h3, h4, h5, h6,
   transform: translateY(-1px);
 }
 
-/* ── Cart & Saved ─────────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Cart & Saved Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .card-actions {
   display: flex;
   align-items: center;
@@ -365,7 +365,7 @@ h1, h2, h3, h4, h5, h6,
   opacity: 0.5;
 }
 
-/* ── Buttons — soft pill buttons, gold primary ───────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Buttons Ã¢â‚¬â€ soft pill buttons, gold primary Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .btn, .btn-primary, .btn-primary-nav, .btn-sell, .btn-logout,
 .btn-outline, .btn-outline-primary, .btn-outline-secondary {
   border-radius: var(--radius-pill) !important;
@@ -431,7 +431,7 @@ h1, h2, h3, h4, h5, h6,
   transform: translateY(0) scale(0.99);
 }
 
-/* Canonical button geometry — one border weight and one size scale everywhere */
+/* Canonical button geometry Ã¢â‚¬â€ one border weight and one size scale everywhere */
 .btn, .btn-primary, .btn-primary-nav, .btn-sell, .btn-logout,
 .btn-outline, .btn-outline-primary, .btn-outline-secondary {
   border-width: 1.5px !important;
@@ -449,7 +449,7 @@ h1, h2, h3, h4, h5, h6,
   box-shadow: none !important;
 }
 
-/* ── Stat values ─────────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Stat values Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .stat-value {
   text-shadow: none !important;
 }
@@ -472,7 +472,7 @@ h1, h2, h3, h4, h5, h6,
   color: var(--gold-text);
 }
 
-/* ── Operational priority queue ────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Operational priority queue Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .priority-queue-item {
   background: var(--paper);
   border: 1px solid var(--borders);
@@ -482,7 +482,7 @@ h1, h2, h3, h4, h5, h6,
   box-shadow: var(--shadow-card);
 }
 
-/* ── Order tables — monospace truncated IDs ────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Order tables Ã¢â‚¬â€ monospace truncated IDs Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .order-id-tag {
   font-family: var(--font-mono);
   font-size: 0.85em;
@@ -495,7 +495,7 @@ h1, h2, h3, h4, h5, h6,
   white-space: nowrap;
 }
 
-/* ── Horizontal carousel (Buyer discover) ──────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Horizontal carousel (Buyer discover) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .horizontal-carousel {
   display: flex;
   gap: 1rem;
@@ -530,7 +530,7 @@ h1, h2, h3, h4, h5, h6,
   overflow-wrap: anywhere;
 }
 
-/* ── Stock toggle (farmer inventory) — soft switch ──── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Stock toggle (farmer inventory) Ã¢â‚¬â€ soft switch Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .stock-toggle {
   appearance: none;
   width: 2.6rem;
@@ -564,7 +564,7 @@ h1, h2, h3, h4, h5, h6,
   transform: translateX(1.14rem);
 }
 
-/* ── Slide-over Drawer ──────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Slide-over Drawer Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .drawer-overlay {
   position: fixed;
   inset: 0;
@@ -665,7 +665,7 @@ h1, h2, h3, h4, h5, h6,
   margin: 1.5rem 0;
 }
 
-/* ── Empty States ──────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Empty States Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .empty-state {
   text-align: center;
   padding: 3rem 1rem;
@@ -708,7 +708,7 @@ h1, h2, h3, h4, h5, h6,
   display: inline-block;
 }
 
-/* ═══ Section layout (marketing pages) ═════════════─── */
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Section layout (marketing pages) Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .section {
   padding: 4rem 0;
 }
@@ -755,7 +755,7 @@ h1, h2, h3, h4, h5, h6,
   color: var(--borders);
 }
 
-/* ── Eyebrow / kicker label — harvest stamp ─────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Eyebrow / kicker label Ã¢â‚¬â€ harvest stamp Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .eyebrow-pill {
   display: block;
   font-size: 0.78rem;
@@ -769,7 +769,7 @@ h1, h2, h3, h4, h5, h6,
   content: none;
 }
 
-/* ── Hero — printed-photo editorial ─────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Hero Ã¢â‚¬â€ printed-photo editorial Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .hero-section {
   overflow: hidden;
   isolation: isolate;
@@ -914,7 +914,7 @@ h1, h2, h3, h4, h5, h6,
   background: transparent !important;
 }
 
-/* ── Trust bar — harvest market ribbon ──────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Trust bar Ã¢â‚¬â€ harvest market ribbon Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .trust-bar {
   background: var(--primary);
   border-bottom: 3px solid var(--gold);
@@ -935,7 +935,7 @@ h1, h2, h3, h4, h5, h6,
   flex: 0 0 auto;
 }
 
-/* ── How it works — field ledger ────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ How it works Ã¢â‚¬â€ field ledger Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .how-it-works { background: var(--paper); }
 .how-it-works .section-title {
   font-size: clamp(1.9rem, 3.6vw, 2.7rem);
@@ -981,7 +981,7 @@ h1, h2, h3, h4, h5, h6,
   margin-bottom: 0;
 }
 
-/* ── Story section — farmer's field note ────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Story section Ã¢â‚¬â€ farmer's field note Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .story-section {
   background: var(--canvas);
   border-block: 1px solid var(--borders);
@@ -1004,7 +1004,7 @@ h1, h2, h3, h4, h5, h6,
   position: relative;
 }
 .story-quote::before {
-  content: '“';
+  content: 'Ã¢â‚¬Å“';
   position: absolute;
   left: 0;
   top: -1.4rem;
@@ -1036,7 +1036,7 @@ h1, h2, h3, h4, h5, h6,
   color: var(--primary);
 }
 
-/* ── FAQ accordion ──────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ FAQ accordion Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .faq-section { background: var(--paper); }
 .faq-section .accordion {
   max-width: 48rem;
@@ -1066,7 +1066,7 @@ h1, h2, h3, h4, h5, h6,
 }
 .faq-section .accordion-button::after {
   background-image: none;
-  content: '✦';
+  content: 'Ã¢Å“Â¦';
   font-size: 0.9rem;
   line-height: 1;
   text-align: center;
@@ -1092,7 +1092,7 @@ h1, h2, h3, h4, h5, h6,
   padding: 0 2.5rem 1.4rem 0.25rem;
 }
 
-/* ── CTA section — deep forest field ────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ CTA section Ã¢â‚¬â€ deep forest field Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .cta-section {
   border-top: 1px solid var(--borders);
   background: var(--canvas-deep);
@@ -1134,7 +1134,7 @@ h1, h2, h3, h4, h5, h6,
   border-color: var(--primary) !important;
 }
 
-/* ── Search + filter (marketplace) ─────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Search + filter (marketplace) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .search-form {
   max-width: 30rem;
   margin-bottom: 1.75rem;
@@ -1156,7 +1156,7 @@ h1, h2, h3, h4, h5, h6,
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 30%, transparent);
 }
 
-/* ── Hero search (landing page) ─────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Hero search (landing page) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .hero-search {
   max-width: 34rem;
 }
@@ -1267,7 +1267,7 @@ h1, h2, h3, h4, h5, h6,
 }
 :root[data-theme="dark"] .filter-pill.is-active { color: #FFFFFF; }
 
-/* ── Marketplace grid + cards — printed catalog ─────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Marketplace grid + cards Ã¢â‚¬â€ printed catalog Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -1287,7 +1287,7 @@ h1, h2, h3, h4, h5, h6,
   box-shadow: var(--shadow-card-hover);
 }
 .card .thumb {
-  /* 1:1 matches the 800×800 source photos → zero crop for most listings */
+  /* 1:1 matches the 800Ãƒâ€”800 source photos Ã¢â€ â€™ zero crop for most listings */
   aspect-ratio: 1 / 1;
   position: relative;
   overflow: hidden;
@@ -1508,12 +1508,12 @@ h1, h2, h3, h4, h5, h6,
 }
 .feature-card .add-to-basket { align-self: flex-start; }
 
-/* Swipe decorative flags — inert, no motion here */
+/* Swipe decorative flags Ã¢â‚¬â€ inert, no motion here */
 .swipe-reveal {
   display: none !important;
 }
 
-/* ── Footer — deep forest sign-off ──────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Footer Ã¢â‚¬â€ deep forest sign-off Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .footer {
   background: var(--footer-bg);
   color: var(--footer-text);
@@ -1582,7 +1582,7 @@ h1, h2, h3, h4, h5, h6,
   color: color-mix(in srgb, var(--footer-text) 65%, transparent);
 }
 
-/* ── Mobile CTA bar ────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Mobile CTA bar Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .mobile-cta-bar {
   display: none;
 }
@@ -1603,7 +1603,7 @@ h1, h2, h3, h4, h5, h6,
   }
 }
 
-/* ═══ Dashboard chrome ═══════════════════════════════ */
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Dashboard chrome Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 .dash-section-header {
   margin-bottom: 1.5rem;
 }
@@ -1721,7 +1721,7 @@ h1, h2, h3, h4, h5, h6,
 /* Pills stay pill-shaped in the app chrome */
 .rounded-pill { border-radius: var(--radius-pill) !important; }
 
-/* Bootstrap form plumbing — soft fields */
+/* Bootstrap form plumbing Ã¢â‚¬â€ soft fields */
 .form-control,
 .form-select,
 .input-group-text,
@@ -1825,7 +1825,7 @@ h1, h2, h3, h4, h5, h6,
 .priority-queue-item h5 { font-size: 0.98rem; margin-bottom: 0.15rem; font-family: var(--font-display); }
 .priority-queue-item p { color: var(--text-soft); }
 
-/* Legacy Bootstrap neutralization — softened, not squared.
+/* Legacy Bootstrap neutralization Ã¢â‚¬â€ softened, not squared.
    Bootstrap-only components; .card/.btn/.badge/.modal-content keep their own radii. */
 .alert, .accordion-item, .accordion-button,
 .list-group-item, .input-group-text {
@@ -1878,7 +1878,7 @@ h1, h2, h3, h4, h5, h6,
   margin-bottom: 1.75rem;
 }
 
-/* ═══ Header / nav — market stall awning ══════════════ */
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Header / nav Ã¢â‚¬â€ market stall awning Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 .nav {
   position: sticky;
   top: 0;
@@ -2122,7 +2122,7 @@ h1, h2, h3, h4, h5, h6,
   border-radius: 50%;
 }
 
-/* ── Mobile menu (drawer interior) ── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Mobile menu (drawer interior) Ã¢â€â‚¬Ã¢â€â‚¬ */
 .mobile-menu-inner {
   display: flex;
   flex-direction: column;
@@ -2173,7 +2173,7 @@ h1, h2, h3, h4, h5, h6,
 }
 .mobile-menu-locale .locale-label { text-decoration: none; }
 
-/* ═══ Auth pages — 50/50 split screen ═══════════════════════
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Auth pages Ã¢â‚¬â€ 50/50 split screen Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    grid-row must be pinned with grid-column, or auto-placement makes a 2x2 grid. */
 .auth-wrap {
   display: grid;
@@ -2367,7 +2367,7 @@ h1, h2, h3, h4, h5, h6,
 .auth-subtitle { font-family: var(--font-display); }
 .auth-title { font-weight: 620; }
 
-/* ═══ Register: role selection + farmer fields ══════════════ */
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Register: role selection + farmer fields Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 .role-selection {
   display: flex;
   gap: 0.75rem;
@@ -2513,7 +2513,7 @@ h1, h2, h3, h4, h5, h6,
   .footer .cols { grid-template-columns: 1fr; gap: 2rem; }
 }
 
-/* ═══ Dashboard sidebar layout ══════════════════════ */
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Dashboard sidebar layout Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 .has-sidebar { background: var(--canvas); }
 
 .sidebar {
@@ -2604,6 +2604,8 @@ h1, h2, h3, h4, h5, h6,
   gap: 0.75rem;
   padding: 0.6rem clamp(0.75rem, 1.5vw, 1.25rem);
   background: var(--paper);
+      backdrop-filter: blur(12px);\n      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);\n      -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--borders);
   position: sticky;
   top: 0;
@@ -2769,7 +2771,7 @@ html[data-drawer-open] .sidebar-toggle-lines span:nth-child(3) { transform: tran
 .sidebar-content .section { padding: 0; }
 .sidebar-content .container { padding-left: 0; padding-right: 0; }
 
-/* ═══ Responsive — nav / auth / sidebar ═════════════ */
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Responsive Ã¢â‚¬â€ nav / auth / sidebar Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 @media (max-width: 991.98px) {
   .nav-links { display: none; }
   /* Hamburger leads the bar (order:-1), not mid-bar; nav-cta keeps its right auto margin. */
@@ -2926,7 +2928,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   .dash-table { font-size: 0.84rem; }
 }
 
-/* ═══ Shared grid and container ═══ */
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Shared grid and container Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 .shared-grid {
   display: grid;
   gap: 1.5rem;
@@ -2959,7 +2961,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   .container { padding-left: 2rem; padding-right: 2rem; }
 }
 
-/* Marketplace interface — fill available width between sidebar and viewport edge */
+/* Marketplace interface Ã¢â‚¬â€ fill available width between sidebar and viewport edge */
 #market .container {
   max-width: none;
   padding-left: clamp(1.5rem, 3vw, 2rem);
@@ -2992,7 +2994,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   color: var(--gold-text);
 }
 
-/* ── Trust / USP metric bar ──────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Trust / USP metric bar Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .trust-bar {
   padding: 1.6rem 0;
 }
@@ -3033,7 +3035,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   color: #FFFFFF;
 }
 
-/* ── Story / farmer split section ────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Story / farmer split section Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .story-figure {
   position: relative;
   padding: 1.1rem;
@@ -3045,7 +3047,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 .story-figure-img {
   display: block;
   width: 100%;
-  /* seedlings.jpg is 800×533 (3:2) → native ratio, no crop */
+  /* seedlings.jpg is 800Ãƒâ€”533 (3:2) Ã¢â€ â€™ native ratio, no crop */
   aspect-ratio: 3 / 2;
   object-fit: cover;
   border-radius: calc(var(--radius-card) - 0.4rem);
@@ -3067,7 +3069,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   margin-right: 0;
 }
 
-/* ── Process step icons ──────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Process step icons Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .process-step-icon {
   width: 3.4rem;
   height: 3.4rem;
@@ -3082,7 +3084,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   border-radius: 50%;
 }
 
-/* ── CTA polish ──────────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ CTA polish Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .cta-section {
   padding: 5.25rem 0;
 }
@@ -3094,13 +3096,13 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   font-size: 1.05rem;
 }
 
-/* ── FAQ header polish ───────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ FAQ header polish Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .faq-section .section-title {
   font-size: clamp(2rem, 3.6vw, 2.8rem);
   letter-spacing: -0.015em;
 }
 
-/* ═══ Dashboard redesign — scannable admin chrome ═══════ */
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Dashboard redesign Ã¢â‚¬â€ scannable admin chrome Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 /* Stat cards: icon + gradient presence */
 .stat-card {
   background:
@@ -3181,7 +3183,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   line-height: 1.35;
 }
 
-/* Shared chip geometry — listing badges and dashboard badges are one component */
+/* Shared chip geometry Ã¢â‚¬â€ listing badges and dashboard badges are one component */
 .badge, .badge-fresh, .badge-normal, .badge-stale, .badge-location, .dash-badge {
   display: inline-flex;
   align-items: center;
@@ -3221,7 +3223,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   border-color: var(--status-neutral-border);
 }
 
-/* Role badge fills — quick-scan colors */
+/* Role badge fills Ã¢â‚¬â€ quick-scan colors */
 .dash-badge--role-buyer {
   color: #1F5E97;
   background: rgba(31, 94, 151, 0.14);
@@ -3253,7 +3255,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   border-color: rgba(217, 154, 43, 0.45);
 }
 
-/* Report tabs — pill navigation with clear active state */
+/* Report tabs Ã¢â‚¬â€ pill navigation with clear active state */
 .report-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -3290,7 +3292,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   color: #FFFFFF;
 }
 
-/* Dark-mode buttons & fields — lift off the canvas */
+/* Dark-mode buttons & fields Ã¢â‚¬â€ lift off the canvas */
 :root[data-theme="dark"] .btn-outline-primary {
   border-color: rgba(255, 255, 255, 0.22) !important;
   color: var(--text) !important;
@@ -3318,7 +3320,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
 /* Dark table headers - light neutral grey */
 :root[data-theme="dark"] .dash-table th { color: #CFCFCF !important; }
 
-/* Report table columns — proportional, no dead middle gap */
+/* Report table columns Ã¢â‚¬â€ proportional, no dead middle gap */
 .dash-table .col-when  { width: 9rem; max-width: 9rem; }
 .dash-table .col-role  { width: 6rem; max-width: 6rem; }
 .dash-table .col-status { width: 7rem; max-width: 7rem; }
@@ -3399,7 +3401,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   color: var(--text-soft);
 }
 
-/* ── Home vertical rhythm standardisation ────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Home vertical rhythm standardisation Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .trust-bar {
   padding: 1.8rem 0;
 }
@@ -3722,7 +3724,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
     group is unshrinkable, and it sets flex: 0 0 auto itself. */
 
 
-/* Profile menu wrapper — card styling comes from the shared .profile-btn rules. */
+/* Profile menu wrapper Ã¢â‚¬â€ card styling comes from the shared .profile-btn rules. */
 .profile-menu {
   display: flex;
   align-items: center;
@@ -3982,7 +3984,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   background: color-mix(in srgb, var(--danger) 18%, transparent);
 }
 
-/* ── Account deletion ─────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Account deletion Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 
 /* Wider auth card for the longer delete-account copy so labels stay on one line. */
 .auth-card--wide {
@@ -4088,7 +4090,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   margin-top: 4px;
 }
 
-/* ── Account settings additions ───────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Account settings additions Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 
 /* Explanatory line above the name inputs, matching the muted scale of fieldset legends. */
 .account-hint {
