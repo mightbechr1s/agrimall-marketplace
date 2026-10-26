@@ -130,6 +130,8 @@ $fmtQty = function ($value, $symbol): string {
                     <?= $fmtQty($item['available_quantity'], $item['unit_symbol']) ?> <?= $l($copy['listing'], 'available') ?>
                     <span class="sep">&middot;</span>
                     <?= $l($copy['listing'], 'min_order') ?> <?= $fmtQty($item['minimum_order_qty'], $item['unit_symbol']) ?>
+                    <span class="sep">&middot;</span>
+                    <span class="text-muted small">Min. total: <?= money($item['price_per_unit'] * $item['minimum_order_qty']) ?> for <?= $fmtQty($item['minimum_order_qty'], $item['unit_symbol']) ?></span>
                 </div>
 
                 <p class="listing-desc"><?= nl2br(e($item['description'] ?? '')) ?></p>

@@ -1,4 +1,4 @@
--- AniMAL Migration 003: per-user preferences (settings page storage).
+-- AniMALL Migration 003: per-user preferences (settings page storage).
 -- Run after 002 against `animal_marketplace`; additive, touches no existing data.
 
 USE `animal_marketplace`;

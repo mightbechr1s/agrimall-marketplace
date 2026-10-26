@@ -16,7 +16,7 @@ require __DIR__ . '/partials/header.php';
                 <article class="legal-body">
                     <section class="legal-block" data-reveal>
                         <h2 id="who-we-are">1. Who we are</h2>
-                        <p>AniMAL ("we", "our", "us") operates this Philippine agricultural marketplace at the domain you are visiting. Our registered office is in the Philippines. You can contact us at <a href="mailto:support@animal.ph">support@animal.ph</a>.</p>
+                        <p>AniMALL ("we", "our", "us") operates this Philippine agricultural marketplace at the domain you are visiting. Our registered office is in the Philippines. You can contact us at <a href="mailto:support@animal.ph">support@animal.ph</a>.</p>
                     </section>
 
                     <hr class="legal-divider">

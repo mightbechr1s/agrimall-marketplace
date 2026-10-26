@@ -44,14 +44,14 @@ require __DIR__ . '/partials/header.php';
             </div>
             <div class="col-lg-5 position-relative">
                 <div class="hero-image-wrapper">
-                    <img src="assets/images/products/mango.jpg"
-                         alt="Fresh mangoes"
+                    <img src="assets/images/products/farmer.jpg"
+                         alt="Filipino farmer harvesting rice"
                          class="hero-image"
                          onerror="this.onerror=null;this.parentNode.classList.add('image-failed');">
                 </div>
                 <div class="origin-badge">Verified Origin</div>
                 <div class="hero-overlay">
-                    <div class="price-pill">₱180.00 / kg</div>
+                    <div class="price-pill">Fresh produce / kg</div>
                 </div>
             </div>
         </div>

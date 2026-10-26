@@ -61,7 +61,7 @@ one cheap query and stays correct at any size.
   page size and confirming the counts did not change with zero database writes.
 
 **Evidence.** `public/dashboard.php` — `$listingsPerPage = 12`,
-`$ordersPerPage = 15`, `$savedPerPage = 12`, and the `$countSince` closure for
+`$ordersPerPage = 15`, `saved.php` `$perPage = 12`, and the `$countSince` closure for
 the weekly counts.
 
 ### D-02 Split the sitemap into numbered files behind an index

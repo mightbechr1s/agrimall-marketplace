@@ -1,4 +1,4 @@
-# AniMAL: A Web-Based Market Access Platform for Farmers
+# AniMALL: A Web-Based Market Access Platform for Farmers
 
 **Document type:** Software Requirements Specification  
 **Document version:** 0.3 (Requirements Baseline Draft)  
@@ -9,15 +9,15 @@
 
 ## 1. Document Purpose
 
-This Software Requirements Specification (SRS) defines the initial functional, non-functional, security, and business requirements for AniMAL. It establishes the agreed project boundary before database design, interface design, or implementation begins.
+This Software Requirements Specification (SRS) defines the initial functional, non-functional, security, and business requirements for AniMALL. It establishes the agreed project boundary before database design, interface design, or implementation begins.
 
-The authoritative project source is `AniMAL_Capstone_Super_Prompt_Updated.md`. The earlier FarmRoute technical blueprint is a legacy artifact and may be used only for ideas that do not conflict with this SRS.
+The authoritative project source is `AniMALL_Capstone_Super_Prompt_Updated.md`. The earlier FarmRoute technical blueprint is a legacy artifact and may be used only for ideas that do not conflict with this SRS.
 
 ## 2. Product Overview
 
-AniMAL is a web-based market access and information management platform that helps local farmers and buyers coordinate produce availability and orders. It centralizes produce listings, buyer requests, order status updates, profiles, and administrative reports.
+AniMALL is a web-based market access and information management platform that helps local farmers and buyers coordinate produce availability and orders. It centralizes produce listings, buyer requests, order status updates, profiles, and administrative reports.
 
-AniMAL is not an online payment platform, delivery tracking platform, or open marketplace clone. It focuses on improving farmer market access, communication, and record management using a scope that a four-member undergraduate team can complete and defend.
+AniMALL is not an online payment platform, delivery tracking platform, or open marketplace clone. It focuses on improving farmer market access, communication, and record management using a scope that a four-member undergraduate team can complete and defend.
 
 ## 3. Objectives
 
@@ -101,7 +101,7 @@ An authorized system operator who verifies farmers, manages users and categories
 
 - Users have intermittent but sufficient internet access to use a responsive website.
 - Farmers can present valid identity or farm-related evidence to an administrator outside the system.
-- Buyers and farmers coordinate payment outside AniMAL.
+- Buyers and farmers coordinate payment outside AniMALL.
 - Local delivery is arranged by the farmer and is not assigned to a courier inside the system.
 - Exact home or farm addresses are not shown publicly.
 - Production deployment details will be selected later and must support PHP and MySQL.
@@ -350,7 +350,7 @@ All limits apply after trimming surrounding whitespace and shall be enforced on 
 - **BR-012:** Only valid status transitions defined in Section 8.7 are allowed.
 - **BR-013:** Historical records shall not be physically deleted through normal user actions.
 - **BR-014:** Deactivated categories and suspended users remain referenced by historical records.
-- **BR-015:** AniMAL coordinates orders but does not guarantee payment, delivery, product quality, or contract fulfillment.
+- **BR-015:** AniMALL coordinates orders but does not guarantee payment, delivery, product quality, or contract fulfillment.
 - **BR-016:** Prices are expressed in Philippine pesos and stored with two decimal places.
 - **BR-017:** Dates and times displayed to users use the configured Philippine local time zone.
 - **BR-018:** Verification evidence is reviewed outside the application; sensitive identity-document images are not stored in the first release.

@@ -1,4 +1,4 @@
-# AniMAL — Team Laptop Setup Guide (via GitHub)
+# AniMALL — Team Laptop Setup Guide (via GitHub)
 
 > **Source:** `https://github.com/mightbechr1s/animal-marketplace` (branch `main`)
 > **Last verified:** 2026-09-25 — 21 tables full schema + migrations, seeded, offline-ready.
@@ -111,7 +111,7 @@ Start-Sleep 3
 
 The reset tool drops and rebuilds the DB from `database/schema.sql
 
-(The Entity Relationship Diagram (ERD) is in docs/AniMAL_ERD_full.drawio, editable in diagrams.net, and docs/AniMAL_ERD_Documentation.pdf. It models all 15 tables and 2 views with Crow's Foot notation.)` + every
+(The Entity Relationship Diagram (ERD) is in docs/AniMALL_ERD_full.drawio, editable in diagrams.net, and docs/AniMALL_ERD_Documentation.pdf. It models all 15 tables and 2 views with Crow's Foot notation.)` + every
 `database/migrations/*.sql` and seeds demo data. It needs `config/config.php`
 (created in step 3) to read DB credentials:
 

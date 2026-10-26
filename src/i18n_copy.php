@@ -124,19 +124,19 @@ return [
 
     'trust' => [
         'en' => [
-            'section_title' => 'Why trust AniMAL',
+            'section_title' => 'Why trust AniMALL',
             'heading' => 'Real farms, real people, real food.',
-            'intro' => 'Here is what makes buying on AniMAL different.',
+            'intro' => 'Here is what makes buying on AniMALL different.',
             'comparison' => [
                 'market_title' => 'At the traditional palengke',
                 'market_text' => 'Farmers sell low, traders mark up, quality fades in the middle. You never know who grew your food or how fresh it really is.',
-                'animal_title' => 'With AniMAL',
+                'animal_title' => 'With AniMALL',
                 'animal_text' => 'You talk straight to the verified farmer, pay a fair price, and get food that was picked within days — not sitting in a warehouse.',
             ],
             'pillars' => [
                 [
                     'title' => 'Every seller is verified',
-                    'description' => 'We check IDs and visit farms before anyone lists a single kilo. If you buy on AniMAL, the seller is real.',
+                    'description' => 'We check IDs and visit farms before anyone lists a single kilo. If you buy on AniMALL, the seller is real.',
                 ],
                 [
                     'title' => 'Fair prices, no middlemen',
@@ -150,13 +150,13 @@ return [
             'promise' => 'This is the FarmRoute Promise: you will always know who grew your food, what it cost to grow it, and that it reached you fresh.',
         ],
         'tl' => [
-            'section_title' => 'Bakit magtitiwala sa AniMAL',
+            'section_title' => 'Bakit magtitiwala sa AniMALL',
             'heading' => 'Totoong sakahan, totoong tao, totoong pagkain.',
-            'intro' => 'Narito kung bakit kaiba ang bumibili sa AniMAL.',
+            'intro' => 'Narito kung bakit kaiba ang bumibili sa AniMALL.',
             'pillars' => [
                 [
                     'title' => 'Bawat seller, na-verify',
-                    'description' => 'Chine-check namin ang ID at pinupuntahan ang sakahan bago pa man makapaglista. Kung bumili ka sa AniMAL, totoo ang seller.',
+                    'description' => 'Chine-check namin ang ID at pinupuntahan ang sakahan bago pa man makapaglista. Kung bumili ka sa AniMALL, totoo ang seller.',
                 ],
                 [
                     'title' => 'Patas na presyo, walang gitna',
@@ -171,7 +171,7 @@ return [
             'comparison' => [
                 'market_title' => 'Sa tradisyonal na palengke',
                 'market_text' => 'Mababa ang benta ng magsasaka, itinataas ng negosyante, nauupat ang sariwang sa gitna. Hindi mo alam kung sino ang nagtanim o kung gaano kasariwa.',
-                'animal_title' => 'Sa AniMAL',
+                'animal_title' => 'Sa AniMALL',
                 'animal_text' => 'Direkta kang kausap sa na-verify na magsasaka, patas ang presyo, at ilang araw lang mula nang pitasin ang pagkain — hindi nakalagay sa bodega.',
             ],
         ],
@@ -181,7 +181,7 @@ return [
         'farmer' => [
             'en' => [
                 'heading' => 'For farmers',
-                'body' => 'List your harvest on AniMAL and sell directly to buyers. No middleman eating your profit.',
+                'body' => 'List your harvest on AniMALL and sell directly to buyers. No middleman eating your profit.',
                 'benefits' => [
                     'Set your own price — no trader tells you what to sell for',
                     'Keep more of every peso you earn',
@@ -190,7 +190,7 @@ return [
             ],
             'tl' => [
                 'heading' => 'Para sa magsasaka',
-                'body' => 'I-list ang ani mo sa AniMAL at ibenta direkta sa buyers. Walang gitna na kumakagat sa kita mo.',
+                'body' => 'I-list ang ani mo sa AniMALL at ibenta direkta sa buyers. Walang gitna na kumakagat sa kita mo.',
                 'benefits' => [
                     'Ikaw ang nagtatakbo ng presyo — walang negosyante ang nagsasabi kung magkano',
                     'Mas malaki ang napupunta sa iyo ng bawat piso',
@@ -255,14 +255,14 @@ return [
         'en' => [
             'kicker' => 'Our story',
             'heading' => 'Built for the people who grow our food',
-            'body' => 'We grew up watching farmers sell their harvest for pennies while traders mark it up three times at the palengke. AniMAL exists to cut that out — direct from farm to table, verified farmers setting fair prices, food that was picked this week, not last month.',
+            'body' => 'We grew up watching farmers sell their harvest for pennies while traders mark it up three times at the palengke. AniMALL exists to cut that out — direct from farm to table, verified farmers setting fair prices, food that was picked this week, not last month.',
             'quote' => 'The farmer who grows your rice should earn enough to feed their own family first.',
             'quote_attr' => '— Karlo, co-founder, son of a Laguna farmer',
         ],
         'tl' => [
             'kicker' => 'Ang kwento namin',
             'heading' => 'Ginawa para sa mga nagtatanim ng ating pagkain',
-            'body' => 'Laki namin nakikita kung paano binibenta ng magsasaka ang ani nila sa mura samantalang tatlong beses itinataas ng negosyante sa palengke. Ang AniMAL ay para alisin iyon — direkta mula sa sakahan patungo sa hapag-kainan, na-verify na magsasaka ang nagtatakda ng patas na presyo, pagkang pinitas nitong linggo, hindi noong nakaraang buwan.',
+            'body' => 'Laki namin nakikita kung paano binibenta ng magsasaka ang ani nila sa mura samantalang tatlong beses itinataas ng negosyante sa palengke. Ang AniMALL ay para alisin iyon — direkta mula sa sakahan patungo sa hapag-kainan, na-verify na magsasaka ang nagtatakda ng patas na presyo, pagkang pinitas nitong linggo, hindi noong nakaraang buwan.',
             'quote' => 'Dapat, ang magsasaka ng iyong kanin ay kayang pakainin muna ang sariling pamilya.',
             'quote_attr' => '— Karlo, co-founder, anak ng magsasaka sa Laguna',
         ],
@@ -283,7 +283,7 @@ return [
                 ],
                 [
                     'question' => 'What if the produce arrives bad?',
-                    'answer' => 'Message the farmer directly. Most times they make it right — replacement, refund, or credit. If the seller does not respond within 48 hours, AniMAL steps in and issues a refund from our protection fund.',
+                    'answer' => 'Message the farmer directly. Most times they make it right — replacement, refund, or credit. If the seller does not respond within 48 hours, AniMALL steps in and issues a refund from our protection fund.',
                 ],
                 [
                     'question' => 'Who sets the prices?',
@@ -342,13 +342,13 @@ return [
     'cta' => [
         'en' => [
             'heading' => 'Ready to taste the difference?',
-            'intro' => 'Join AniMAL and buy straight from the people who grow our food.',
+            'intro' => 'Join AniMALL and buy straight from the people who grow our food.',
             'primary' => 'Browse market',
             'secondary' => 'Become a seller',
         ],
         'tl' => [
             'heading' => 'Handa ka nang matikman ang pagkakaiba?',
-            'intro' => 'Sumali sa AniMAL at bumili direkta sa mga nagtatanim ng ating pagkain.',
+            'intro' => 'Sumali sa AniMALL at bumili direkta sa mga nagtatanim ng ating pagkain.',
             'primary' => 'Mag-browse',
             'secondary' => 'Magbenta',
         ],
@@ -577,7 +577,7 @@ return [
             'faq' => 'FAQ',
             'browse' => 'Browse market',
             'login' => 'Log in',
-            'sell' => 'Sell on AniMAL',
+            'sell' => 'Sell on AniMALL',
             'become_seller' => 'Become a seller',
             'basket' => 'Basket',
             'dashboard' => 'Dashboard',
@@ -591,7 +591,7 @@ return [
             'faq' => 'FAQ',
             'browse' => 'Mag-browse',
             'login' => 'Mag-login',
-            'sell' => 'Magbenta sa AniMAL',
+            'sell' => 'Magbenta sa AniMALL',
             'become_seller' => 'Maging seller',
             'basket' => 'Basket',
             'dashboard' => 'Dashboard',
@@ -694,7 +694,7 @@ return [
     'auth' => [
         'en' => [
             'login_title' => 'Log in',
-            'login_sub' => 'Access your AniMAL account.',
+            'login_sub' => 'Access your AniMALL account.',
             'email' => 'Email address',
             'password' => 'Password',
             'login_btn' => 'Log in',
@@ -708,7 +708,7 @@ return [
             'welcome_back' => 'Welcome back, you are logged in.',
 
             'reg_title' => 'Create account',
-            'reg_sub' => 'Join AniMAL as a farmer or a buyer.',
+            'reg_sub' => 'Join AniMALL as a farmer or a buyer.',
             'full_name' => 'Full name',
             'register_as' => 'I am registering as a',
             'buyer' => 'Buyer',
@@ -742,6 +742,7 @@ return [
             'err_full_name' => 'Please enter your full name.',
             'err_email_valid' => 'Please enter a valid email address.',
             'err_pass_min' => 'Password must be at least 8 characters.',
+            'err_pass_space' => 'Password must not contain spaces.',
             'err_pass_upper' => 'Password must include at least one uppercase letter.',
             'err_pass_number' => 'Password must include at least one number.',
             'err_too_long' => 'This field is too long (max %1$d characters).',
@@ -764,7 +765,7 @@ return [
             'reset_success' => 'If an account exists with that email, you will receive password reset instructions shortly.',
             'err_rate_limit' => 'Too many attempts. Please wait a few minutes and try again.',
             'consent_label' => 'I agree to the <a href="privacy.php" target="_blank">Privacy Policy</a> and <a href="terms.php" target="_blank">Terms of Use</a>.',
-            'consent_helper' => 'By creating an account, you consent to AniMAL collecting your name, contact details, and (for farmers) identity documents to create your account, verify your identity, and enable marketplace transactions. Your data is processed under the Data Privacy Act of 2012 (RA 10173) and is never sold to third parties.',
+            'consent_helper' => 'By creating an account, you consent to AniMALL collecting your name, contact details, and (for farmers) identity documents to create your account, verify your identity, and enable marketplace transactions. Your data is processed under the Data Privacy Act of 2012 (RA 10173) and is never sold to third parties.',
             'err_consent' => 'You must agree to the Privacy Policy and Terms of Use.',
 
             'reset_title' => 'Reset Password',
@@ -783,7 +784,7 @@ return [
 
     'tl' => [
         'login_title' => 'Mag-login',
-        'login_sub' => 'I-access ang iyong AniMAL account.',
+        'login_sub' => 'I-access ang iyong AniMALL account.',
         'email' => 'Email address',
         'password' => 'Password',
         'login_btn' => 'Mag-login',
@@ -797,7 +798,7 @@ return [
         'welcome_back' => 'Maligayang pagbabalik, naka-log in ka na.',
 
         'reg_title' => 'Gumawa ng account',
-        'reg_sub' => 'Sumali sa AniMAL bilang magsasaka o buyer.',
+        'reg_sub' => 'Sumali sa AniMALL bilang magsasaka o buyer.',
         'full_name' => 'Buong pangalan',
         'register_as' => 'Nagrerehistro ako bilang',
         'buyer' => 'Buyer',
@@ -831,6 +832,7 @@ return [
         'err_full_name' => 'Pakilagay ang iyong buong pangalan.',
         'err_email_valid' => 'Pakilagay ang valid na email address.',
         'err_pass_min' => 'Ang password ay dapat hindi bababa sa 8 character.',
+        'err_pass_space' => 'Ang password ay hindi dapat may space.',
         'err_pass_upper' => 'Ang password ay dapat may isang malaking titik.',
         'err_pass_number' => 'Ang password ay dapat may isang numero.',
         'err_too_long' => 'Masyadong mahaba ang field (max %1$d na character).',
@@ -853,7 +855,7 @@ return [
         'reset_success' => 'Kung may account na gumagamit ng email na ito, makakatanggap ka ng instruksyon sa pag-reset ng password.',
         'err_rate_limit' => 'Maraming subukan. Maghintay ng ilang minuto bago subukan muli.',
             'consent_label' => 'Sinasang-ayon ako sa <a href="privacy.php" target="_blank">Privacy Policy</a> at <a href="terms.php" target="_blank">Mga Termino ng Gamit</a>.',
-            'consent_helper' => 'Sa paggawa ng account, pumapayag ka na kokolektahin ng AniMAL ang iyong pangalan, impormasyon ng kontak, at (para sa mga magsasaka) mga dokumento ng pagkakakilanlan upang gawin ang iyong account, i-verify ang iyong pagkakakilanlan, at paganahin ang mga transaksyon sa pamilihan. Ang iyong data ay pinoproseso sa ilalim ng Data Privacy Act ng 2012 (RA 10173) at hindi kailanman ipinagbibili sa mga third party.',
+            'consent_helper' => 'Sa paggawa ng account, pumapayag ka na kokolektahin ng AniMALL ang iyong pangalan, impormasyon ng kontak, at (para sa mga magsasaka) mga dokumento ng pagkakakilanlan upang gawin ang iyong account, i-verify ang iyong pagkakakilanlan, at paganahin ang mga transaksyon sa pamilihan. Ang iyong data ay pinoproseso sa ilalim ng Data Privacy Act ng 2012 (RA 10173) at hindi kailanman ipinagbibili sa mga third party.',
             'err_consent' => 'Kailangan mong sang-ayunan ang Privacy Policy at Mga Termino ng Gamit.',
 
         'reset_title' => 'I-reset ang Password',
@@ -999,8 +1001,8 @@ return [
             'no_active_listings' => 'No active listings yet. Be the first to',
             'list_your_harvest' => 'list your harvest',
             'community_title' => 'Meet the Community',
-            'community_lead' => 'Hear from those who make AniMAL work.',
-            'faq_lead' => 'Find answers to common questions about buying and selling on AniMAL.',
+            'community_lead' => 'Hear from those who make AniMALL work.',
+            'faq_lead' => 'Find answers to common questions about buying and selling on AniMALL.',
             'pager_prev' => 'Previous',
             'pager_next' => 'Next',
             'pager_page' => 'Page',
@@ -1024,8 +1026,8 @@ return [
             'no_active_listings' => 'Wala pang aktibong listings. Maging una na',
             'list_your_harvest' => 'maglista ng iyong ani',
             'community_title' => 'Kilalanin ang Komunidad',
-            'community_lead' => 'Makinig mula sa mga bumubuo sa AniMAL.',
-            'faq_lead' => 'Hanapin ang mga sagot sa mga karaniwang tanong tungkol sa pagbili at pagbenta sa AniMAL.',
+            'community_lead' => 'Makinig mula sa mga bumubuo sa AniMALL.',
+            'faq_lead' => 'Hanapin ang mga sagot sa mga karaniwang tanong tungkol sa pagbili at pagbenta sa AniMALL.',
             'pager_prev' => 'Nakaraan',
             'pager_next' => 'Susunod',
             'pager_page' => 'Pahina',
@@ -1058,6 +1060,7 @@ return [
             'err_email_exists' => 'An account with this email already exists.',
             'err_pass_required' => 'Please enter a password.',
             'err_pass_min' => 'Password must be at least 8 characters.',
+            'err_pass_space' => 'Password must not contain spaces.',
             'err_pass_upper' => 'Password must include at least one uppercase letter.',
             'err_pass_number' => 'Password must include at least one number.',
             'err_too_long' => 'This field is too long (max %1$d characters).',
@@ -1106,6 +1109,7 @@ return [
             'err_email_exists' => 'May umiiral nang account sa email na ito.',
             'err_pass_required' => 'Mangyaring maglagay ng password.',
             'err_pass_min' => 'Ang password ay dapat hindi bababa sa 8 karakter.',
+            'err_pass_space' => 'Ang password ay hindi dapat may space.',
             'err_pass_upper' => 'Ang password ay dapat may isang malaking titik.',
             'err_pass_number' => 'Ang password ay dapat may isang numero.',
             'err_too_long' => 'Masyadong mahaba ang field (max %1$d na karakter).',
@@ -1209,7 +1213,7 @@ return [
     'account_delete' => [
         'en' => [
             'page_title' => 'Delete Account',
-            'page_description' => 'Permanently remove your personal data from AniMAL.',
+            'page_description' => 'Permanently remove your personal data from AniMALL.',
             'section_heading' => 'Danger zone',
             'warning_lead' => 'This cannot be undone. Your identifying details are overwritten and your account can never sign in again.',
             'keeps_heading' => 'What is kept',
@@ -1235,7 +1239,7 @@ return [
         ],
         'tl' => [
             'page_title' => 'Burahin ang Account',
-            'page_description' => 'Permanenteng alisin ang iyong personal na datos sa AniMAL.',
+            'page_description' => 'Permanenteng alisin ang iyong personal na datos sa AniMALL.',
             'section_heading' => 'Danger zone',
             'warning_lead' => 'Hindi na ito mababawi. Ang iyong mga pagkakakikilan ay papalitan at hindi na makakapag-sign in muli ang iyong account.',
             'keeps_heading' => 'Ano ang itinatago',
@@ -1262,7 +1266,7 @@ return [
     ],
 
     'dashboard_nav' => [
-        'en' => ['dashboard' => 'Dashboard', 'listings' => 'My Listings', 'create_listing' => 'New Listing', 'orders' => 'Orders', 'analytics' => 'Analytics', 'browse' => 'Browse', 'market' => 'Market', 'cart' => 'Cart', 'saved' => 'Saved', 'users' => 'Users', 'verifications' => 'Verifications', 'audit' => 'Audit Log', 'reports' => 'Reports', 'categories' => 'Categories', 'theme' => 'Theme', 'animations' => 'Animation only', 'settings' => 'Preferences', 'logout' => 'Log out', 'home' => 'Back to site', 'account' => 'Profile & Security'],
-        'tl' => ['dashboard' => 'Dashboard', 'listings' => 'Aking mga listing', 'create_listing' => 'Bagong listing', 'orders' => 'Mga order', 'analytics' => 'Analytics', 'browse' => 'Mag-browse', 'market' => 'Palengke', 'cart' => 'Cart', 'saved' => 'Naka-save', 'users' => 'Mga user', 'verifications' => 'Mga beripikasyon', 'audit' => 'Audit log', 'reports' => 'Mga ulat', 'categories' => 'Mga kategorya', 'theme' => 'Hitsura', 'animations' => 'Animation only', 'settings' => 'Mga kagustuhan', 'logout' => 'Mag-log out', 'home' => 'Bumalik sa site', 'account' => 'Profile at Seguridad'],
+        'en' => ['dashboard' => 'Dashboard', 'goods' => 'Goods', 'listings' => 'My Listings', 'create_listing' => 'New Listing', 'orders' => 'Orders', 'analytics' => 'Analytics', 'browse' => 'Browse', 'market' => 'Market', 'cart' => 'Cart', 'saved' => 'Saved', 'users' => 'Users', 'verifications' => 'Verifications', 'audit' => 'Audit Log', 'reports' => 'Reports', 'categories' => 'Categories', 'theme' => 'Theme', 'animations' => 'Animation only', 'settings' => 'Preferences', 'logout' => 'Log out', 'home' => 'Back to site', 'account' => 'Profile & Security'],
+        'tl' => ['dashboard' => 'Dashboard', 'goods' => 'Mga paninda', 'listings' => 'Aking mga listing', 'create_listing' => 'Bagong listing', 'orders' => 'Mga order', 'analytics' => 'Analytics', 'browse' => 'Mag-browse', 'market' => 'Palengke', 'cart' => 'Cart', 'saved' => 'Naka-save', 'users' => 'Mga user', 'verifications' => 'Mga beripikasyon', 'audit' => 'Audit log', 'reports' => 'Mga ulat', 'categories' => 'Mga kategorya', 'theme' => 'Hitsura', 'animations' => 'Animation only', 'settings' => 'Mga kagustuhan', 'logout' => 'Mag-log out', 'home' => 'Bumalik sa site', 'account' => 'Profile at Seguridad'],
     ],
 ];

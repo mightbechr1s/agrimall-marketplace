@@ -1,5 +1,5 @@
 /**
- * AniMAL Accessibility Audit. Run: node tests/axe-audit.js
+ * AniMALL Accessibility Audit. Run: node tests/axe-audit.js
  * Crawls key pages with axe-core, prints violations, writes tests/axe-report.json
  */
 

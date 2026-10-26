@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = $l($copy['account'], 'err_email_required');
         } elseif ($newEmail === $user['email']) {
             $error = $l($copy['account'], 'email_same');
-        } elseif (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+        } elseif (!filter_var($newEmail, FILTER_VALIDATE_EMAIL) || !preg_match('/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/', $newEmail) || !preg_match('/@(phinmaed\.com|gmail\.com|animal\.local)$/i', $newEmail)) {
             $error = $l($copy['account'], 'err_email_valid');
         } elseif (mb_strlen($newEmail) > FIELD_LIMITS['email']) {
             $error = sprintf($l($copy['account'], 'err_too_long'), FIELD_LIMITS['email']);
@@ -93,6 +93,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = sprintf($l($copy['account'], 'err_too_long'), FIELD_LIMITS['farm_name']);
             } elseif (mb_strlen($contactPerson) > FIELD_LIMITS['contact_person']) {
                 $error = sprintf($l($copy['account'], 'err_too_long'), FIELD_LIMITS['contact_person']);
+            } elseif (!preg_match('/^[A-Za-z0-9À-ÿ\s\'\-\.&,()]+$/', $farmName) || !preg_match('/[A-Za-z0-9À-ÿ]/', $farmName)) {
+                $error = 'Farm name may only contain letters, numbers, spaces, and basic punctuation.';
+            } elseif (!preg_match('/^[A-Za-zÀ-ÿ\s\'\-\.]+$/', $contactPerson) || !preg_match('/[A-Za-zÀ-ÿ]/', $contactPerson)) {
+                $error = 'Contact person may only contain letters, spaces, hyphens, and apostrophes.';
             } elseif ($farmName === $current['farm_name'] && $contactPerson === $current['contact_person']) {
                 $error = $l($copy['account'], 'name_same');
             } else {
@@ -115,6 +119,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = $l($copy['account'], 'err_name_required');
             } elseif (mb_strlen($fullName) > FIELD_LIMITS['full_name']) {
                 $error = sprintf($l($copy['account'], 'err_too_long'), FIELD_LIMITS['full_name']);
+            } elseif (!preg_match('/^[A-Za-zÀ-ÿ\s\'\-\.]+$/', $fullName) || !preg_match('/[A-Za-zÀ-ÿ]/', $fullName)) {
+                $error = 'Full name may only contain letters, spaces, hyphens, and apostrophes.';
             } elseif ($fullName === $current) {
                 $error = $l($copy['account'], 'name_same');
             } else {

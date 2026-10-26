@@ -18,31 +18,18 @@ if (isset($_GET['ref']) && ctype_alnum($_GET['ref'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>Server Error | AniMAL</title>
+    <title>Server Error | AniMALL</title>
     <link href="assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
     <link href="assets/vendor/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet" />
-    <style>
-        :root {
-            --primary: #1B3B2B;
-            --primary-dark: #152D22;
-            --muted: #5C5F63;
-            --bg: #FAF8F5;
-            --card-bg: #FFFFFF;
-            --borders: #E5E2D9;
-        }
-        body { background: var(--bg); font-family: 'Plus Jakarta Sans', -apple-system, 'Segoe UI', system-ui, sans-serif; }
-        .error-500 { font-size: 6rem; font-weight: 800; color: var(--primary); line-height: 1; letter-spacing: -0.02em; }
-        .card { border: 1px solid var(--borders); background: var(--card-bg); border-radius: 0; box-shadow: none; }
-        .btn-primary { background: var(--primary); border-color: var(--primary); }
-        .btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
-        .ref-code { font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Inconsolata', monospace; font-size: 0.875rem; }
-    </style>
+    <!-- Page-specific rules (.error-500, .ref-code) live in design-system.css;
+         tokens come from there too instead of an inline stale copy. -->
+    <link href="assets/css/design-system.css" rel="stylesheet" />
 </head>
 <body class="d-flex flex-column min-vh-100">
     <!-- Minimal header -->
     <header class="py-3 border-bottom bg-white">
         <div class="container d-flex justify-content-between align-items-center">
-            <a href="/" class="text-decoration-none fw-bold fs-4 text-primary">AniMAL</a>
+            <a href="/" class="text-decoration-none fw-bold fs-4 text-primary">AniMALL</a>
         </div>
     </header>
 
@@ -83,7 +70,7 @@ if (isset($_GET['ref']) && ctype_alnum($_GET['ref'])) {
 
     <footer class="py-4 border-top bg-white">
         <div class="container text-center text-muted small">
-            &copy; <?= date('Y') ?> AniMAL. All rights reserved.
+            &copy; <?= date('Y') ?> AniMALL. All rights reserved.
         </div>
     </footer>
 

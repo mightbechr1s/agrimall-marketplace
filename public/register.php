@@ -48,12 +48,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!in_array($farmer['valid_id_type'] ?? '', $allowedIdTypes, true)) {
             $errors[] = $l($copy['auth'], 'err_valid_id');
         }
+        if (!preg_match('/^(09|\+639)\d{9}$/', $farmer['contact_phone'] ?? '')) {
+            $errors[] = 'Contact phone may only contain digits, spaces, +, -, and parentheses.';
+        }
+        if (!preg_match('/^[A-Za-z0-9\-]{3,50}$/', $farmer['valid_id_number'] ?? '')) {
+            $errors[] = 'Valid ID number may only contain letters, digits, and hyphens.';
+        }
     }
 
     if ($fullName === '') {
         $errors[] = $l($copy['auth'], 'err_full_name');
+    } elseif (!preg_match('/^[A-Za-zÀ-ÿ\s\'\-\.]+$/u', $fullName) || !preg_match('/[A-Za-zÀ-ÿ]/u', $fullName)) {
+        $errors[] = 'Full name may only contain letters, spaces, hyphens, and apostrophes.';
     }
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/', $email) || !preg_match('/@(phinmaed\.com|gmail\.com|animal\.local)$/i', $email)) {
         $errors[] = $l($copy['auth'], 'err_email_valid');
     }
     $passwordError = password_policy_error($password);
@@ -153,7 +161,7 @@ require __DIR__ . '/partials/header.php';
     <div class="auth-right">
         <div class="auth-card">
             <div class="auth-logo">
-                <a href="index.php"><img src="assets/branding/logo-horizontal.svg" alt="AniMAL"></a>
+                <a href="index.php"><img src="assets/branding/logo-horizontal.svg" alt="AniMALL"></a>
             </div>
             <h1 class="auth-title"><?= $l($copy['auth'], 'reg_title') ?></h1>
             <p class="auth-subtitle"><?= $l($copy['auth'], 'reg_sub') ?></p>
@@ -209,24 +217,24 @@ require __DIR__ . '/partials/header.php';
                         <div class="span-2">
                             <label class="form-label required" for="contact_person"><?= $l($copy['auth'], 'contact_person') ?></label>
                             <input class="form-control" type="text" id="contact_person" name="contact_person"
-                                   value="<?= e($old['contact_person'] ?? '') ?>" maxlength="<?= FIELD_LIMITS['contact_person'] ?>"
+                                   value="<?= e($old['contact_person'] ?? '') ?>" placeholder="Juan dela Cruz" maxlength="<?= FIELD_LIMITS['contact_person'] ?>"
                                    aria-describedby="contact_person-help" />
                             <div class="form-text" id="contact_person-help"><?= $l($copy['auth'], 'contact_helper') ?></div>
                         </div>
                         <div>
                             <label class="form-label required" for="barangay"><?= $l($copy['auth'], 'barangay') ?></label>
                             <input class="form-control" type="text" id="barangay" name="barangay"
-                                   value="<?= e($old['barangay'] ?? '') ?>" maxlength="<?= FIELD_LIMITS['barangay'] ?>" />
+                                   value="<?= e($old['barangay'] ?? '') ?>" placeholder="San Roque" maxlength="<?= FIELD_LIMITS['barangay'] ?>" />
                         </div>
                         <div>
                             <label class="form-label required" for="municipality_city"><?= $l($copy['auth'], 'municipality') ?></label>
                             <input class="form-control" type="text" id="municipality_city" name="municipality_city"
-                                   value="<?= e($old['municipality_city'] ?? '') ?>" maxlength="<?= FIELD_LIMITS['municipality_city'] ?>" />
+                                   value="<?= e($old['municipality_city'] ?? '') ?>" placeholder="Lucban" maxlength="<?= FIELD_LIMITS['municipality_city'] ?>" />
                         </div>
                         <div>
                             <label class="form-label" for="province"><?= $l($copy['auth'], 'province') ?></label>
                             <input class="form-control" type="text" id="province" name="province"
-                                   value="<?= e($old['province'] ?? '') ?>" maxlength="<?= FIELD_LIMITS['province'] ?>" />
+                                   value="<?= e($old['province'] ?? '') ?>" placeholder="Quezon" maxlength="<?= FIELD_LIMITS['province'] ?>" />
                         </div>
                         <div>
                             <label class="form-label" for="region"><?= $l($copy['auth'], 'region') ?></label>
@@ -246,7 +254,7 @@ require __DIR__ . '/partials/header.php';
                         <div>
                             <label class="form-label" for="valid_id_number"><?= $l($copy['auth'], 'valid_id_number') ?></label>
                             <input class="form-control" type="text" id="valid_id_number" name="valid_id_number"
-                                   value="<?= e($old['valid_id_number'] ?? '') ?>" maxlength="<?= FIELD_LIMITS['valid_id_number'] ?>"
+                                   value="<?= e($old['valid_id_number'] ?? '') ?>" placeholder="ABC-123456" maxlength="<?= FIELD_LIMITS['valid_id_number'] ?>"
                                    aria-describedby="valid_id_number-help" />
                             <div class="form-text" id="valid_id_number-help"><?= $l($copy['auth'], 'valid_id_number_hint') ?></div>
                         </div>
@@ -307,7 +315,7 @@ require __DIR__ . '/partials/header.php';
                     <div style="margin-bottom: 1.5rem;">
                         <label class="form-check d-flex align-items-start gap-2 w-100" for="consent" style="cursor: pointer; margin-bottom: 0.4rem;">
                             <input class="form-check-input mt-1" type="checkbox" value="1" id="consent" name="consent"
-                                   <?= isset($old['consent']) && $old['consent'] === '1' ? 'checked' : '' ?> required>
+                                   <?= isset($old['consent']) && $old['consent'] === '1' ? 'checked' : '' ?> required disabled>
                             <span class="form-check-label" style="margin-bottom: 0;">
                                 <?= $l($copy['auth'], 'consent_label') ?>
                             </span>
@@ -316,6 +324,79 @@ require __DIR__ . '/partials/header.php';
                             <i class="bi bi-shield-check me-1" aria-hidden="true"></i>
                             <?= $l($copy['auth'], 'consent_helper') ?>
                         </p>
+                        <p class="small text-muted mt-1 mb-0" id="consent-hint">Please read the Privacy Policy and Terms of Use first.</p>
+                        <script>
+                        (function(){
+                          function init() {
+                            var consent = document.getElementById('consent');
+                            var hint = document.getElementById('consent-hint');
+                            if (!consent) return;
+                          var modalBody = document.getElementById('privacyTermsBody');
+                          var closeBtn = document.getElementById('privacyTermsClose');
+                          if (closeBtn) closeBtn.disabled = true;
+                          function syncCloseState() {
+                            if (!modalBody || !closeBtn) return;
+                            if (modalBody.scrollTop + modalBody.clientHeight >= modalBody.scrollHeight - 5) {
+                              closeBtn.disabled = false;
+                            }
+                          }
+                          if (modalBody) {
+                            modalBody.addEventListener('scroll', syncCloseState);
+                            // Enable immediately when the content already fits (no scrollbar).
+                            syncCloseState();
+                          } else if (closeBtn) {
+                            closeBtn.disabled = false;
+                          }
+                            function showModal() {
+                              var m = document.getElementById('privacyTermsModal');
+                              if (modalBody) modalBody.scrollTop = 0;
+                              if (closeBtn) closeBtn.disabled = true;
+                              syncCloseState();
+                              if (m) m.style.display = 'flex';
+                            }
+                            function closeModal() {
+                              var m = document.getElementById('privacyTermsModal');
+                              if (m) m.style.display = 'none';
+                              consent.disabled = false;
+                              if (hint) hint.textContent = 'Thank you for reading. You may now agree.';
+                            }
+                            document.querySelectorAll('.form-check-label a[href*="privacy.php"], .form-check-label a[href*="terms.php"]').forEach(function(a){
+                              a.addEventListener('click', function(e){
+                                e.preventDefault();
+                                showModal();
+                              });
+                            });
+                            var closeBtn = document.getElementById('privacyTermsClose');
+                            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+                          }
+                          if (document.readyState === 'loading') {
+                            document.addEventListener('DOMContentLoaded', init);
+                          } else {
+                            init();
+                          }
+                        })();
+                        </script>
+                        <div id="privacyTermsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
+                          <div id="privacyTermsBody" style="background:#fff;max-width:700px;width:100%;margin:auto;padding:2rem;border-radius:8px;max-height:70vh;overflow:auto;position:relative;">
+                            <h2>Privacy Policy & Terms of Use</h2>
+                            <h3>Privacy Policy</h3>
+                            <p>We respect your privacy. Your data is used only to operate the AniMALL marketplace and is never sold to third parties.</p>
+                            <p>We collect account details, order history, and usage data to provide and improve the service.</p>
+                            <p>Your personal information is stored securely and is only accessible to authorized personnel. We do not share your data with third-party advertisers.</p>
+                            <p>You may request deletion of your account and associated data at any time through the account settings page.</p>
+                            <p>Cookies are used solely for session management and preference storage. No tracking cookies are employed.</p>
+                            <h3>Terms of Use</h3>
+                            <p>By creating an account, you agree to use AniMALL responsibly and not to post misleading or fraudulent listings.</p>
+                            <p>Farmers must verify their identity before selling. Buyers must honor confirmed orders.</p>
+                            <p>All transactions are subject to our cancellation and refund policies as described in the order section.</p>
+                            <p>AniMALL reserves the right to suspend accounts that violate these terms or engage in fraudulent activity.</p>
+                            <p>Prices and availability are set by farmers and may change without notice. Always confirm before ordering.</p>
+                            <p>By proceeding, you acknowledge that you have read and understood both documents in full.</p>
+                            <div class="text-center mt-3">
+                              <button type="button" class="btn btn-primary" id="privacyTermsClose" disabled>I have read both — close</button>
+                            </div>
+                          </div>
+                        </div>
                         <?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($old['consent'] ?? '') !== '1'): ?>
                         <div class="invalid-feedback d-block">
                             <?= $l($copy['auth'], 'err_consent') ?>

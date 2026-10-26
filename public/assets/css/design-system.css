@@ -1,4 +1,4 @@
-/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â AniMAL Design System Ã¢â‚¬â€ v3 Harvest Editorial Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â AniMALL Design System Ã¢â‚¬â€ v3 Harvest Editorial Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    Warm paper, forest green, harvest gold; Fraunces display (bundled, offline) + Source Sans body.
    Loaded LAST in header.php and dashboard-layout.php so these overrides beat
    styles.min.css / motion.min.css. */
@@ -356,7 +356,8 @@ h1, h2, h3, h4, h5, h6,
 .dash-empty {
   text-align: center;
   padding: 3rem 1rem;
-  color: var(--muted, inherit);
+  margin: 0 auto;
+  max-width: 36rem;
 }
 .dash-empty i {
   font-size: 2.5rem;
@@ -1004,7 +1005,7 @@ h1, h2, h3, h4, h5, h6,
   position: relative;
 }
 .story-quote::before {
-  content: 'Ã¢â‚¬Å“';
+  content: '“';
   position: absolute;
   left: 0;
   top: -1.4rem;
@@ -1036,7 +1037,7 @@ h1, h2, h3, h4, h5, h6,
   color: var(--primary);
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ FAQ accordion Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* --- FAQ accordion --- */
 .faq-section { background: var(--paper); }
 .faq-section .accordion {
   max-width: 48rem;
@@ -1066,7 +1067,7 @@ h1, h2, h3, h4, h5, h6,
 }
 .faq-section .accordion-button::after {
   background-image: none;
-  content: 'Ã¢Å“Â¦';
+  content: '+';
   font-size: 0.9rem;
   line-height: 1;
   text-align: center;
@@ -1518,7 +1519,7 @@ h1, h2, h3, h4, h5, h6,
   background: var(--footer-bg);
   color: var(--footer-text);
   padding: 3.5rem 0 2rem;
-  margin-top: 0;
+  margin-top: 2rem;
   border-top: 3px solid var(--gold);
 }
 .footer .inside {
@@ -1618,7 +1619,9 @@ h1, h2, h3, h4, h5, h6,
 
 /* Stat cards */
 .stat-card {
-  display: flex;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  margin-bottom: 1rem;
   align-items: stretch;
 }
 .stat-content {
@@ -1653,6 +1656,13 @@ h1, h2, h3, h4, h5, h6,
 .stat-sparkline svg { display: block; }
 
 /* Panels */
+.dash-panel {
+  margin-bottom: 2rem;
+}
+
+.dash-panel-body {
+  padding: 1.25rem;
+}
 .dash-panel-header {
   display: flex;
   justify-content: space-between;
@@ -1789,8 +1799,8 @@ h1, h2, h3, h4, h5, h6,
      carousel in listing.php keeps its behaviour. */
   display: block;
   scroll-snap-align: start;
-  flex: 0 0 16rem;
-  max-width: 78%;
+  flex: 0 0 20rem;
+  max-width: 85%;
 }
 .carousel-controls {
   padding: 0 1.25rem 1rem;
@@ -1866,6 +1876,8 @@ h1, h2, h3, h4, h5, h6,
 .dash-empty {
   text-align: center;
   padding: 3rem 1rem;
+  margin: 0 auto;
+  max-width: 36rem;
 }
 .dash-empty i {
   font-size: 2.5rem;
@@ -2241,7 +2253,7 @@ h1, h2, h3, h4, h5, h6,
   border: 1px solid var(--borders);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
-  padding: 2.4rem;
+  padding: 1.5rem 1.5rem 2rem;
 }
 .auth-card {
   border-radius: var(--radius-card) !important;
@@ -2338,7 +2350,7 @@ h1, h2, h3, h4, h5, h6,
 .auth-card .consent-helper { margin-top: 0.5rem !important; }
 
 /* Button spacing */
-.auth-card .btn-lg { margin-top: 1.5rem; padding-top: 0.875rem; padding-bottom: 0.875rem; font-size: 1rem; }
+.auth-card .btn-lg { margin-top: 0.25rem; padding-top: 0.875rem; padding-bottom: 0.875rem; font-size: 1rem; }
 
 /* Footer links */
 .auth-footer { margin-top: 1.5rem; font-size: 0.9rem; text-align: center; }
@@ -2417,6 +2429,9 @@ h1, h2, h3, h4, h5, h6,
   border-radius: var(--radius-sm);
   padding: 1.6rem;
   margin-bottom: 1.75rem;
+}
+#farmer-fields:not(.is-open) {
+  display: none;
 }
 #farmer-fields legend {
   float: none;
@@ -2604,12 +2619,13 @@ h1, h2, h3, h4, h5, h6,
   gap: 0.75rem;
   padding: 0.6rem clamp(0.75rem, 1.5vw, 1.25rem);
   background: var(--paper);
-      backdrop-filter: blur(12px);\n      -webkit-backdrop-filter: blur(12px);
-      backdrop-filter: blur(12px);\n      -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--borders);
   position: sticky;
   top: 0;
-  z-index: 900;
+  z-index: 1200;
+  overflow: visible;
 }
 .sidebar-topbar-side {
   display: flex;
@@ -2747,7 +2763,7 @@ html[data-drawer-open] .sidebar-toggle-lines span:nth-child(3) { transform: tran
   letter-spacing: 0.06em;
   color: var(--text-soft);
 }
-.profile-dd-menu { min-width: 14rem; }
+.profile-dd-menu { min-width: 14rem; z-index: 2000; position: absolute; top: 100%; right: 0; left: auto; margin-top: 0.25rem; }
 .profile-dd-head {
   padding: 0.5rem 1rem;
   display: flex;
@@ -2839,7 +2855,8 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
     border-bottom: 1px solid var(--borders);
     position: sticky;
     top: 0;
-    z-index: 900;
+    z-index: 1200;
+    overflow: visible;
   }
   .sidebar-toggle {
     width: 2.4rem;
@@ -3096,7 +3113,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   font-size: 1.05rem;
 }
 
-/* Ã¢â€â‚¬Ã¢â€â‚¬ FAQ header polish Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+/* --- FAQ header polish --- */
 .faq-section .section-title {
   font-size: clamp(2rem, 3.6vw, 2.8rem);
   letter-spacing: -0.015em;
@@ -3387,14 +3404,23 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
   background: rgba(200, 90, 75, 0.16);
 }
 
-/* Empty states inside dashboard panels */
-.dash-panel .empty-state {
-  margin: 1.5rem;
+/* Empty states inside dashboard panels / sidebar content */
+.dash-panel .empty-state,
+.sidebar-content .empty-state {
+  margin: 1.5rem auto;
   padding: 2.5rem 1.5rem;
   text-align: center;
   border: 1px dashed var(--borders);
   border-radius: var(--radius-card);
   background: var(--canvas);
+  max-width: 36rem;
+}
+/* Empty states inside admin tables */
+.dash-table .empty-state,
+td .empty-state {
+  margin: 0 auto !important;
+  max-width: 36rem;
+  text-align: center;
 }
 .dash-panel .empty-state .empty-state-icon {
   margin: 0 auto 0.75rem;
@@ -4209,3 +4235,91 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: flex; }
     border-left: 1px solid var(--borders);
   }
 }
+
+/* --- UI/UX consistency tweaks (spacing, alignment, responsive) --- */
+/* Form controls: consistent touch target height */
+.form-control, .form-select {
+  min-height: 2.75rem;
+}
+/* Empty state: single, predictable rhythm between icon and title */
+.empty-state .empty-state-icon-wrapper {
+  margin-bottom: 0;
+}
+.empty-state .empty-state-icon {
+  margin-bottom: 1.25rem;
+}
+.empty-state .empty-state-title {
+  margin-bottom: 0.75rem;
+}
+.empty-state .empty-state-description {
+  margin-bottom: 1.5rem;
+}
+/* Dash empty: consistent paragraph spacing */
+.dash-empty p {
+  margin-bottom: 1.25rem;
+}
+/* Responsive stacking for multi-column marketing blocks */
+@media (max-width: 767.98px) {
+  .feature-card {
+    grid-template-columns: 1fr;
+  }
+  .feature-card .thumb {
+    border-right: 0;
+    border-bottom: 1px solid var(--borders);
+    min-height: 12rem;
+  }
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+  .process-strip {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .footer .inside {
+    grid-template-columns: 1fr;
+  }
+  .footer .cols {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 575.98px) {
+  .footer .cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Server error page (500.php)
+   Tokens come from :root above — the page used to inline a stale copy
+   (#1B3B2B) that had drifted from the real --primary.
+   ═══════════════════════════════════════════════════════════════════════ */
+.error-500 { font-size: 6rem; font-weight: 800; color: var(--primary); line-height: 1; letter-spacing: -0.02em; }
+.ref-code { font-family: var(--font-mono); font-size: 0.875rem; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Reports (admin_reports.php): hide chrome when printing, keep the
+   on-screen "Report period" meta out of the printed sheet.
+   ═══════════════════════════════════════════════════════════════════════ */
+@media print {
+  body.has-sidebar .sidebar,
+  .sidebar-overlay,
+  .sidebar-topbar,
+  .dash-section-header .report-actions,
+  .report-form,
+  .report-tabs { display: none !important; }
+  body.has-sidebar .sidebar-main { margin-left: 0 !important; padding: 0 !important; }
+  .report-meta { display: block !important; }
+  .report-table { border: none !important; }
+  .dash-table tfoot { border-top: 2px solid #000 !important; }
+}
+@media screen {
+  .report-meta { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Privacy & Terms sheet (privacy-terms.php) — scoped so the generic
+   h2/section margins never leak into other pages.
+   ═══════════════════════════════════════════════════════════════════════ */
+body.legal-page { padding: 2rem; font-family: var(--font-body); }
+body.legal-page h2 { margin-top: 2rem; }
+body.legal-page section { margin-bottom: 2rem; }

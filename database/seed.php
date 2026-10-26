@@ -170,17 +170,50 @@ function makeListing(PDO $pdo, int $farmerId, array $data): int
     return $listingId;
 }
 
-function makeOrder(PDO $pdo, int $buyerId, int $farmerId, int $listingId, float $qty, float $price, float $fee, string $method, string $status, ?string $address): void
+function makeOrder(PDO $pdo, int $buyerId, int $farmerId, int $listingId, float $qty, float $price, float $fee, string $method, string $status, ?string $address, int $minsAgo = 360, ?string $reason = null): void
 {
-    $stmt = $pdo->prepare(
-        'INSERT INTO orders
-            (order_number, buyer_id, farmer_id, listing_id, quantity, unit_price, delivery_fee,
-             delivery_method, delivery_address, status, confirmed_at)
-         VALUES
-            (:number, :buyer_id, :farmer_id, :listing_id, :quantity, :unit_price, :delivery_fee,
-             :method, :address, :status, :confirmed_at)'
-    );
-    $stmt->execute([
+    // Walk the lifecycle by the status the order actually reached; pickup orders
+    // skip out_for_delivery, but a seeded delivery order keeps its delivery chain.
+    $deliveryMid = ['confirmed', 'preparing', 'ready_for_pickup', 'out_for_delivery'];
+    $pickupMid = ['confirmed', 'preparing', 'ready_for_pickup'];
+    if ($status === 'out_for_delivery' || ($status === 'completed' && $method !== 'pickup')) {
+        $mid = $deliveryMid;
+    } else {
+        $mid = $pickupMid;
+    }
+    if (in_array($status, $mid, true)) {
+        $chain = array_slice($mid, 0, array_search($status, $mid, true) + 1);
+    } else {
+        $chain = [
+            'pending'             => [],
+            'delivery_fee_review' => ['delivery_fee_review'],
+            'rejected'            => ['rejected'],
+            'cancelled'           => ['confirmed', 'cancelled'],
+            'completed'           => array_merge($mid, ['completed']),
+        ][$status] ?? [];
+    }
+    $first = $method === 'farmer_delivery' ? 'delivery_fee_review' : 'pending';
+
+    $created = date('Y-m-d H:i:s', time() - ($minsAgo * 60));
+    $stepTs = [];
+    $n = count($chain);
+    foreach ($chain as $i => $step) {
+        $stepTs[$step] = date('Y-m-d H:i:s', time() - (int) round($minsAgo * 60 * (1 - ($i + 1) / ($n + 1))));
+    }
+    $tsCols = [
+        'confirmed'        => 'confirmed_at',
+        'preparing'        => 'preparing_at',
+        'ready_for_pickup' => 'ready_at',
+        'out_for_delivery' => 'out_for_delivery_at',
+        'completed'        => 'completed_at',
+        'rejected'         => 'rejected_at',
+        'cancelled'        => 'cancelled_at',
+    ];
+
+    $cols = ['order_number', 'buyer_id', 'farmer_id', 'listing_id', 'quantity', 'unit_price',
+             'delivery_fee', 'delivery_method', 'delivery_address', 'status', 'created_at',
+             'preferred_pickup_date', 'preferred_pickup_time'];
+    $bind = [
         'number' => 'ORD-' . strtoupper(bin2hex(random_bytes(4))),
         'buyer_id' => $buyerId,
         'farmer_id' => $farmerId,
@@ -191,10 +224,73 @@ function makeOrder(PDO $pdo, int $buyerId, int $farmerId, int $listingId, float 
         'method' => $method,
         'address' => $address,
         'status' => $status,
-        'confirmed_at' => $status === 'completed' ? date('Y-m-d H:i:s') : null,
-    ]);
+        'created_at' => $created,
+        'pickup_date' => $method === 'pickup' ? date('Y-m-d', strtotime('+2 days')) : null,
+        'pickup_time' => $method === 'pickup' ? '09:00:00' : null,
+    ];
+    if ($status === 'rejected') {
+        $cols[] = 'rejection_reason';
+        $bind['rejection_reason'] = $reason ?? 'Listing no longer available.';
+    }
+    if ($status === 'cancelled') {
+        $cols[] = 'cancellation_reason';
+        $cols[] = 'cancelled_by_role';
+        $bind['cancellation_reason'] = $reason ?? 'Buyer cancelled the order.';
+        $bind['cancelled_by_role'] = 'buyer';
+    }
+    foreach ($chain as $step) {
+        if (!array_key_exists($step, $tsCols)) continue;   // delivery_fee_review has no dedicated column
+        $cols[] = $tsCols[$step];
+        $bind[$tsCols[$step]] = $stepTs[$step];
+    }
+    $sets = [];
+    for ($i = 0; $i < count($cols); $i++) {
+        $sets[] = ':' . ltrim($cols[$i], ':') ;
+    }
+    $stmt = $pdo->prepare('INSERT INTO orders (' . implode(', ', $cols) . ') VALUES (' . implode(', ', $sets) . ')');
+    $stmt->execute($bind);
 
     $orderId = (int) $pdo->lastInsertId();
+
+    // Timeline: one history row per transition, buyer booked it, farmer walks the rest.
+    $history = $pdo->prepare(
+        'INSERT INTO order_status_history (order_id, from_status, to_status, changed_by, changed_by_role, reason)
+         VALUES (:order_id, :from_status, :to_status, :changed_by, :changed_by_role, :reason)'
+    );
+    $reasons = [
+        'pending'            => 'Order requested.',
+        'delivery_fee_review' => 'Awaiting farmer delivery-fee quote.',
+        'confirmed'          => 'Order confirmed by farmer.',
+        'preparing'          => 'Farmer is preparing the order.',
+        'ready_for_pickup'   => 'Ready for pickup.',
+        'out_for_delivery'   => 'Out for delivery.',
+        'completed'          => 'Order completed.',
+        'rejected'           => 'Order rejected by farmer.',
+        'cancelled'          => 'Order cancelled by buyer.',
+    ];
+    $prev = null;
+    $actor = $buyerId;
+    $role = 'buyer';
+    $walk = $chain;
+    if ($first !== 'pending' || !in_array($first, $chain, true)) {
+        if ($chain && $chain[0] !== $first) {
+            $history->execute(['order_id' => $orderId, 'from_status' => null, 'to_status' => $first,
+                'changed_by' => $buyerId, 'changed_by_role' => 'buyer', 'reason' => $reasons[$first] ?? null]);
+            $prev = $first;
+        }
+    }
+    if (!$chain && $first === $status) {
+        $history->execute(['order_id' => $orderId, 'from_status' => null, 'to_status' => $first,
+            'changed_by' => $buyerId, 'changed_by_role' => 'buyer', 'reason' => $reasons[$first] ?? null]);
+    }
+    foreach ($walk as $step) {
+        $isFarmerStep = in_array($step, ['confirmed', 'preparing', 'ready_for_pickup', 'out_for_delivery', 'completed', 'rejected'], true);
+        $actor = $isFarmerStep ? $farmerId : $buyerId;
+        $role = $isFarmerStep ? 'farmer' : 'buyer';
+        $history->execute(['order_id' => $orderId, 'from_status' => $prev, 'to_status' => $step,
+            'changed_by' => $actor, 'changed_by_role' => $role, 'reason' => $reasons[$step] ?? null]);
+        $prev = $step;
+    }
 
     // Completed orders must deduct stock (FR-ORD-010, BR-009); tools/stock_ledger_backfill.php repairs drift.
     if ($status === 'completed') {

@@ -52,15 +52,20 @@ if ($page > $totalPages) {
 }
 $offset = ($page - 1) * $perPage;
 
-$sql .= ' ORDER BY al.created_at DESC LIMIT :limit OFFSET :offset';
-$stmt = $pdo->prepare($sql);
-$stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
-$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+// Drive from the audit table first (ordered by its indexed created_at), join the
+// tiny user row afterwards — the planner could otherwise pick users as the drive
+// table and filesort the whole audit log per page.
+$sqlLead = 'SELECT al.*, u.email AS admin_email
+        FROM (SELECT * FROM admin_audit_log' . ($where ? ' WHERE ' . implode(' AND ', $where) : '') . ' ORDER BY created_at DESC LIMIT :limit OFFSET :offset) al
+        LEFT JOIN users u ON u.id = al.admin_id';
+$pageStmt = $pdo->prepare($sqlLead);
+$pageStmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+$pageStmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 foreach ($params as $k => $v) {
-    $stmt->bindValue(':' . $k, $v);
+    $pageStmt->bindValue(':' . $k, $v);
 }
-$stmt->execute();
-$events = $stmt->fetchAll();
+$pageStmt->execute();
+$events = $pageStmt->fetchAll();
 
 $entities = $pdo->query('SELECT DISTINCT entity_type FROM admin_audit_log ORDER BY entity_type')->fetchAll(PDO::FETCH_COLUMN);
 
@@ -88,6 +93,7 @@ $filters = [
 
 $pageTitle = 'Audit Log';
 $activePage = 'audit';
+$role = 'admin';
 require __DIR__ . '/partials/dashboard-layout.php';
 ?>
 <div class="dash-section-header">
@@ -97,7 +103,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
 
 <form method="get" action="admin_audit.php" class="d-flex flex-wrap align-items-center gap-2 mb-4">
     <label class="visually-hidden" for="entity-filter">Entity type</label>
-    <select name="entity" id="entity-filter" class="form-select form-select-sm" style="max-width: 220px;">
+    <select name="entity" id="entity-filter" class="form-select form-select-sm" style="max-width: 220px;" onchange="this.form.submit()">
         <option value="">All entity types</option>
         <?php foreach ($entities as $entity): ?>
             <option value="<?= e($entity) ?>" <?= $entityFilter === $entity ? 'selected' : '' ?>><?= e($entity) ?></option>
@@ -105,7 +111,6 @@ require __DIR__ . '/partials/dashboard-layout.php';
     </select>
     <label class="visually-hidden" for="action-filter">Action</label>
     <input type="text" name="action" id="action-filter" value="<?= e($actionFilter) ?>" class="form-control form-control-sm" style="max-width: 220px;" maxlength="100" placeholder="Action contains...">
-    <button type="submit" class="btn btn-sm btn-primary">Filter</button>
     <a href="admin_audit.php" class="btn btn-sm btn-outline-primary">Reset</a>
 </form>
 

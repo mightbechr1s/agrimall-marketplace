@@ -231,6 +231,9 @@ function password_policy_error(string $password): ?string
     if (strlen($password) < 8) {
         return 'err_pass_min';
     }
+    if (preg_match('/\s/', $password)) {
+        return 'err_pass_space';
+    }
     if (!preg_match('/[A-Z]/', $password)) {
         return 'err_pass_upper';
     }
@@ -478,7 +481,7 @@ function rate_limit_check(string $key, int $maxAttempts = 5, int $windowSeconds 
             `key` VARCHAR(128) NOT NULL PRIMARY KEY,
             attempts INT UNSIGNED NOT NULL DEFAULT 0,
             window_start INT UNSIGNED NOT NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         $initialized = true;
     }
 
@@ -516,6 +519,9 @@ function status_variant(string $status): string
         'pending' => 'warning', 'pending_verification' => 'warning',
         'delivery_fee_review' => 'warning',
         'cancelled' => 'danger', 'rejected' => 'danger', 'suspended' => 'danger',
+        // Admin-issued freeze is not the farmer's own pause: keep it visibly
+        // separate from 'paused' so both never collapse into one chip colour.
+        'admin_deactivated' => 'danger', 'paused' => 'secondary', 'draft' => 'secondary',
     ];
     return $families[$status] ?? 'secondary';
 }

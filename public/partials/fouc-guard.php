@@ -15,9 +15,9 @@ $withSidebarState = $withSidebarState ?? false;
         document.documentElement.classList.add('js');
 
         // localStorage is truth; the DB preference only seeds it when nothing is stored yet
-        window.AniMAL = window.AniMAL || {};
-        window.AniMAL.userId = <?= json_encode(current_user_id() ?: null) ?>;
-        window.AniMAL.csrf = <?= json_encode(csrf_token()) ?>;
+        window.AniMALL = window.AniMALL || {};
+        window.AniMALL.userId = <?= json_encode(current_user_id() ?: null) ?>;
+        window.AniMALL.csrf = <?= json_encode(csrf_token()) ?>;
         var pref = localStorage.getItem('animal_theme');
         if (pref !== 'system' && pref !== 'light' && pref !== 'dark') {
           pref = <?= json_encode($dbTheme) ?> || 'system';

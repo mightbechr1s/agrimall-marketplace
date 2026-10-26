@@ -1,4 +1,4 @@
-# AniMAL robots.txt
+# AniMALL robots.txt
 User-agent: *
 Allow: /
 

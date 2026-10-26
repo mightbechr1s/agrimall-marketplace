@@ -1,6 +1,6 @@
 <?php
-$pageTitle = $pageTitle ?? ($config['app']['name'] ?? 'AniMAL');
-$appName = $config['app']['name'] ?? 'AniMAL';
+$pageTitle = $pageTitle ?? ($config['app']['name'] ?? 'AniMALL');
+$appName = $config['app']['name'] ?? 'AniMALL';
 $currentLocale = function_exists('locale_current') ? locale_current() : 'en';
 $isIndex = basename($_SERVER['SCRIPT_NAME'] ?? '') === 'index.php';
 
@@ -17,10 +17,10 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
 <!doctype html>
 <html lang="<?= e($currentLocale) ?>">
 <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?= e($pageTitle) ?> | <?= e($appName) ?></title>
-    <meta name="description" content="<?= e($currentLocale === 'tl' ? 'AniMAL — Merkadong agrikultura ng Pilipinas. Mga na-verify na magsasaka, patas na presyo, sariwa mula sa sakahan.' : 'AniMAL — Philippine agricultural marketplace connecting verified farms directly with buyers. Farm to table, no middlemen.') ?>" />
+    <meta name="description" content="<?= e($currentLocale === 'tl' ? 'AniMALL — Merkadong agrikultura ng Pilipinas. Mga na-verify na magsasaka, patas na presyo, sariwa mula sa sakahan.' : 'AniMALL — Philippine agricultural marketplace connecting verified farms directly with buyers. Farm to table, no middlemen.') ?>" />
     <meta name="theme-color" content="#1F4B32" />
 
     <!-- Canonical & hreflang -->
@@ -35,7 +35,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
     <meta property="og:description" content="<?= e($i18nCopy['og_description'][$currentLocale] ?? $i18nCopy['og_description']['en'] ?? '') ?>" />
     <meta property="og:image" content="<?= e($baseUrl) ?>/assets/branding/mark.svg" />
     <meta property="og:url" content="<?= e($canonicalUrl) ?>" />
-    <meta property="og:site_name" content="AniMAL" />
+    <meta property="og:site_name" content="AniMALL" />
     <meta property="og:locale" content="<?= $currentLocale === 'tl' ? 'tl_PH' : 'en_PH' ?>" />
 
     <!-- Twitter Card -->
@@ -60,21 +60,36 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
 
     <!-- Prevent dark-mode flash: apply theme class before first paint -->
     <?php
+    // One query for everything <head> and the avatar need (theme prefs + user
+    // row); the old two lookups per page share an indexed primary key anyway.
     $dbTheme = null;
     $reduceMotion = false;
     $largerText = false;
+    $userProfile = ['email' => 'User', 'role' => current_user_role(), 'status' => 'active', 'name' => ''];
     if (current_user_id()) {
         try {
-            $stmt = DB::pdo()->prepare('SELECT theme, reduce_motion, larger_text FROM user_preferences WHERE user_id = :id LIMIT 1');
+            $stmt = DB::pdo()->prepare(
+                'SELECT p.theme, p.reduce_motion, p.larger_text, u.email, u.role, u.status
+                   FROM users u LEFT JOIN user_preferences p ON p.user_id = u.id
+                  WHERE u.id = :id LIMIT 1'
+            );
             $stmt->execute(['id' => current_user_id()]);
             $row = $stmt->fetch();
-            if ($row && in_array($row['theme'] ?? null, ['system', 'light', 'dark'], true)) {
-                $dbTheme = $row['theme'];
+            if ($row) {
+                if (in_array($row['theme'] ?? null, ['system', 'light', 'dark'], true)) {
+                    $dbTheme = $row['theme'];
+                }
+                $reduceMotion = !empty($row['reduce_motion']);
+                $largerText = !empty($row['larger_text']);
+                $userProfile = array_merge($userProfile, [
+                    'email' => $row['email'] ?? 'User',
+                    'role' => $row['role'] ?? current_user_role(),
+                    'status' => $row['status'] ?? 'active',
+                ]);
             }
-            $reduceMotion = !empty($row['reduce_motion']);
-            $largerText = !empty($row['larger_text']);
         } catch (Throwable $e) {
             // fallback to default behavior below
+            error_log('header: user+prefs lookup failed: ' . $e->getMessage());
         }
     }
     $withSidebarState = false;
@@ -97,7 +112,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
         {
           "@type": "LocalBusiness",
           "@id": "<?= e($canonicalUrl) ?>#business",
-          "name": "AniMAL",
+          "name": "AniMALL",
           "description": <?= json_encode($currentLocale === 'tl'
                 ? 'Merkadong agrikultura ng Pilipinas. Mga na-verify na magsasaka, patas na presyo, sariwa mula sa sakahan.'
                 : 'Philippine agricultural marketplace connecting verified farms directly with buyers. Farm to table, no middlemen.', JSON_UNESCAPED_UNICODE) ?>,
@@ -148,6 +163,23 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
       ]
     }
     </script>
+    <script>
+      // Close any open profile dropdown when the page scrolls, so it never
+      // overlaps/sticks over scrolling content (e.g. the reports section).
+      (function () {
+        var closeOpen = function () {
+          document.querySelectorAll('.dropdown-menu.show').forEach(function (m) {
+            if (window.bootstrap && bootstrap.Dropdown) {
+              var t = document.querySelector('[data-bs-toggle="dropdown"][aria-expanded="true"]');
+              if (t) bootstrap.Dropdown.getInstance(t)?.hide();
+            } else {
+              m.classList.remove('show');
+            }
+          });
+        };
+        window.addEventListener('scroll', closeOpen, true);
+      })();
+    </script>
 </head>
 <body>
 <!-- Skip link for accessibility -->
@@ -156,8 +188,8 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
 <header class="nav" role="banner">
   <div class="nav-inner container">
     <div class="brand">
-      <a href="index.php" class="brand-link" aria-label="AniMAL home">
-        <img src="assets/branding/logo-horizontal.svg" alt="AniMAL" class="brand-logo">
+      <a href="index.php" class="brand-link" aria-label="AniMALL home">
+        <img src="assets/branding/logo-horizontal.svg" alt="AniMALL" class="brand-logo">
       </a>
     </div>
     <nav class="nav-links" aria-label="Main navigation" id="mainNav">
@@ -209,22 +241,6 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
           <a href="notifications.php" class="notif-pill" aria-label="<?= e($notifLabel) ?>">
             <?php if ($unreadCount > 0): ?>
               <span class="notif-count"><?= $unreadCount ?></span>
-              <?php if ($unreadCount > 0): ?>
-              <script>
-                if (!sessionStorage.getItem('notif_toast_shown')) {
-                  sessionStorage.setItem('notif_toast_shown', '1');
-                  document.addEventListener('DOMContentLoaded', function () {
-                    if (window.animalToast) {
-                      var n = <?= (int) $unreadCount ?>;
-                      window.animalToast(
-                        'You have ' + n + ' unread notification' + (n > 1 ? 's' : ''),
-                        { type: 'info' }
-                      );
-                    }
-                  });
-                }
-              </script>
-              <?php endif; ?>
             <?php endif; ?>
             <i class="bi bi-bell" aria-hidden="true"></i>
           </a>
@@ -252,18 +268,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
         <?php endif; ?>
         <?php if (current_user_id()): ?>
           <?php
-            // Fetch user profile data for avatar
-            $userProfile = ['email' => 'User', 'role' => current_user_role(), 'status' => 'active', 'name' => ''];
-            try {
-                $uStmt = DB::pdo()->prepare('SELECT email, role, status FROM users WHERE id = :id');
-                $uStmt->execute(['id' => current_user_id()]);
-                $uRow = $uStmt->fetch();
-                if ($uRow) $userProfile = array_merge($userProfile, $uRow);
-            } catch (Exception $e) {
-                // Decorative query: degrade rather than break the page, but do not
-                // swallow it silently -- a failure here is invisible otherwise.
-                error_log('header: avatar profile lookup failed: ' . $e->getMessage());
-            }
+            // Avatar data already fetched in <head> (user+prefs single query).
             $emailUser = explode('@', $userProfile['email'])[0];
             $initials = strtoupper(substr($emailUser, 0, 2));
             $nameUser = !empty($userProfile['name']) ? $userProfile['name'] : $emailUser;
@@ -272,7 +277,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
             $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' => '#C9A227'];
           ?>
           <div class="dropdown profile-dd">
-            <button class="profile-btn dropdown-toggle" type="button" id="avatarDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account menu">
+            <button class="profile-btn dropdown-toggle" type="button" id="avatarDropdown" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" aria-label="Account menu">
               <span class="profile-avatar" style="background: <?= e($avatarBg[$role] ?? 'var(--accent)') ?>"><?= e($initials) ?></span>
               <span class="profile-meta">
                 <span class="profile-name"><?= e(ucfirst($nameUser)) ?></span>
@@ -287,11 +292,11 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
                 </div>
               </li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="dashboard.php"><i class="bi bi-speedometer2 me-2"></i><?= t($i18nCopy['nav'], 'dashboard') ?></a></li>
-              <li><a class="dropdown-item" href="settings.php"><i class="bi bi-gear me-2"></i><?= t($i18nCopy['settings'], 'nav_settings') ?></a></li>
-              <li><a class="dropdown-item" href="account.php"><i class="bi bi-person-gear me-2" aria-hidden="true"></i><?= t($i18nCopy['dashboard_nav'], 'account') ?></a></li>
+              <li><a class="dropdown-item" href="dashboard.php"><i class="bi bi-speedometer2 me-2"></i><?= e($i18nCopy['nav']['en']['dashboard']) ?></a></li>
+              <li><a class="dropdown-item" href="settings.php"><i class="bi bi-gear me-2"></i><?= e($i18nCopy['settings']['en']['nav_settings']) ?></a></li>
+              <li><a class="dropdown-item" href="account.php"><i class="bi bi-person-gear me-2" aria-hidden="true"></i><?= e($i18nCopy['dashboard_nav']['en']['account']) ?></a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="logout.php"><i class="bi bi-box-arrow-left me-2"></i><?= t($i18nCopy['nav'], 'logout') ?></a></li>
+              <li><a class="dropdown-item" href="logout.php"><i class="bi bi-box-arrow-left me-2"></i><?= e($i18nCopy['nav']['en']['logout']) ?></a></li>
             </ul>
           </div>
         <?php else: ?>
@@ -343,9 +348,10 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
     </nav>
     <?php if (current_user_id()): ?>
     <div class="mobile-menu-utils" style="display:flex;gap:0.5rem;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:0.5rem;">
-      <a href="notifications.php" class="notif-pill" aria-label="<?= e($notifLabel) ?>" style="width:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--paper);border:1px solid var(--borders);color:var(--text);">
-        <?php $unreadCount = unread_notification_count((int) current_user_id()); ?>
-        <?php if ($unreadCount > 0): ?><span class="notif-count" style="position:absolute;top:0;right:0;background:var(--danger);color:#fff;font-size:0.6rem;padding:0.1rem 0.35rem;border-radius:999px;"><?= $unreadCount ?></span><?php endif; ?>
+      <a href="notifications.php" class="notif-pill" aria-label="<?= e($notifLabel) ?>">
+        <?php if ($unreadCount > 0): ?>
+          <span class="notif-count"><?= $unreadCount ?></span>
+        <?php endif; ?>
         <i class="bi bi-bell" aria-hidden="true"></i>
       </a>
     </div>

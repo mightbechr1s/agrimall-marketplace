@@ -22,32 +22,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Total count for pagination
-$countStmt = DB::pdo()->prepare('SELECT COUNT(*) FROM notifications WHERE user_id = :id');
-$countStmt->execute(['id' => $userId]);
-$total = (int) $countStmt->fetchColumn();
-$totalPages = max(1, (int) ceil($total / $perPage));
-if ($page > $totalPages) {
-    $page = $totalPages;
-}
-$offset = ($page - 1) * $perPage;
-
-$stmt = DB::pdo()->prepare(
-    'SELECT id, category, title, body, link, read_at, created_at
-     FROM notifications WHERE user_id = :id
-     ORDER BY created_at DESC, id DESC LIMIT :limit OFFSET :offset'
-);
-$stmt->bindValue(':id', $userId, PDO::PARAM_INT);
-$stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
-$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-$stmt->execute();
-$items = $stmt->fetchAll();
-
-$unread = 0;
-foreach ($items as $item) {
-    if ($item['read_at'] === null) {
-        $unread++;
+$loadError = null;
+$totalPages = 1;
+try {
+    $countStmt = DB::pdo()->prepare('SELECT COUNT(*) FROM notifications WHERE user_id = :id');
+    $countStmt->execute(['id' => $userId]);
+    $total = (int) $countStmt->fetchColumn();
+    $totalPages = max(1, (int) ceil($total / $perPage));
+    if ($page > $totalPages) {
+        $page = $totalPages;
     }
+    $offset = ($page - 1) * $perPage;
+
+    $stmt = DB::pdo()->prepare(
+        'SELECT id, category, title, body, link, read_at, created_at
+         FROM notifications WHERE user_id = :id
+         ORDER BY created_at DESC, id DESC LIMIT :limit OFFSET :offset'
+    );
+    $stmt->bindValue(':id', $userId, PDO::PARAM_INT);
+    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    $items = $stmt->fetchAll();
+
+    $unread = 0;
+    foreach ($items as $item) {
+        if ($item['read_at'] === null) {
+            $unread++;
+        }
+    }
+} catch (Throwable $e) {
+    error_log('Notifications load failed: ' . $e->getMessage());
+    $items = [];
+    $unread = 0;
+    $loadError = 'We could not load your notifications right now. Please try again later.';
 }
 
 $activePage = 'notifications';
@@ -62,19 +70,14 @@ require __DIR__ . '/partials/dashboard-layout.php';
         </div>
         <a href="dashboard.php" class="btn btn-outline btn-sm mb-3"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i> Back</a>
 
+        <?php if (!empty($loadError)): ?>
+            <div class="alert alert-danger" role="alert"><?= e($loadError) ?></div>
+        <?php endif; ?>
+
         <?php if (!empty($success)): ?>
             <div class="alert alert-success" role="status">
                 <i class="bi bi-check-circle me-1"></i> <?= e($success) ?>
             </div>
-            <script>
-              // Mirror the flash as a toast so the feedback follows the user
-              // even after they navigate away from this page.
-              document.addEventListener('DOMContentLoaded', function () {
-                if (window.animalToast) {
-                  window.animalToast(<?= json_encode($success) ?>, { type: 'success' });
-                }
-              });
-            </script>
         <?php endif; ?>
 
         <?php if ($unread > 0): ?>
@@ -93,7 +96,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
             <?php $title = $l($copy['notifications'], 'empty'); ?>
             <?php $description = ''; ?>
             <?php $actions = []; ?>
-            <?php include __DIR__ . '/empty-state.php'; ?>
+            <?php include __DIR__ . '/partials/empty-state.php'; ?>
         <?php else: ?>
             <ul class="list-group">
                 <?php foreach ($items as $item): ?>

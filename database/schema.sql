@@ -1,4 +1,4 @@
--- AniMAL database schema: SRS v0.3 Section 11 entities, 3NF, MySQL 8.0+.
+-- AniMALL database schema: SRS v0.3 Section 11 entities, 3NF, MySQL 8.0+.
 
 CREATE DATABASE IF NOT EXISTS `animal_marketplace`
   CHARACTER SET utf8mb4
@@ -22,18 +22,8 @@ CREATE TABLE `users` (
   KEY `idx_users_role_status` (`role`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE `sessions` (
-  `id`            VARCHAR(128)    NOT NULL,
-  `user_id`       BIGINT UNSIGNED NOT NULL,
-  `ip_address`    VARCHAR(45)     NOT NULL,
-  `user_agent`    TEXT            NOT NULL,
-  `payload`       TEXT            NOT NULL,
-  `last_activity` INT UNSIGNED    NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_sessions_user_id` (`user_id`),
-  KEY `idx_sessions_last_activity` (`last_activity`),
-  CONSTRAINT `fk_sessions_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- `sessions` table removed: PHP's native file-backed session store is used; this
+-- table was defined, never written, and dropped from the live schema.
 
 -- FARMER & BUYER PROFILES
 
@@ -332,7 +322,7 @@ INSERT INTO `quantity_units` (`name`, `symbol`, `type`, `base_factor`, `step`) V
 
 -- Default admin user, password admin123 (change in production).
 INSERT INTO `users` (`email`, `password_hash`, `role`, `status`) VALUES
-('admin@animal.local', '$2y$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.PZvO.S', 'admin', 'active');
+('admin@animal.local', '$2y$10$/6IwqVmz9axvoQ7fXeS/HOFjsgbupwwu.ABuWXRnVoTguwxCo2NvS', 'admin', 'active');
 
 -- VIEWS FOR COMMON QUERIES
 

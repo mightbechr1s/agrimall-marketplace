@@ -1,4 +1,4 @@
--- AniMAL Migration 004: cart and saved listings.
+-- AniMALL Migration 004: cart and saved listings.
 -- Run after 003 against `animal_marketplace`; additive, creates two tables.
 
 USE `animal_marketplace`;

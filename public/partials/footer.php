@@ -44,7 +44,7 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
 <footer class="footer" role="contentinfo">
   <div class="inside container">
     <div class="brand">
-      <img src="assets/branding/logo-reverse.svg" alt="AniMAL" class="brand-logo">
+      <img src="assets/branding/logo-reverse.svg" alt="AniMALL" class="brand-logo">
       <div class="brand-tagline"><?= $f('brand_tagline') ?></div>
     </div>
     <div class="cols">
@@ -70,14 +70,14 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
       </div>
     </div>
   </div>
-  <p class="copyright">&copy; <?= date('Y') ?> AniMAL &middot; FarmRoute Cooperative. Built for Philippine farms.</p>
+  <p class="copyright">&copy; <?= date('Y') ?> AniMALL &middot; FarmRoute Cooperative. Built for Philippine farms.</p>
 </footer>
 
 <!-- Back to top button -->
 <button id="backToTop" class="back-to-top" type="button" aria-label="Back to top"><i class="bi bi-arrow-up"></i></button>
 
-<!-- Toast region -->
-<div id="toast-region" aria-live="polite" aria-relevant="additions"></div>
+<!-- Toast region removed -->
+
 
 <!-- Cookie Consent Banner -->
 <div id="cookie-banner" class="cookie-banner" role="dialog" aria-label="Cookie consent" aria-describedby="cookie-banner-text">
@@ -102,7 +102,6 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
 <?php if (!defined('ANIMAL_ASSETS_EMITTED')): define('ANIMAL_ASSETS_EMITTED', true); ?>
     <script src="<?= e(asset('assets/js/motion.min.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/swipe.min.js')) ?>" defer></script>
-    <script src="<?= e(asset('assets/js/toast.js')) ?>" defer></script>
 <script src="<?= e(asset('assets/js/cart-ajax.js')) ?>" defer></script>
     <script src="<?= e(asset('assets/js/save-ajax.js')) ?>" defer></script>
 <?php endif; ?>

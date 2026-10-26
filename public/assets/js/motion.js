@@ -229,6 +229,7 @@ function initFilterButtons() {
       this.classList.add('is-active');
       const filterVal = this.getAttribute('data-filter');
       const cards = grid.querySelectorAll('.card');
+      let visible = 0;
       cards.forEach(card => {
         const cat = card.getAttribute('data-category') || '';
         const show = filterVal === 'all' || cat === filterVal;
@@ -237,12 +238,29 @@ function initFilterButtons() {
           card.style.display = '';
           void card.offsetWidth;
           requestAnimationFrame(() => card.classList.remove('is-filtered-out'));
+          visible++;
         } else if (!show && !hidden) {
           card.classList.add('is-filtered-out');
           const delay = prefersReducedMotion.matches ? 0 : 200;
           setTimeout(() => { card.style.display = 'none'; }, delay);
+        } else if (show) {
+          visible++;
         }
       });
+      // Show/hide empty state
+      let emptyEl = grid.querySelector('.client-empty-state');
+      if (visible === 0) {
+        if (!emptyEl) {
+          emptyEl = document.createElement('div');
+          emptyEl.className = 'client-empty-state empty-state text-center';
+          emptyEl.style.gridColumn = '1 / -1';
+          emptyEl.innerHTML = '<h3 class="empty-state-title">No products in this category</h3><p class="empty-state-description">Try another filter.</p>';
+          grid.appendChild(emptyEl);
+        }
+        emptyEl.style.display = '';
+      } else if (emptyEl) {
+        emptyEl.style.display = 'none';
+      }
     });
   });
 }
@@ -365,7 +383,7 @@ function initThemeToggle() {
   function persistTheme(pref) {
     localStorage.setItem(STORAGE_KEY, pref);
     // Sync to the account so the choice sticks across pages and devices.
-    const api = window.AniMAL || {};
+    const api = window.AniMALL || {};
     if (api.userId && api.csrf) {
       const body = new URLSearchParams();
       body.append('csrf_token', api.csrf);

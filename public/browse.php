@@ -10,6 +10,9 @@ $l = function($dict, $key) use ($copy, $locale) {
     return $dict[$locale][$key] ?? $dict['en'][$key] ?? $key;
 };
 $q = is_string($_GET['q'] ?? null) ? $_GET['q'] : '';
+// Bound the search term to the column width so an oversized query cannot
+// drive a huge LIKE scan or be stored in error/log output.
+$q = mb_substr($q, 0, FIELD_LIMITS['q']);
 $page = max(1, (int)($_GET['page'] ?? 1));
 
 // Category label formatter
@@ -72,6 +75,13 @@ if ($sidebarShell) {
       <p><?php echo $l($copy['preview'], 'intro'); ?></p>
     </div>
 
+    <?php if (current_user_id() && current_user_role() === 'farmer'): ?>
+    <div class="d-flex gap-3 mb-3">
+      <a href="dashboard.php#listings" class="btn btn-outline btn-sm"><i class="bi bi-basket3 me-1"></i>My Listings</a>
+      <a href="create_listing.php" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>New Listing</a>
+    </div>
+    <?php endif; ?>
+
     <form class="search-form" method="get" action="browse.php">
       <?php if (isset($_GET['lang'])): ?>
         <input type="hidden" name="lang" value="<?php echo htmlspecialchars($_GET['lang']); ?>">
@@ -109,16 +119,28 @@ if ($sidebarShell) {
       // A DB outage and an empty marketplace are different states; do not share one flag.
       $listingsFailed = false;
       try {
-        $where = $q !== ''
-          ? "status = 'active' AND name LIKE :q"
-          : "status = 'active'";
+        $hasSearch = $q !== '';
+        // Search path: resolve matching ids on the base table first (one indexed
+        // scan using ft_listing_search + a substring fallback for prefixes the
+        // tokenizer misses) and let the 5-join view drive only off `id IN (...)`.
+        // LIKE '%...%' over the view full-scanned every join per keystroke.
+        if ($hasSearch) {
+          $idsStmt = DB::pdo()->prepare(
+            "SELECT id FROM produce_listings
+              WHERE status = 'active'
+                AND (MATCH(name, description) AGAINST(:fts IN NATURAL LANGUAGE MODE) OR name LIKE :like)");
+          $idsStmt->execute([':fts' => $q, ':like' => '%' . $q . '%']);
+          $matchIds = array_map('intval', $idsStmt->fetchAll(PDO::FETCH_COLUMN));
+          $where = $matchIds
+            ? 'id IN (' . implode(',', $matchIds) . ')'
+            : '1 = 0';   // no hits: count and grid both come up empty
+        } else {
+          $where = "status = 'active'";
+        }
 
         // Count first: an out-of-range ?page= (bookmark, edited URL) is pulled back
         // onto the last page before it can become an OFFSET and show an empty grid.
         $countStmt = DB::pdo()->prepare("SELECT COUNT(*) FROM v_active_listings WHERE $where");
-        if ($q !== '') {
-          $countStmt->bindValue(':q', '%'.$q.'%', PDO::PARAM_STR);
-        }
         $countStmt->execute();
         $total = (int) $countStmt->fetchColumn();
         $totalPages = (int) ceil($total / 12);
@@ -128,9 +150,6 @@ if ($sidebarShell) {
 
         $offset = ($page - 1) * 12;
         $stmt = DB::pdo()->prepare("SELECT * FROM v_active_listings WHERE $where ORDER BY published_at DESC LIMIT 12 OFFSET :offset");
-        if ($q !== '') {
-          $stmt->bindValue(':q', '%'.$q.'%', PDO::PARAM_STR);
-        }
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         $listings = $stmt->fetchAll();
@@ -327,10 +346,7 @@ if ($sidebarShell) {
 
 <?php /* The marketplace is a public page that a signed-in visitor happens to be
      viewing, so it keeps the public footer in both shells -- and the footer
-     already hides the seller link for signed-in visitors. The sidebar branch used
-     to swap it for dashboard-footer.php, which contains no <footer> element at
-     all, so the page had no contentinfo landmark and lost the farmers section.
-     Here it renders inside <main>, before dashboard-footer closes the layout. */ ?>
+     already hides the seller link for signed-in visitors. */ ?>
 <?php require __DIR__ . '/partials/footer.php'; ?>
 <?php if ($sidebarShell): ?>
 <?php require __DIR__ . '/partials/dashboard-footer.php'; ?>

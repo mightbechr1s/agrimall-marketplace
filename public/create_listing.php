@@ -76,6 +76,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($name === '') {
         $errors[] = $l($copy['lf'], 'err_name');
+    } elseif (mb_strlen($name) > FIELD_LIMITS['name']) {
+        $errors[] = sprintf($l($copy['lf'], 'err_too_long'), FIELD_LIMITS['name']);
+    } elseif (!preg_match('/^[A-Za-z0-9À-ÿ\s\'\-\.&,()]+$/u', $name) || !preg_match('/[A-Za-z0-9À-ÿ]/u', $name)) {
+        $errors[] = 'Listing name may only contain letters, numbers, spaces, and basic punctuation.';
     }
 
     if ($pricePerUnit === null) {

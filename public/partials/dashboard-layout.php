@@ -12,24 +12,22 @@ $navCopy = include __DIR__ . '/../../src/i18n_copy.php';
 $sidebarMenus = [
     'farmer' => [
         ['page' => 'dashboard',      'label' => 'Dashboard',      'icon' => 'bi-grid-1x2-fill',  'href' => 'dashboard.php'],
-        ['page' => 'listings',       'label' => 'My Listings',    'icon' => 'bi-basket3-fill',   'href' => 'dashboard.php#listings'],
-        ['page' => 'create_listing', 'label' => 'New Listing',    'icon' => 'bi-plus-circle-fill','href' => 'create_listing.php'],
-        ['page' => 'orders',         'label' => 'Orders',         'icon' => 'bi-receipt-cutoff', 'href' => 'dashboard.php#orders'],
+        ['page' => 'orders',         'label' => 'Orders',         'icon' => 'bi-receipt-cutoff', 'href' => 'orders.php'],
         ['page' => 'market',         'label' => 'Market',         'icon' => 'bi-shop',           'href' => 'browse.php'],
         ['page' => 'analytics',      'label' => 'Analytics',      'icon' => 'bi-graph-up',       'href' => 'dashboard.php#analytics'],
+        ['page' => 'reports',        'label' => 'Sales Report',  'icon' => 'bi-bar-chart-line', 'href' => 'farmer_reports.php'],
     ],
     'buyer' => [
         ['page' => 'dashboard',  'label' => 'Dashboard',   'icon' => 'bi-grid-1x2-fill',  'href' => 'dashboard.php'],
         ['page' => 'browse',     'label' => 'Browse',      'icon' => 'bi-shop',           'href' => 'browse.php'],
         ['page' => 'cart',       'label' => 'Cart',        'icon' => 'bi-basket3-fill',   'href' => 'cart.php'],
-        ['page' => 'orders',     'label' => 'My Orders',   'icon' => 'bi-receipt-cutoff', 'href' => 'dashboard.php#orders'],
-        ['page' => 'saved',      'label' => 'Saved',       'icon' => 'bi-heart',          'href' => 'dashboard.php#saved'],
+        ['page' => 'orders',     'label' => 'My Orders',   'icon' => 'bi-receipt-cutoff', 'href' => 'orders.php'],
+        ['page' => 'saved',      'label' => 'Saved',       'icon' => 'bi-heart',          'href' => 'saved.php'],
     ],
     'admin' => [
         // Admin pages not yet implemented; menu links only to existing panels/pages.
         ['page' => 'dashboard',  'label' => 'Dashboard',   'icon' => 'bi-grid-1x2-fill',  'href' => 'dashboard.php'],
-        ['page' => 'orders',     'label' => 'Orders',      'icon' => 'bi-receipt-cutoff', 'href' => 'dashboard.php#orders'],
-        ['page' => 'verifications','label' => 'Verifications','icon' => 'bi-patch-check-fill','href' => 'admin_verify.php'],
+        ['page' => 'goods',      'label' => 'Goods',      'icon' => 'bi-shop',           'href' => 'browse.php'],
         ['page' => 'audit',      'label' => 'Audit Log',   'icon' => 'bi-journal-text',   'href' => 'admin_audit.php'],
         ['page' => 'reports',    'label' => 'Reports',     'icon' => 'bi-bar-chart-line', 'href' => 'admin_reports.php'],
     ],
@@ -42,15 +40,21 @@ $roleIcons  = ['farmer' => 'bi-tree-fill', 'buyer' => 'bi-cart3', 'admin' => 'bi
 $roleColors = ['farmer' => 'role-farmer', 'buyer' => 'role-buyer', 'admin' => 'role-admin'];
 
 // Fetch user profile. Display name from role profile (not email local-part — showed "Qa.Buyer" before). Admins fall back to email.
+// Theme prefs ride along in the same query; <head> only applies them.
 $userProfile = ['email' => 'User', 'role' => $role, 'status' => 'active', 'created_at' => '', 'last_login_at' => ''];
 $displayName = '';
+$dbTheme = null;
+$reduceMotion = false;
+$largerText = false;
 try {
     $uStmt = DB::pdo()->prepare(
         'SELECT u.email, u.role, u.status, u.created_at, u.last_login_at,
-                COALESCE(bp.full_name, fp.contact_person, fp.farm_name) AS profile_name
+                COALESCE(bp.full_name, fp.contact_person, fp.farm_name) AS profile_name,
+                up.theme, up.reduce_motion, up.larger_text
            FROM users u
            LEFT JOIN buyer_profiles  bp ON bp.user_id = u.id
            LEFT JOIN farmer_profiles fp ON fp.user_id = u.id
+           LEFT JOIN user_preferences up ON up.user_id = u.id
           WHERE u.id = :id'
     );
     $uStmt->execute(['id' => current_user_id()]);
@@ -58,6 +62,11 @@ try {
     if ($uRow) {
         $userProfile = array_merge($userProfile, $uRow);
         $displayName = trim((string) ($uRow['profile_name'] ?? ''));
+        if (in_array($uRow['theme'] ?? null, ['system', 'light', 'dark'], true)) {
+            $dbTheme = $uRow['theme'];
+        }
+        $reduceMotion = !empty($uRow['reduce_motion']);
+        $largerText = !empty($uRow['larger_text']);
     }
 } catch (Exception $e) {
     // Decorative query: degrade rather than break the page, but do not
@@ -86,28 +95,14 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><?= e($pageTitle) ?> | <?= e($config['app']['name'] ?? 'AniMAL') ?></title>
+    <title><?= e($pageTitle) ?> | <?= e($config['app']['name'] ?? 'AniMALL') ?></title>
     <meta name="theme-color" content="#1B3B2B" />
     <link rel="icon" type="image/svg+xml" href="assets/branding/mark.svg" />
     <link rel="apple-touch-icon" href="assets/branding/mark.svg" />
 
     <?php
-    $dbTheme = null;
-    $reduceMotion = false;
-    $largerText = false;
-    try {
-        $themeStmt = DB::pdo()->prepare('SELECT theme, reduce_motion, larger_text FROM user_preferences WHERE user_id = :id LIMIT 1');
-        $themeStmt->execute(['id' => current_user_id()]);
-        $themePrefs = $themeStmt->fetch();
-        $themeValue = $themePrefs['theme'] ?? null;
-        $reduceMotion = !empty($themePrefs['reduce_motion']);
-        $largerText = !empty($themePrefs['larger_text']);
-        if (in_array($themeValue, ['system', 'light', 'dark'], true)) {
-            $dbTheme = $themeValue;
-        }
-    } catch (Throwable $e) {
-        $dbTheme = null;
-    }
+    // Theme prefs already fetched with the profile query above; nothing to
+    // re-read here.
     $withSidebarState = true;
     require __DIR__ . '/fouc-guard.php';
     ?>
@@ -128,8 +123,8 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
 <aside class="sidebar" id="sidebar" aria-label="Dashboard navigation">
     <div class="sidebar-header">
         <a href="index.php" class="sidebar-brand">
-            <img src="assets/branding/mark.svg" alt="AniMAL" class="sidebar-logo">
-            <span class="sidebar-brand-text">AniMAL</span>
+            <img src="assets/branding/mark.svg" alt="AniMALL" class="sidebar-logo">
+            <span class="sidebar-brand-text">AniMALL</span>
         </a>
         <button class="sidebar-toggle sidebar-toggle-brand" type="button" aria-label="Toggle sidebar" aria-expanded="false" aria-controls="sidebar">
             <span class="sidebar-toggle-lines" aria-hidden="true"><span></span><span></span><span></span></span>
@@ -188,7 +183,7 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
                 <?php endif; ?>
             </a>
             <div class="dropdown profile-dd">
-                <button class="profile-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <button class="profile-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
                     <span class="profile-avatar" style="background: <?= e($avatarBg[$role] ?? 'var(--accent)') ?>"><?= e($initials) ?></span>
                     <span class="profile-meta">
                         <span class="profile-name"><?= e($displayName) ?></span>

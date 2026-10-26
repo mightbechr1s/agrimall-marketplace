@@ -101,9 +101,10 @@ set_exception_handler(function (Throwable $e) use ($config, $isProduction): void
         ? $logDir . DIRECTORY_SEPARATOR . 'errors-' . date('Y-m-d') . '.log'
         : $logPath;
     $msg = sprintf(
-        "[%s] %s in %s:%d\nStack trace:\n%s\n---\n",
+        "[%s] %s: %s in %s:%d\nStack trace:\n%s\n---\n",
         date('Y-m-d H:i:s'),
         get_class($e),
+        $e->getMessage(),
         $e->getFile(),
         $e->getLine(),
         $e->getTraceAsString()

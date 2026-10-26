@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 96" role="img" aria-labelledby="title desc">
-  <title id="title">AniMAL</title>
-  <desc id="desc">AniMAL detailed field-gate mark and wordmark.</desc>
+  <title id="title">AniMALL</title>
+  <desc id="desc">AniMALL detailed field-gate mark and wordmark.</desc>
   <g transform="translate(8 8) scale(1.25)">
     <path fill="#1f5a3d" d="M32 4C19.8 18.5 10.5 36.5 3.5 60h14.7c3.5-12.7 8-23.7 13.8-33.5C37.8 36.3 42.3 47.3 45.8 60h14.7C53.5 36.5 44.2 18.5 32 4Z"/>
     <path d="M10.5 56C14.5 43 22 27 29.5 15M53.5 56C49.5 43 42 27 34.5 15" fill="none" stroke="#f6f0e4" stroke-linecap="round" stroke-width="2.25"/>
     <rect width="36" height="10" x="14" y="39" fill="#ad5734" rx="5"/>
     <circle cx="32" cy="44" r="3.25" fill="#f6f0e4"/>
   </g>
-  <text x="106" y="66" fill="#153f2d" font-family="Atkinson Hyperlegible, Trebuchet MS, sans-serif" font-size="58" font-weight="800" letter-spacing="-2"><tspan>Ani</tspan><tspan fill="#ad5734">MAL</tspan></text>
+  <text x="106" y="66" fill="#153f2d" font-family="Atkinson Hyperlegible, Trebuchet MS, sans-serif" font-size="58" font-weight="800" letter-spacing="-2"><tspan>Ani</tspan><tspan fill="#ad5734">MALL</tspan></text>
 </svg>

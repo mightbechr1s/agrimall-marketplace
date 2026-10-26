@@ -1,5 +1,5 @@
 # -------------------------------
-# AniMAL — Philippine Agricultural Marketplace
+# AniMALL — Philippine Agricultural Marketplace
 # -------------------------------
 
 # --- Local configuration (contains credentials) ---
@@ -57,3 +57,5 @@ AGENTS.md
 *Prompt*.txt
 *Overhaul*.txt
 *.prompt.txt
+# Scratchpad (temp artifacts, probes, one-shot scripts)
+scratchpad/

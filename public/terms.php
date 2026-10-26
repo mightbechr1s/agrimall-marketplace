@@ -16,7 +16,7 @@ require __DIR__ . '/partials/header.php';
                 <article class="legal-body">
                     <section class="legal-block" data-reveal>
                         <h2 id="agreement">1. Agreement</h2>
-                        <p>By accessing or using AniMAL (the "Platform"), you agree to these Terms. If you do not agree, do not use the Platform.</p>
+                        <p>By accessing or using AniMALL (the "Platform"), you agree to these Terms. If you do not agree, do not use the Platform.</p>
                     </section>
 
                     <hr class="legal-divider">
@@ -54,7 +54,7 @@ require __DIR__ . '/partials/header.php';
                     <section class="legal-block" data-reveal>
                         <h2 id="transactions">5. Transactions</h2>
                         <ul>
-                            <li>AniMAL connects buyers and sellers; we are not a party to the sale.</li>
+                            <li>AniMALL connects buyers and sellers; we are not a party to the sale.</li>
                             <li>Payment, delivery, and pickup are arranged directly between you and the other party.</li>
                             <li>We do not handle funds, offer escrow, or guarantee transactions (online payments coming soon).</li>
                             <li>Disputes: message the other party first. If unresolved, contact <a href="mailto:support@animal.ph">support@animal.ph</a>.</li>
@@ -65,7 +65,7 @@ require __DIR__ . '/partials/header.php';
 
                     <section class="legal-block" data-reveal>
                         <h2 id="refund-policy">6. Refund Policy</h2>
-                        <p>As AniMAL does not handle payments, refunds are arranged directly between the buyer and the seller. We encourage buyers to contact the seller first if there is an issue with the order. If the seller does not respond within 48 hours or refuses to resolve the issue, the buyer may contact AniMAL support for assistance. AniMAL may issue a refund from the protection fund in cases of verified fraud or non-delivery, subject to investigation.</p>
+                        <p>As AniMALL does not handle payments, refunds are arranged directly between the buyer and the seller. We encourage buyers to contact the seller first if there is an issue with the order. If the seller does not respond within 48 hours or refuses to resolve the issue, the buyer may contact AniMALL support for assistance. AniMALL may issue a refund from the protection fund in cases of verified fraud or non-delivery, subject to investigation.</p>
                     </section>
 
                     <hr class="legal-divider">
@@ -110,7 +110,7 @@ require __DIR__ . '/partials/header.php';
 
                     <section class="legal-block" data-reveal>
                         <h2 id="limitation-liability">11. Limitation of Liability</h2>
-                        <p>To the fullest extent permitted by law, AniMAL is not liable for indirect, incidental, special, or consequential damages, or for any loss of profit, data, or goodwill arising from your use of the Platform.</p>
+                        <p>To the fullest extent permitted by law, AniMALL is not liable for indirect, incidental, special, or consequential damages, or for any loss of profit, data, or goodwill arising from your use of the Platform.</p>
                     </section>
 
                     <hr class="legal-divider">

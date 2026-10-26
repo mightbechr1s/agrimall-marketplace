@@ -81,7 +81,7 @@ require __DIR__ . '/partials/header.php';
     <div class="auth-right">
         <div class="auth-card">
             <div class="auth-logo">
-                <a href="index.php"><img src="assets/branding/logo-horizontal.svg" alt="AniMAL"></a>
+                <a href="index.php"><img src="assets/branding/logo-horizontal.svg" alt="AniMALL"></a>
             </div>
             <h1 class="auth-title"><?= $l($copy['auth'], 'login_title') ?></h1>
             <p class="auth-subtitle"><?= $l($copy['auth'], 'login_sub') ?></p>

@@ -44,28 +44,34 @@ if ($role === 'admin') {
             'value' => (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn(),
             'trend' => $usersNew . ' new this week',
             'icon' => 'bi-people',
-            'variant' => 'info'
+            'variant' => 'info',
+            'href' => 'admin_reports.php?t=registration'
         ],
         'Pending Verifications' => [
             'value' => (int) $pdo->query('SELECT COUNT(*) FROM farmer_profiles WHERE verification_status = \'pending\'')->fetchColumn(),
             'trend' => 'awaiting review',
             'icon' => 'bi-patch-check-fill',
-            'variant' => 'warning'
+            'variant' => 'warning',
+            'href' => 'admin_verify.php'
         ],
         'Active Listings' => [
             'value' => (int) $pdo->query('SELECT COUNT(*) FROM produce_listings WHERE status = \'active\'')->fetchColumn(),
             'trend' => $listingsNew . ' new this week',
             'icon' => 'bi-basket3-fill',
-            'variant' => 'success'
+            'variant' => 'success',
+            'href' => 'admin_reports.php?t=listings'
         ],
         'Pending Orders' => [
             'value' => (int) $pdo->query('SELECT COUNT(*) FROM orders WHERE status IN (\'pending\',\'delivery_fee_review\')')->fetchColumn(),
             'trend' => $ordersNew . ' placed this week',
             'icon' => 'bi-clock-history',
-            'variant' => 'warning'
+            'variant' => 'warning',
+            'href' => 'admin_reports.php?t=orders'
         ],
     ];
-    $orders = $pdo->query('SELECT * FROM v_order_summary ORDER BY created_at DESC LIMIT 10')->fetchAll();
+    $orders = $pdo->query('SELECT id, order_number, buyer_name, farm_name, listing_name, unit_symbol,
+                                  quantity, unit_price, delivery_fee, delivery_method, status, created_at
+                             FROM v_order_summary ORDER BY created_at DESC LIMIT 10')->fetchAll();
 
     $pendingFarmers = $pdo->query('SELECT u.id AS user_id, u.created_at, fp.farm_name, fp.municipality_city, fp.province
                                    FROM farmer_profiles fp
@@ -73,9 +79,8 @@ if ($role === 'admin') {
                                    WHERE fp.verification_status = \'pending\'
                                    ORDER BY u.created_at ASC LIMIT 5')->fetchAll();
     $recentAudit = $pdo->query('SELECT al.action, al.entity_type, al.entity_id, al.created_at, u.email AS admin_email
-                                FROM admin_audit_log al
-                                LEFT JOIN users u ON u.id = al.admin_id
-                                ORDER BY al.created_at DESC LIMIT 8')->fetchAll();
+                                FROM (SELECT * FROM admin_audit_log ORDER BY created_at DESC LIMIT 5) al
+                                LEFT JOIN users u ON u.id = al.admin_id')->fetchAll();
 
 } elseif ($role === 'farmer') {
     $pdo = DB::pdo();
@@ -86,12 +91,14 @@ if ($role === 'admin') {
     $pendingOrders = $pdo->prepare('SELECT COUNT(*) FROM v_order_summary WHERE farmer_id = :id AND status IN (\'pending\',\'confirmed\',\'preparing\')');
     $pendingOrders->execute(['id' => $userId]);
 
-    // Total earnings and volume sold
-    $earningsStmt = $pdo->prepare('SELECT COALESCE(SUM(o.unit_price * o.quantity + o.delivery_fee), 0) FROM orders o JOIN v_order_summary vos ON o.id = vos.id WHERE vos.farmer_id = :id AND vos.status NOT IN (\'cancelled\',\'rejected\')');
+    // Total earnings and volume sold — straight off the view; the view already
+    // carries unit_price/quantity/delivery_fee, so the old self-join against
+    // `orders o` doubled every row lookup for nothing.
+    $earningsStmt = $pdo->prepare('SELECT COALESCE(SUM(unit_price * quantity + delivery_fee), 0) FROM v_order_summary WHERE farmer_id = :id AND status NOT IN (\'cancelled\',\'rejected\')');
     $earningsStmt->execute(['id' => $userId]);
     $totalEarnings = money((float) $earningsStmt->fetchColumn());
 
-    $volumeStmt = $pdo->prepare('SELECT COALESCE(SUM(o.quantity), 0) FROM orders o JOIN v_order_summary vos ON o.id = vos.id WHERE vos.farmer_id = :id AND vos.status NOT IN (\'cancelled\',\'rejected\')');
+    $volumeStmt = $pdo->prepare('SELECT COALESCE(SUM(quantity), 0) FROM v_order_summary WHERE farmer_id = :id AND status NOT IN (\'cancelled\',\'rejected\')');
     $volumeStmt->execute(['id' => $userId]);
     $totalVolume = rtrim(rtrim(number_format((float) $volumeStmt->fetchColumn(), 2), '0'), '.') . ' units';
 
@@ -104,9 +111,9 @@ if ($role === 'admin') {
 
     $orderSummaryStmt = $pdo->prepare(
         'SELECT status, COUNT(*) AS cnt,
-                COALESCE(SUM(o.unit_price * o.quantity), 0) AS produce,
-                COALESCE(SUM(o.delivery_fee), 0) AS fees
-         FROM orders o WHERE o.farmer_id = :id GROUP BY status'
+                COALESCE(SUM(unit_price * quantity), 0) AS produce,
+                COALESCE(SUM(delivery_fee), 0) AS fees
+         FROM v_order_summary WHERE farmer_id = :id GROUP BY status'
     );
     $orderSummaryStmt->execute(['id' => $userId]);
     $orderSummary = $orderSummaryStmt->fetchAll();
@@ -123,19 +130,22 @@ if ($role === 'admin') {
             'trend' => $completed . ' completed order' . ($completed === 1 ? '' : 's'),
             'icon' => 'bi-currency-dollar',
             'type' => 'money',
-            'variant' => 'success'
+            'variant' => 'success',
+            'href' => 'dashboard.php#orders'
         ],
         'Volume Sold' => [
             'value' => $totalVolume,
             'trend' => $closed . ' cancelled/rejected',
             'icon' => 'bi-box-seam',
-            'variant' => 'info'
+            'variant' => 'info',
+            'href' => 'dashboard.php#listings'
         ],
         'Pending Orders' => [
             'value' => (int) $pendingOrders->fetchColumn(),
             'trend' => 'awaiting action',
             'icon' => 'bi-clock-history',
-            'variant' => 'warning'
+            'variant' => 'warning',
+            'href' => 'dashboard.php#orders'
         ],
     ];
 
@@ -151,6 +161,9 @@ if ($role === 'admin') {
     );
     $listingsCountStmt->execute(['id' => $userId]);
     $listingsTotal = (int) $listingsCountStmt->fetchColumn();
+    $listingsTotalQtyStmt = $pdo->prepare('SELECT COALESCE(SUM(available_quantity),0) FROM produce_listings WHERE farmer_id = :id AND status <> \'archived\'');
+    $listingsTotalQtyStmt->execute(['id' => $userId]);
+    $listingsTotalQty = (float) $listingsTotalQtyStmt->fetchColumn();
     $listingsPages = max(1, (int) ceil($listingsTotal / $listingsPerPage));
     $listingsPage = max(1, min($listingsPages, (int) ($_GET['listings_page'] ?? 1)));
 
@@ -199,6 +212,10 @@ if ($role === 'admin') {
                           WHERE buyer_id = :id AND status NOT IN ('completed','cancelled','rejected')");
     $oca->execute(['id' => $userId]);
     $activeOrders = (int) $oca->fetchColumn();
+    $occ = $pdo->prepare("SELECT COUNT(*) FROM v_order_summary
+                          WHERE buyer_id = :id AND status = 'completed'");
+    $occ->execute(['id' => $userId]);
+    $completedOrders = (int) $occ->fetchColumn();
     $orderPages = max(1, (int) ceil($orderTotal / $ordersPerPage));
     $orderPage = max(1, min($orderPages, (int) ($_GET['orders_page'] ?? 1)));
     $os = $pdo->prepare('SELECT * FROM v_order_summary WHERE buyer_id = :id ORDER BY created_at DESC LIMIT :lim OFFSET :off');
@@ -210,21 +227,24 @@ if ($role === 'admin') {
     $stats = [
         'Total Orders' => [
             'value' => $orderTotal,
-            'trend' => '+7%',
+            'trend' => '',
             'icon' => 'bi-receipt',
-            'variant' => 'info'
+            'variant' => 'info',
+            'href' => 'orders.php'
         ],
         'Active Orders' => [
             'value' => $activeOrders,
-            'trend' => '+5%',
+            'trend' => '',
             'icon' => 'bi-clock',
-            'variant' => 'warning'
+            'variant' => 'warning',
+            'href' => 'orders.php'
         ],
         'Completed' => [
-            'value' => $orderTotal - $activeOrders,
-            'trend' => '+3%',
+            'value' => $completedOrders,
+            'trend' => '',
             'icon' => 'bi-check-circle',
-            'variant' => 'success'
+            'variant' => 'success',
+            'href' => 'completed_orders.php'
         ],
     ];
 }
@@ -236,13 +256,13 @@ require __DIR__ . '/partials/dashboard-layout.php';
     <!-- Admin Dashboard -->
     <div class="dash-section-header">
         <h1>Platform Overview</h1>
-        <p>Monitor AniMAL marketplace activity across all users and listings.</p>
+        <p>Monitor AniMALL marketplace activity across all users and listings.</p>
     </div>
 
     <div class="row g-4 mb-4" data-reveal="stagger">
         <?php foreach ($stats as $label => $data): ?>
             <div class="col-12 col-sm-6 col-lg-3">
-<div class="stat-card stat-card--<?= e($data['variant'] ?? 'info') ?>" data-reveal="stagger">
+<div class="stat-card stat-card--<?= e($data['variant'] ?? 'info') ?>" data-reveal="stagger" data-href="<?= e($data['href'] ?? '#') ?>" onclick="if(this.dataset.href&&this.dataset.href!=='#')window.location.href=this.dataset.href;" style="cursor:pointer;">
                     <div class="stat-content">
                         <div class="stat-icon"><i class="bi <?= e($data['icon']) ?>" aria-hidden="true"></i></div>
                         <div class="stat-body">
@@ -327,7 +347,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
     </div>
 
     <!-- Farmer Verifications + Audit Activity -->
-    <div class="row g-4">
+    <div class="row g-4 mt-4">
         <div class="col-lg-6">
             <div class="dash-panel">
                 <div class="dash-panel-header">
@@ -418,7 +438,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
     <div class="row g-4 mb-4" data-reveal="stagger">
         <?php foreach ($stats as $label => $data): ?>
             <div class="col-12 col-sm-6 col-lg-4">
-<div class="stat-card stat-card--<?= e($data['variant'] ?? 'info') ?>" data-reveal="stagger">
+<div class="stat-card stat-card--<?= e($data['variant'] ?? 'info') ?>" data-reveal="stagger" data-href="<?= e($data['href'] ?? '#') ?>" onclick="if(this.dataset.href&&this.dataset.href!=='#')window.location.href=this.dataset.href;" style="cursor:pointer;">
                     <div class="stat-content">
                         <div class="stat-icon"><i class="bi <?= e($data['icon']) ?>" aria-hidden="true"></i></div>
                         <div class="stat-body">
@@ -432,61 +452,6 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 </div>
             </div>
         <?php endforeach; ?>
-    </div>
-
-    <!-- My Listings -->
-    <div class="dash-panel" id="listings">
-        <div class="dash-panel-header">
-            <h2>My Listings</h2>
-            <a href="create_listing.php" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>New</a>
-        </div>
-        <?php if ($farmerListings): ?>
-        <div class="grid" data-reveal="stagger" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
-            <?php foreach ($farmerListings as $l): ?>
-              <?php
-              $listing = [
-                'id' => (int) $l['id'],
-                'title' => $l['name'],
-                'description' => $l['description'] ?? '',
-                'price' => (float) $l['price_per_unit'],
-                'unit' => $l['unit_symbol'] ?? 'kg',
-                'category' => $l['category_name'] ?? 'Produce',
-                'farmer_name' => 'You',
-                'farmer_slug' => '',
-                'image_path' => $l['primary_image'] ?? fallback_produce_image(),
-                'is_fresh' => $l['status'] === 'active',
-                'is_saved' => false,
-                'status' => $l['status'],
-                'qty_available' => (int) ($l['available_quantity'] ?? 0),
-              ];
-              $mode = 'farmer';
-              include __DIR__ . '/partials/listing-card.php';
-              ?>
-            <?php endforeach; ?>
-        </div>
-            <?php
-            $page = $listingsPage;
-            $totalPages = $listingsPages;
-            $pageParam = 'listings_page';
-            $param = isset($_GET['saved_page']) ? 'saved_page=' . (int) $_GET['saved_page'] : '';
-            $labels = [
-                'prev' => t($navCopy['ui'], 'pager_prev'),
-                'next' => t($navCopy['ui'], 'pager_next'),
-                'page' => t($navCopy['ui'], 'pager_page'),
-                'of'   => t($navCopy['ui'], 'pager_of'),
-            ];
-            include __DIR__ . '/partials/pager.php';
-            ?>
-        <?php else: ?>
-        <div class="empty-state">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon" aria-hidden="true">
-            <path d="M5.757 1.071a.5.5 0 0 1 .172.686L3.383 6h9.234l1.12-4.243a.5.5 0 0 1 .172-.686zM.5 8a.5.5 0 0 1 .5.5V13a1.5 1.5 0 0 0 1.5 1.5h9a1.5 1.5 0 0 0 1.5-1.5V8.5a.5.5 0 0 1 1 0v4.5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 0.5 12.5V8.5a.5.5 0 0 1 .5-.5z"/>
-          </svg>
-          <h2 class="empty-state-title">No listings yet</h2>
-          <p class="empty-state-description">Start selling your harvest directly to buyers.</p>
-          <a href="create_listing.php" class="btn btn-primary">Create Your First Listing</a>
-        </div>
-        <?php endif; ?>
     </div>
 
     <!-- Orders -->
@@ -594,6 +559,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
             <h2><i class="bi bi-graph-up me-2"></i>Analytics</h2>
             <span class="dash-panel-count">Generated <?= e(date('M j, Y \a\t g:i A')) ?></span>
         </div>
+        <div class="dash-panel-body">
         <div class="row g-4">
             <div class="col-lg-6">
                 <h3 class="fs-6 fw-semibold mb-2">Listing Quantities</h3>
@@ -621,7 +587,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                             <tr>
                                 <th>Total</th>
                                 <th class="text-end"><?= $listingsTotal ?></th>
-                                <th class="text-end"><?= rtrim(rtrim(number_format(array_sum(array_map(function ($r) { return (float) $r['available_quantity']; }, $farmerListings)), 2), '0'), '.') ?></th>
+                                <th class="text-end"><?= rtrim(rtrim(number_format($listingsTotalQty, 2), '0'), '.') ?></th>
                             </tr>
                         </tfoot>
                     </table>
@@ -665,6 +631,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <?php endif; ?>
             </div>
         </div>
+        </div>
     </div>
 
 <?php else: ?>
@@ -673,12 +640,13 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <h1>My Orders</h1>
         <p>Track your orders, discover fresh produce from verified farms.</p>
         <a href="browse.php" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Browse Market</a>
+        <a href="orders.php" class="btn btn-outline btn-sm"><i class="bi bi-receipt me-1"></i>My Orders</a>
     </div>
 
     <div class="row g-4 mb-4" data-reveal="stagger">
         <?php foreach ($stats as $label => $data): ?>
             <div class="col-12 col-sm-6 col-lg-4">
-                <div class="stat-card stat-card--<?= e($data['variant'] ?? 'info') ?>" data-reveal="stagger">
+                <div class="stat-card stat-card--<?= e($data['variant'] ?? 'info') ?>" data-reveal="stagger" data-href="<?= e($data['href'] ?? '#') ?>" onclick="if(this.dataset.href&&this.dataset.href!=='#')window.location.href=this.dataset.href;" style="cursor:pointer;">
                     <div class="stat-content">
                         <div class="stat-icon"><i class="bi <?= e($data['icon']) ?>" aria-hidden="true"></i></div>
                         <div class="stat-body">
@@ -784,7 +752,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
     </div>
 
     <!-- Quick Browse: real, live listings instead of hardcoded placeholders -->
-    <div class="dash-panel">
+    <div class="dash-panel mt-4">
         <div class="dash-panel-header">
             <h2>Discover</h2>
             <a href="browse.php" class="btn btn-sm btn-outline-secondary">Browse all</a>
@@ -814,11 +782,11 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <div class="carousel-item">
                     <div class="card h-100">
                         <div class="card-body p-3">
-                            <h6 class="card-title mb-1"><?= e($d['name']) ?></h6>
+                            <h6 class="card-title mb-2"><?= e($d['name']) ?></h6>
                             <p class="card-text text-muted small">
                                 <?= e($d['farm_name']) ?> &middot; <?= e($d['municipality_city']) ?>
                             </p>
-                            <div class="d-flex justify-content-between align-items-center mt-2">
+                            <div class="d-flex justify-content-between align-items-center mt-3">
                                 <span class="fw-medium"><?= money($d['price_per_unit']) ?> <small>/ <?= e($d['unit_symbol'] ?? 'kg') ?></small></span>
                                 <a class="btn btn-sm btn-outline-primary" href="listing.php?id=<?= (int) $d['id'] ?>">
                                     <i class="bi bi-eye me-1"></i>View
@@ -829,97 +797,14 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 </div>
             <?php endforeach; ?>
         </div>
-        <div class="carousel-controls mt-3">
-            <button class="btn btn-sm btn-outline-secondary me-2" id="prevSlide" aria-label="Previous items">
+        <div class="carousel-controls mt-3 d-flex justify-content-center gap-2">
+            <button class="btn btn-sm btn-outline-secondary" id="prevSlide" aria-label="Previous items">
                 <i class="bi bi-chevron-left" aria-hidden="true"></i>
             </button>
             <button class="btn btn-sm btn-outline-secondary" id="nextSlide" aria-label="Next items">
                 <i class="bi bi-chevron-right" aria-hidden="true"></i>
             </button>
         </div>
-    </div>
-
-    </div>
-
-    <!-- Saved Listings -->
-    <div class="dash-panel mt-4" id="saved">
-        <div class="dash-panel-header">
-            <h2>Saved Listings</h2>
-        </div>
-        <?php
-        // Saved listings accumulate without bound, so this list is paged too.
-        $savedPerPage = 12;
-        $savedWhere = 'FROM saved_listings sl
-             JOIN produce_listings pl ON sl.listing_id = pl.id
-             JOIN farmer_profiles fp ON pl.farmer_id = fp.user_id
-             JOIN quantity_units qu ON pl.unit_id = qu.id
-             JOIN produce_categories pc ON pl.category_id = pc.id
-             WHERE sl.user_id = :user AND pl.status = \'active\'';
-        $savedCountStmt = DB::pdo()->prepare('SELECT COUNT(*) ' . $savedWhere);
-        $savedCountStmt->execute(['user' => current_user_id()]);
-        $savedTotal = (int) $savedCountStmt->fetchColumn();
-        $savedPages = max(1, (int) ceil($savedTotal / $savedPerPage));
-        $savedPage = max(1, min($savedPages, (int) ($_GET['saved_page'] ?? 1)));
-
-        $savedStmt = DB::pdo()->prepare(
-            'SELECT sl.listing_id, pl.name, pl.price_per_unit, pl.description, fp.farm_name, qu.symbol,
-                    (SELECT li.image_path FROM listing_images li
-                      WHERE li.listing_id = pl.id AND li.is_primary = 1
-                      ORDER BY li.sort_order LIMIT 1) AS primary_image,
-                    pc.name AS category_name, sl.created_at ' . $savedWhere . '
-             ORDER BY sl.created_at DESC
-             LIMIT :lim OFFSET :off'
-        );
-        $savedStmt->bindValue(':user', current_user_id(), PDO::PARAM_INT);
-        $savedStmt->bindValue(':lim', $savedPerPage, PDO::PARAM_INT);
-        $savedStmt->bindValue(':off', ($savedPage - 1) * $savedPerPage, PDO::PARAM_INT);
-        $savedStmt->execute();
-        $savedListings = $savedStmt->fetchAll();
-        ?>
-        <?php if (!$savedListings): ?>
-            <div class="dash-empty">
-                <i class="bi bi-heart" aria-hidden="true"></i>
-                <p>Nothing saved yet. Tap the heart on a listing to keep it here for later.</p>
-                <a class="btn btn-primary" href="browse.php">Browse Listings</a>
-            </div>
-        <?php else: ?>
-            <div class="grid" data-reveal="stagger" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
-                <?php foreach ($savedListings as $saved): ?>
-                    <?php
-                    $listing = [
-                      'id' => (int) $saved['listing_id'],
-                      'title' => $saved['name'],
-                      'description' => $saved['description'] ?? '',
-                      'price' => (float) $saved['price_per_unit'],
-                      'unit' => $saved['symbol'] ?? 'kg',
-                      'category' => $saved['category_name'] ?? 'Produce',
-                      'farmer_name' => $saved['farm_name'],
-                      'farmer_slug' => '',
-                      'image_path' => $saved['primary_image'] ?: fallback_produce_image(),
-                      'is_fresh' => true,
-                      'is_saved' => true,
-                      'qty_available' => 999,
-                    ];
-                    $mode = 'grid';
-                    $showActions = false;
-                    include __DIR__ . '/partials/listing-card.php';
-                    ?>
-                <?php endforeach; ?>
-            </div>
-            <?php
-            $page = $savedPage;
-            $totalPages = $savedPages;
-            $pageParam = 'saved_page';
-            $param = isset($_GET['listings_page']) ? 'listings_page=' . (int) $_GET['listings_page'] : '';
-            $labels = [
-                'prev' => t($navCopy['ui'], 'pager_prev'),
-                'next' => t($navCopy['ui'], 'pager_next'),
-                'page' => t($navCopy['ui'], 'pager_page'),
-                'of'   => t($navCopy['ui'], 'pager_of'),
-            ];
-            include __DIR__ . '/partials/pager.php';
-            ?>
-        <?php endif; ?>
     </div>
 
 <?php endif; ?>
