@@ -56,7 +56,7 @@ if (current_user_id() && current_user_role() === 'buyer') {
 $role = function_exists('current_user_role') ? current_user_role() : null;
 $sidebarShell = (bool) current_user_id();
 if ($sidebarShell) {
-    $activePage = $role === 'buyer' ? 'browse' : 'market';
+    $activePage = $role === 'buyer' ? 'browse' : ($role === 'admin' ? 'goods' : 'market');
     require __DIR__ . '/partials/dashboard-layout.php';
 } else {
     require __DIR__ . '/partials/header.php';
@@ -77,7 +77,7 @@ if ($sidebarShell) {
 
     <?php if (current_user_id() && current_user_role() === 'farmer'): ?>
     <div class="d-flex gap-3 mb-3">
-      <a href="dashboard.php#listings" class="btn btn-outline btn-sm"><i class="bi bi-basket3 me-1"></i>My Listings</a>
+      <a href="my_listings.php" class="btn btn-outline btn-sm"><i class="bi bi-basket3 me-1"></i>My Listings</a>
       <a href="create_listing.php" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>New Listing</a>
     </div>
     <?php endif; ?>

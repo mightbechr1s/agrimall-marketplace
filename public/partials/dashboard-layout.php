@@ -12,9 +12,10 @@ $navCopy = include __DIR__ . '/../../src/i18n_copy.php';
 $sidebarMenus = [
     'farmer' => [
         ['page' => 'dashboard',      'label' => 'Dashboard',      'icon' => 'bi-grid-1x2-fill',  'href' => 'dashboard.php'],
+        ['page' => 'listings',       'label' => 'My Listings',    'icon' => 'bi-basket3',        'href' => 'my_listings.php'],
         ['page' => 'orders',         'label' => 'Orders',         'icon' => 'bi-receipt-cutoff', 'href' => 'orders.php'],
         ['page' => 'market',         'label' => 'Market',         'icon' => 'bi-shop',           'href' => 'browse.php'],
-        ['page' => 'analytics',      'label' => 'Analytics',      'icon' => 'bi-graph-up',       'href' => 'dashboard.php#analytics'],
+        ['page' => 'analytics',      'label' => 'Analytics',      'icon' => 'bi-graph-up',       'href' => 'farmer_analytics.php'],
         ['page' => 'reports',        'label' => 'Sales Report',  'icon' => 'bi-bar-chart-line', 'href' => 'farmer_reports.php'],
     ],
     'buyer' => [
@@ -144,7 +145,7 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
             }
             $label = t($navCopy['dashboard_nav'], $menuItem['page']);
             ?>
-            <a href="<?= e($menuItem['href']) ?>" class="sidebar-link <?= $isActive ? 'is-active' : '' ?>">
+            <a href="<?= e($menuItem['href']) ?>" class="sidebar-link <?= $isActive ? 'is-active' : '' ?>" title="<?= e($label) ?>">
                 <i class="bi <?= e($menuItem['icon']) ?>" aria-hidden="true"></i>
                 <span><?= e($label) ?></span>
             </a>

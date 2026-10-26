@@ -92,7 +92,7 @@ return [
             'step_2' => [
                 'number' => '2',
                 'title' => 'You order directly',
-                'description' => 'Message the farmer, order what you want, pay via GCash, bank transfer, or on delivery.',
+                'description' => 'Message the farmer, agree on quantity and price, and settle payment directly (GCash, bank transfer, or cash on delivery). The platform never touches your money.',
             ],
             'step_3' => [
                 'number' => '3',
@@ -112,7 +112,7 @@ return [
             'step_2' => [
                 'number' => '2',
                 'title' => 'Direkta kang nag-o-order',
-                'description' => 'I-message ang magsasaka, orderin ang gusto mo, bayaran via GCash, bank transfer, o sa delivery.',
+                'description' => 'I-message ang magsasaka, mag-usap ng dami at presyo, at magbayad nang direkta (GCash, bank transfer, o cash on delivery). Hindi humahawak ng pera ang platform.',
             ],
             'step_3' => [
                 'number' => '3',

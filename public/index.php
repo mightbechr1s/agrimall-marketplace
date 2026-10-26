@@ -117,7 +117,7 @@ require __DIR__ . '/partials/header.php';
                 $howData = $copy['how'][$howLang] ?? $copy['how']['en'];
                 $steps = [
                     ['num' => $howData['step_1']['number'], 'title' => $howData['step_1']['title'], 'desc' => $howData['step_1']['description'], 'icon' => 'bi-basket2'],
-                    ['num' => $howData['step_2']['number'], 'title' => $howData['step_2']['title'], 'desc' => $howData['step_2']['description'], 'icon' => 'bi-cart3'],
+                    ['num' => $howData['step_2']['number'], 'title' => $howData['step_2']['title'], 'desc' => $howData['step_2']['description'], 'icon' => 'bi-chat-left-text'],
                     ['num' => $howData['step_3']['number'], 'title' => $howData['step_3']['title'], 'desc' => $howData['step_3']['description'], 'icon' => 'bi-truck'],
                 ];
                 foreach ($steps as $i => $step): ?>

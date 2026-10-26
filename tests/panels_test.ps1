@@ -84,9 +84,9 @@ try {
   "dev server up on $port (PID $($srv.Id))"
 
   $menus = @{
-    buyer  = @('Dashboard','Browse','Cart','My Orders','Saved')
-    farmer = @('Dashboard','My Listings','New Listing','Orders','Analytics')
-    admin  = @('Dashboard','Orders','Verifications','Audit Log','Reports')
+    buyer  = @('Dashboard','Browse','Cart','Orders','Saved')
+    farmer = @('Dashboard','Orders','Market','Analytics','Reports')
+    admin  = @('Dashboard','Goods','Audit Log','Reports')
   }
   $creds = @{ buyer = 'http-block@x.test'; farmer = 'http-farmer@x.test'; admin = 'http-admin@x.test' }
 
@@ -134,12 +134,14 @@ try {
   }
 
   "`n--- dashboard sections behind the anchors ---"
-  foreach ($anchor in @('listings', 'orders', 'analytics')) {
+  foreach ($anchor in @('orders')) {
     $p = get "$base/dashboard.php#$anchor" $sessions['farmer']
     assertRealPage "farmer dashboard#$anchor renders" $p
     ok "farmer dashboard has an '$anchor' section" ($p -match "id=`"$anchor`"") 'no element with that id'
   }
-  foreach ($anchor in @('orders', 'saved')) {
+  $p = get "$base/farmer_analytics.php" $sessions['farmer']
+  assertRealPage "farmer analytics renders" $p
+  foreach ($anchor in @('orders')) {
     $p = get "$base/dashboard.php#$anchor" $sessions['buyer']
     assertRealPage "buyer dashboard#$anchor renders" $p
     ok "buyer dashboard has an '$anchor' section" ($p -match "id=`"$anchor`"") 'no element with that id'

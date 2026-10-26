@@ -11,7 +11,7 @@ $isFresh = $listing['is_fresh'] ?? false;
 $unit = $listing['unit'] ?? 'kg';
 $imageUrl = asset($listing['image_path'] ?: fallback_produce_image());
 $listingUrl = "listing.php?id=" . (int) $listing['id'];
-$farmerUrl = $listing['farmer_slug'] ? "profile.php?u=" . urlencode($listing['farmer_slug']) : 'browse.php';
+$farmerUrl = ($listing['farmer_slug'] ?? '') ? "profile.php?u=" . urlencode($listing['farmer_slug']) : 'browse.php';
 // Relative path (no leading slash): is_safe_path() rejects absolute; raw REQUEST_URI would fall back to dashboard.
 $returnPath = ltrim((string) ($_SERVER['REQUEST_URI'] ?? ''), '/') ?: 'browse.php';
 
@@ -21,19 +21,20 @@ $freshLabel = $isFresh ? 'Fresh' : ($listing['is_stale'] ?? false ? 'Stale' : 'A
 // rather than buyer-facing freshness.
 $isFarmer = $mode === 'farmer';
 $status = $listing['status'] ?? 'active';
-$cardClasses = 'card h-100';
+// Farmer cards mirror the marketplace card (browse.php) so the grid reads the same;
+// grid/horizontal/featured keep the taller h-100 card.
+$cardClasses = $isFarmer ? 'card' : 'card h-100';
 if ($mode === 'horizontal') $cardClasses .= ' flex-row';
 if ($mode === 'featured') $cardClasses .= ' feature-card';
-if ($isFarmer) $cardClasses .= ' card-farmer';
 ?>
-<article class="<?= e($cardClasses) ?>" data-reveal="stagger" itemscope itemtype="https://schema.org/Product">
+<article class="<?= e($cardClasses) ?>" data-reveal="stagger" data-category="<?= e(strtolower($listing['category'] ?? '')) ?>" itemscope itemtype="https://schema.org/Product">
   <div class="thumb" itemprop="image">
+    <?php if (!$isFarmer): ?>
     <div class="badges-top">
-      <?php if (!$isFarmer): ?>
-        <span class="badge <?= e($freshClass) ?>" itemprop="availability" content="http://schema.org/InStock"><?= e($freshLabel) ?></span>
-      <?php endif; ?>
+      <span class="badge <?= e($freshClass) ?>" itemprop="availability" content="http://schema.org/InStock"><?= e($freshLabel) ?></span>
       <span class="badge badge-normal"><?= e($listing['category'] ?? 'Produce') ?></span>
     </div>
+    <?php endif; ?>
     <?php if ($mode === 'featured'): ?>
       <img src="<?= e($imageUrl) ?>" alt="" loading="eager" width="600" height="450" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null;this.src='assets/images/products/market.jpg'">
     <?php else: ?>
@@ -45,16 +46,23 @@ if ($isFarmer) $cardClasses .= ' card-farmer';
   </div>
 
   <div class="body d-flex flex-column">
+    <?php if ($isFarmer): ?>
+      <div class="badges-top">
+        <?php if (listing_is_expired($listing)): ?>
+          <span class="badge text-bg-warning" data-testid="expired-badge"><?= $l($copy['listing'], 'expired_badge') ?></span>
+        <?php endif; ?>
+        <span class="badge <?= $status === 'active' ? 'badge-fresh' : 'badge-normal' ?>"><?= e(ucfirst(str_replace('_', ' ', $status))) ?></span>
+        <span class="badge badge-location"><i class="bi bi-geo-alt" aria-hidden="true"></i><?= e($listing['farm_name'] ?? '') ?><?= !empty($listing['province']) ? ' · ' . e($listing['province']) : '' ?></span>
+      </div>
+    <?php endif; ?>
+
     <div class="row">
       <div class="col">
         <h3 class="listing-name" itemprop="name"><a href="<?= e($listingUrl) ?>"><?= e($listing['title'] ?? 'Untitled Listing') ?></a></h3>
       </div>
     </div>
 
-    <?php if ($isFarmer): ?>
-      <div><?= status_badge($status) ?></div>
-    <?php endif; ?>
-
+    <?php if (!$isFarmer): ?>
     <div class="row">
       <div class="col text-soft small">
         <a href="<?= e($farmerUrl) ?>" class="farmer-meta text-decoration-none">
@@ -62,6 +70,7 @@ if ($isFarmer) $cardClasses .= ' card-farmer';
         </a>
       </div>
     </div>
+    <?php endif; ?>
 
     <div class="row" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
       <div class="col">
@@ -75,22 +84,20 @@ if ($isFarmer) $cardClasses .= ' card-farmer';
     </div>
 
     <?php if ($isFarmer): ?>
-      <div class="card-actions mt-auto flex-column">
-        <div class="d-flex gap-2">
-          <a href="<?= e($listingUrl) ?>" class="btn btn-outline-primary btn-sm flex-grow-1">
+      <div class="card-actions mt-auto">
+        <div class="d-flex gap-2 align-items-center">
+          <a href="<?= e($listingUrl) ?>" class="btn btn-outline-primary btn-sm flex-grow-1 px-1">
             <i class="bi bi-eye me-1" aria-hidden="true"></i>View
           </a>
-          <a href="create_listing.php?edit=<?= (int) $listing['id'] ?>" class="btn btn-outline-primary btn-sm flex-grow-1">
+          <a href="create_listing.php?edit=<?= (int) $listing['id'] ?>" class="btn btn-outline-primary btn-sm flex-grow-1 px-1">
             <i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit
           </a>
-        </div>
-        <div class="d-flex gap-2">
           <form method="post" action="listing_action.php" class="mb-0 flex-grow-1"
                 onsubmit="return confirm('Delete this listing? Buyers will no longer see it.');">
             <?= csrf_field() ?>
             <input type="hidden" name="listing_id" value="<?= (int) $listing['id'] ?>">
-            <input type="hidden" name="return_to" value="dashboard.php#listings">
-            <button type="submit" name="action" value="delete" class="btn btn-outline-danger btn-sm w-100">
+            <input type="hidden" name="return_to" value="my_listings.php">
+            <button type="submit" name="action" value="delete" class="btn btn-outline-danger btn-sm w-100 px-1">
               <i class="bi bi-trash me-1" aria-hidden="true"></i>Delete
             </button>
           </form>

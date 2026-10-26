@@ -426,8 +426,9 @@ function initSidebar() {
   const syncDesktop = () => {
     if (isDesktop()) {
       if (isCollapsed()) {
-        sidebar.setAttribute('inert', '');
-        sidebar.setAttribute('aria-hidden', 'true');
+        // Collapsed = icon rail: stays visible and interactive, labels hidden via CSS.
+        sidebar.removeAttribute('inert');
+        sidebar.setAttribute('aria-hidden', 'false');
       } else {
         sidebar.removeAttribute('inert');
         sidebar.setAttribute('aria-hidden', 'false');

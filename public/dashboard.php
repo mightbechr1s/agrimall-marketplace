@@ -102,27 +102,13 @@ if ($role === 'admin') {
     $volumeStmt->execute(['id' => $userId]);
     $totalVolume = rtrim(rtrim(number_format((float) $volumeStmt->fetchColumn(), 2), '0'), '.') . ' units';
 
-    $listingSummaryStmt = $pdo->prepare(
-        'SELECT status, COUNT(*) AS cnt, COALESCE(SUM(available_quantity), 0) AS qty
-         FROM produce_listings WHERE farmer_id = :id GROUP BY status'
-    );
-    $listingSummaryStmt->execute(['id' => $userId]);
-    $listingSummary = $listingSummaryStmt->fetchAll();
-
-    $orderSummaryStmt = $pdo->prepare(
-        'SELECT status, COUNT(*) AS cnt,
-                COALESCE(SUM(unit_price * quantity), 0) AS produce,
-                COALESCE(SUM(delivery_fee), 0) AS fees
-         FROM v_order_summary WHERE farmer_id = :id GROUP BY status'
-    );
-    $orderSummaryStmt->execute(['id' => $userId]);
-    $orderSummary = $orderSummaryStmt->fetchAll();
-    $orderSummaryByStatus = [];
-    foreach ($orderSummary as $row) {
-        $orderSummaryByStatus[$row['status']] = $row;
-    }
-    $completed = (int) ($orderSummaryByStatus['completed']['cnt'] ?? 0);
-    $closed = (int) ($orderSummaryByStatus['cancelled']['cnt'] ?? 0) + (int) ($orderSummaryByStatus['rejected']['cnt'] ?? 0);
+    // Completed/closed counts for stat-card trends (real data, no full summary needed).
+    $completedStmt = $pdo->prepare("SELECT COUNT(*) FROM v_order_summary WHERE farmer_id = :id AND status = 'completed'");
+    $completedStmt->execute(['id' => $userId]);
+    $completed = (int) $completedStmt->fetchColumn();
+    $closedStmt = $pdo->prepare("SELECT COUNT(*) FROM v_order_summary WHERE farmer_id = :id AND status IN ('cancelled','rejected')");
+    $closedStmt->execute(['id' => $userId]);
+    $closed = (int) $closedStmt->fetchColumn();
 
     $stats = [
         'Total Earnings' => [
@@ -148,42 +134,6 @@ if ($role === 'admin') {
             'href' => 'dashboard.php#orders'
         ],
     ];
-
-    // My Listings is the farmer's own catalogue and grows without bound, so it is
-    // paged: a farmer with hundreds of listings must not render hundreds of cards.
-    $listingsPerPage = 12;
-    $listingsCountStmt = $pdo->prepare(
-        'SELECT COUNT(*)
-         FROM produce_listings pl
-         JOIN produce_categories pc ON pl.category_id = pc.id
-         JOIN quantity_units qu ON pl.unit_id = qu.id
-         WHERE pl.farmer_id = :id AND pl.status <> \'archived\''
-    );
-    $listingsCountStmt->execute(['id' => $userId]);
-    $listingsTotal = (int) $listingsCountStmt->fetchColumn();
-    $listingsTotalQtyStmt = $pdo->prepare('SELECT COALESCE(SUM(available_quantity),0) FROM produce_listings WHERE farmer_id = :id AND status <> \'archived\'');
-    $listingsTotalQtyStmt->execute(['id' => $userId]);
-    $listingsTotalQty = (float) $listingsTotalQtyStmt->fetchColumn();
-    $listingsPages = max(1, (int) ceil($listingsTotal / $listingsPerPage));
-    $listingsPage = max(1, min($listingsPages, (int) ($_GET['listings_page'] ?? 1)));
-
-    $ls = $pdo->prepare(
-        'SELECT pl.*, pc.name AS category_name, qu.symbol AS unit_symbol,
-                (SELECT li.image_path FROM listing_images li
-                  WHERE li.listing_id = pl.id AND li.is_primary = 1
-                  ORDER BY li.sort_order LIMIT 1) AS primary_image
-         FROM produce_listings pl
-         JOIN produce_categories pc ON pl.category_id = pc.id
-         JOIN quantity_units qu ON pl.unit_id = qu.id
-         WHERE pl.farmer_id = :id AND pl.status <> \'archived\'
-         ORDER BY pl.created_at DESC
-         LIMIT :lim OFFSET :off'
-    );
-    $ls->bindValue(':id', $userId, PDO::PARAM_INT);
-    $ls->bindValue(':lim', $listingsPerPage, PDO::PARAM_INT);
-    $ls->bindValue(':off', ($listingsPage - 1) * $listingsPerPage, PDO::PARAM_INT);
-    $ls->execute();
-    $farmerListings = $ls->fetchAll();
 
     // Order history grows forever, so the table is paged and the totals come
     // from COUNT queries. Counting the fetched page would silently corrupt the
@@ -537,103 +487,16 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <?php endif; ?>
     </div>
 
-    <!-- Analytics: listings & orders summary -->
-    <?php
-        $listingFlowOrder = ['active', 'paused', 'draft', 'sold_out', 'archived'];
-        $orderFlowOrder = ['pending', 'delivery_fee_review', 'confirmed', 'preparing', 'ready_for_pickup', 'out_for_delivery', 'completed', 'rejected', 'cancelled'];
-        $listingMap = [];
-        foreach ($listingSummary as $row) {
-            $listingMap[$row['status']] = $row;
-        }
-        $listingOrdered = array_values(array_filter(array_map(
-            function ($s) use ($listingMap) { return $listingMap[$s] ?? null; },
-            $listingFlowOrder
-        )));
-        $orderOrdered = array_values(array_filter(array_map(
-            function ($s) use ($orderSummaryByStatus) { return $orderSummaryByStatus[$s] ?? null; },
-            $orderFlowOrder
-        )));
-    ?>
+    <!-- Analytics summary (full breakdown lives on the analytics page) -->
     <div class="dash-panel mt-4" id="analytics">
         <div class="dash-panel-header">
             <h2><i class="bi bi-graph-up me-2"></i>Analytics</h2>
-            <span class="dash-panel-count">Generated <?= e(date('M j, Y \a\t g:i A')) ?></span>
+            <a href="farmer_analytics.php" class="btn btn-sm btn-primary">View full analytics</a>
         </div>
         <div class="dash-panel-body">
-        <div class="row g-4">
-            <div class="col-lg-6">
-                <h3 class="fs-6 fw-semibold mb-2">Listing Quantities</h3>
-                <p class="text-muted small mb-2">Quantities per produce type; totals mix unit types (e.g. bundle, kg).</p>
-                <?php if ($listingOrdered): ?>
-                <div class="table-responsive">
-                    <table class="dash-table align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Status</th>
-                                <th class="text-end">Listings</th>
-                                <th class="text-end">Available Qty</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($listingOrdered as $row): ?>
-                                <tr>
-                                    <td><?= status_badge($row['status']) ?></td>
-                                    <td class="text-end"><?= (int) $row['cnt'] ?></td>
-                                    <td class="text-end"><?= rtrim(rtrim(number_format((float) $row['qty'], 2), '0'), '.') ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <th>Total</th>
-                                <th class="text-end"><?= $listingsTotal ?></th>
-                                <th class="text-end"><?= rtrim(rtrim(number_format($listingsTotalQty, 2), '0'), '.') ?></th>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-                <?php else: ?>
-                    <p class="text-muted small mb-0">No listings yet.</p>
-                <?php endif; ?>
-            </div>
-            <div class="col-lg-6">
-                <h3 class="fs-6 fw-semibold mb-2">Orders by Status</h3>
-                <?php if ($orderOrdered): ?>
-                <div class="table-responsive">
-                    <table class="dash-table align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Status</th>
-                                <th class="text-end">Orders</th>
-                                <th class="text-end">Value</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($orderOrdered as $row): ?>
-                                <tr>
-                                    <td><?= status_badge($row['status']) ?></td>
-                                    <td class="text-end"><?= (int) $row['cnt'] ?></td>
-                                    <td class="text-end"><?= money((float) $row['produce'] + (float) $row['fees']) ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <th>Total</th>
-                                <th class="text-end"><?= $orderTotal ?></th>
-                                <th class="text-end"><?= money(array_sum(array_map(function ($r) { return (float) $r['produce'] + (float) $r['fees']; }, $orderSummary))) ?></th>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-                <?php else: ?>
-                    <p class="text-muted small mb-0">No orders yet.</p>
-                <?php endif; ?>
-            </div>
-        </div>
+            <p class="text-muted small mb-0">Detailed listing quantities and order-by-status breakdowns are on the <a href="farmer_analytics.php">analytics page</a>.</p>
         </div>
     </div>
-
 <?php else: ?>
     <!-- Buyer Dashboard -->
     <div class="dash-section-header">

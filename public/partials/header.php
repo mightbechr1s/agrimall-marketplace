@@ -186,7 +186,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
 <a href="#main-content" class="visually-hidden-focusable skip-link">Skip to main content</a>
 
 <header class="nav" role="banner">
-  <div class="nav-inner container">
+  <div class="nav-inner">
     <div class="brand">
       <a href="index.php" class="brand-link" aria-label="AniMALL home">
         <img src="assets/branding/logo-horizontal.svg" alt="AniMALL" class="brand-logo">

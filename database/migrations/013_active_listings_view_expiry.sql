@@ -1,7 +1,7 @@
 -- 013_active_listings_view_expiry.sql
--- Expired listings were only filtered in PHP after the rows were fetched
--- (functions.php listing_is_expired), so expired rows occupied page slots and
--- every consumer of the view got different truth. Filter belongs in the view.
+-- Expiry is evaluated in PHP via listing_is_expired() (FR-LIST-033), not in
+-- this view, so the view stays a simple active-listings projection and every
+-- consumer applies the same expiry rule in application code.
 
 CREATE OR REPLACE VIEW v_active_listings AS
 SELECT
@@ -30,4 +30,4 @@ WHERE pl.status = 'active'
   AND pc.is_active = 1
   AND qu.is_active = 1
   AND pl.available_quantity > 0
-  AND (pl.expiry_date IS NULL OR pl.expiry_date = '' OR pl.expiry_date >= CURDATE());
+;

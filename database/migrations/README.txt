@@ -18,6 +18,10 @@ fresh rebuild only needs that one command.
 | `007_password_reset_expiry.sql` | rewrites `password_resets.expires_at` as `DATETIME` |
 | `008_numeric_check_constraints.sql` | `CHECK` constraints on the money and quantity columns of `produce_listings`, `cart_items` and `orders` |
 | `009_rate_limits.sql` | `rate_limits` table - previously only in `database/animal_marketplace.sql`, which `db-reset.php` never loads |
+| `010_admin_deactivated_status.sql` | Adds `admin_deactivated` to the `produce_listings.status` enum (FR-LIST-025 admin deactivation path) |
+| `011_audit_reason.sql` | Adds `reason` column to `admin_audit_log` |
+| `012_query_indexes.sql` | 7 composite indexes on orders, listing_images, produce_listings, order_status_history (hot-path query optimization) |
+| `013_active_listings_view_expiry.sql` | Recreates `v_active_listings` view (expiry filter removed from view; handled in PHP via listing_is_expired) |
 
 There is no `001`. Numbering starts at `002` because the base tables it would
 have followed are now folded into `schema.sql`.
@@ -38,6 +42,10 @@ whole set twice more:
 | `007_password_reset_expiry.sql` | clean |
 | `008_numeric_check_constraints.sql` | clean |
 | `009_rate_limits.sql` | clean (`CREATE TABLE IF NOT EXISTS`) |
+| `010_admin_deactivated_status.sql` | clean |
+| `011_audit_reason.sql` | clean |
+| `012_query_indexes.sql` | clean (guarded per index via information_schema) |
+| `013_active_listings_view_expiry.sql` | clean (`CREATE OR REPLACE VIEW`) |
 
 Also verified by re-applying all eight to the live database, which already had
 them: every file exited 0 and the schema and row counts were unchanged.
