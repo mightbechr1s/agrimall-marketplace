@@ -1897,38 +1897,50 @@ h1, h2, h3, h4, h5, h6,
   z-index: 1020;
 }
 .nav-inner {
-  max-width: 78rem;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
   padding: 0 2rem;
   height: 4.75rem;
   display: flex;
   align-items: center;
-  gap: 2rem;
+  justify-content: space-between;
+  gap: 1rem;
 }
-.brand { display: flex; align-items: center; flex: 0 0 auto; margin-right: 0.75rem; }
-.brand-link { display: flex; }
-.brand-logo { height: 2.3rem; width: auto; }
-
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 0 0 auto;
+}
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 2.5rem;
-  margin-left: 1rem;
+  gap: 1.25rem;
+  margin-left: 0.5rem;
 }
+.brand { display: flex; align-items: center; flex: 0 0 auto; margin-right: 0.25rem; justify-self: start; }
+.brand-link { display: flex; }
+.brand-logo { height: 2.3rem; width: auto; }
+
+
 .nav-links a {
   color: var(--text);
   text-decoration: none;
   font-family: var(--font-display);
   font-optical-sizing: auto;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 550;
-  padding: 0.25rem 0;
+  padding: 0.4rem 0.6rem;
   white-space: nowrap;
   border-bottom: 2px solid transparent;
+  border-radius: 0.5rem;
+  transition: background 0.15s, color 0.15s;
 }
 .nav-links a:hover {
   color: var(--gold-text);
   border-bottom-color: var(--gold);
+  background: var(--canvas);
 }
 
 .hamburger {
@@ -1967,8 +1979,18 @@ h1, h2, h3, h4, h5, h6,
 .nav-cta {
   display: flex;
   align-items: center;
-  gap: 1.1rem;
-  margin-left: auto;
+  gap: 0.75rem;
+  padding-left: 1.5rem;
+  border-left: 0;
+}
+
+/* Larger circular theme toggle */
+.nav-utils .theme-toggle,
+.sidebar-topbar .theme-toggle {
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  min-height: 2.25rem !important;
+  border-radius: 50% !important;
 }
 .nav-cta > :last-child { margin-left: 0; }
 
@@ -2035,7 +2057,7 @@ h1, h2, h3, h4, h5, h6,
 .nav-utils {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
   margin-right: 0.25rem;
 }
 .nav-utils .nav-text-link { display: none; }
@@ -2065,7 +2087,7 @@ h1, h2, h3, h4, h5, h6,
 .nav-cta .dropdown-toggle:not(.profile-btn) { border: 0; background: transparent; padding: 0.25rem 0.2rem; cursor: pointer; }
 .nav-cta .dropdown-toggle:not(.profile-btn):hover { background: transparent; color: var(--gold-text); }
 .nav-cta .profile-btn.dropdown-toggle { background: var(--paper); border: 1px solid var(--borders); padding: 0.3rem 0.75rem 0.3rem 0.35rem; }
-.nav-cta .profile-btn.dropdown-toggle:hover { background: var(--paper); border-color: var(--gold); }
+.nav-cta .profile-btn.dropdown-toggle:hover { background: var(--canvas); border-color: var(--gold); }
 .nav-cta .dropdown-toggle .avatar { transition: transform var(--hover-speed) ease; }
 .nav-sell-btn {
   display: inline-flex !important;
@@ -2568,8 +2590,8 @@ h1, h2, h3, h4, h5, h6,
   transition: opacity var(--dur-short) var(--ease-decel);
 }
 .sidebar-close {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 1.75rem;
+  height: 1.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3881,7 +3903,7 @@ td .empty-state {
    align-items: center;
    /* Page title/breadcrumb pins left, utility icons + profile pill pin right. */
    justify-content: space-between;
-   gap: 12px;
+   gap: 1.25rem;
    /* nowrap: wrapping pushed the profile pill to row 2, colliding with the title. */
     flex-wrap: nowrap;
     /* 56px min-height + 6px padding gives the 2.75rem (44px) buttons real top/bottom margin. */
@@ -3916,8 +3938,8 @@ td .empty-state {
 .sidebar-topbar .cart-pill,
 .sidebar-topbar .sidebar-icon-btn {
   position: relative;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3950,8 +3972,8 @@ td .empty-state {
 .sidebar-topbar .notif-pill:hover,
 .sidebar-topbar .cart-pill:hover,
 .sidebar-topbar .sidebar-icon-btn:hover {
-  background: var(--paper);
-  border-color: var(--accent);
+  background: var(--canvas);
+  border-color: var(--gold);
 }
 
 /* Badges */

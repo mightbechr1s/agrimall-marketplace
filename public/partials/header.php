@@ -187,12 +187,13 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
 
 <header class="nav" role="banner">
   <div class="nav-inner">
-    <div class="brand">
-      <a href="index.php" class="brand-link" aria-label="AniMALL home">
-        <img src="assets/branding/logo-horizontal.svg" alt="AniMALL" class="brand-logo">
-      </a>
-    </div>
-    <nav class="nav-links" aria-label="Main navigation" id="mainNav">
+    <div class="nav-left">
+      <div class="brand">
+        <a href="index.php" class="brand-link" aria-label="AniMALL home">
+          <img src="assets/branding/logo-horizontal.svg" alt="AniMALL" class="brand-logo">
+        </a>
+      </div>
+      <nav class="nav-links" aria-label="Main navigation" id="mainNav">
       <?php if (current_user_id()): ?>
         <?php $role = current_user_role(); ?>
         <?php if ($role === 'farmer'): ?>
@@ -208,6 +209,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
         <a href="index.php#faq"><span class="label"><?= t($i18nCopy['nav'], 'faq') ?></span></a>
       <?php endif; ?>
     </nav>
+    </div>
     <button class="hamburger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
       <span class="hamburger-line"></span>
       <span class="hamburger-line"></span>
