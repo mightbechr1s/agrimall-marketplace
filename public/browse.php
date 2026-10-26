@@ -185,7 +185,7 @@ if ($sidebarShell) {
               $nameImages = [
                 // Most specific name first: the loop below breaks on first match,
                 // and there are both string-bean and long-bean sitaw listings.
-                'string beans' => 'assets/images/products/Sitaw_String_Beans.jpg',
+                'string beans' => 'assets/images/products/Sitaw_Long_Beans.jpg',
                 'sitaw' => 'assets/images/products/Sitaw_Long_Beans.jpg',
                 'kangkong' => 'assets/images/products/market.jpg',
                 'calamansi' => 'assets/images/products/Calamansi.jpg',

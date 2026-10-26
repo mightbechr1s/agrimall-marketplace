@@ -368,7 +368,7 @@ try {
         'unit_id' => $bundle,
         'name' => 'Sitaw (String Beans)',
         'description' => 'Fresh-picked string beans, harvested the same morning. Best for ginisa and adobo.',
-        'image' => 'assets/images/products/Sitaw_String_Beans.jpg',
+        'image' => 'assets/images/products/Sitaw_Long_Beans.jpg',
         'price_per_unit' => 45.00,
         'available_quantity' => 120,
         'minimum_order_qty' => 1,
