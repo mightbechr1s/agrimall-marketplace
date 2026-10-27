@@ -75,7 +75,7 @@ $fmtQty = function ($value, $symbol): string {
                     <div class="carousel-inner">
                         <?php foreach ($images as $index => $imageUrl): ?>
                             <div class="carousel-item <?= $index === 0 ? 'active' : '' ?>">
-                                <img src="<?= e($imageUrl) ?>" class="d-block w-100" alt="<?= e($item['name']) ?>">
+                                <img src="<?= e(asset($imageUrl)) ?>" class="d-block w-100" alt="<?= e($item['name']) ?>" onerror="this.onerror=null;this.src='<?= e(asset('assets/images/listings/mangoes.svg')) ?>'">
                             </div>
                         <?php endforeach; ?>
                     </div>
