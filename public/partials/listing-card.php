@@ -103,7 +103,7 @@ if ($mode === 'featured') $cardClasses .= ' feature-card';
           </form>
         </div>
       </div>
-    <?php elseif ($showActions): ?>
+    <?php elseif ($showActions && current_user_role() === 'buyer'): ?>
       <div class="card-actions mt-auto">
         <div class="d-flex gap-2 align-items-center">
           <form method="post" action="cart_add.php" class="mb-0" data-buy-now="true">
@@ -134,6 +134,12 @@ if ($mode === 'featured') $cardClasses .= ' feature-card';
             </button>
           </form>
         </div>
+      </div>
+    <?php elseif (current_user_id()): ?>
+      <div class="card-actions mt-auto">
+        <a href="<?= e($listingUrl) ?>" class="btn btn-outline-primary btn-sm w-100">
+          <i class="bi bi-eye me-1" aria-hidden="true"></i>View
+        </a>
       </div>
     <?php endif; ?>
   </div>

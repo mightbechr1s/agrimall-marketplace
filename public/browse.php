@@ -251,7 +251,7 @@ if ($sidebarShell) {
                     </button>
                   </form>
                 <?php else: ?>
-                  <a class="btn-icon" href="<?php echo e(login_url('listing.php?id=' . (int) $item['id'])); ?>" aria-label="Add to cart"><i class="bi bi-cart-plus" aria-hidden="true"></i></a>
+                  <a class="btn-icon" href="listing.php?id=<?php echo (int) $item['id']; ?>" aria-label="View listing" title="View listing"><i class="bi bi-eye" aria-hidden="true"></i></a>
                 <?php endif; ?>
               </div>
             </div>
