@@ -670,6 +670,40 @@ function audit_log(string $action, string $entityType, ?int $entityId, ?array $o
     if ($adminId === null || current_user_role() !== 'admin') {
         return;
     }
+    // NFR-SEC-019: only non-sensitive field names may be persisted in the
+    // audit payload. Anything outside the allowlist (passwords, tokens, PII,
+    // free-text/code) is dropped before it reaches the row.
+    static $allowed = ['status', 'verification_status', 'user_status', 'reason',
+        'name', 'full_name', 'farm_name', 'contact_person', 'listing_status',
+        'category', 'category_id', 'quantity', 'unit_price', 'delivery_fee',
+        'delivery_method', 'fields', 'changed'];
+    $sensitive = ['password', 'token', 'secret', 'csrf', 'email', 'phone',
+        'hash', 'otp', 'ssn', 'card', 'cvv'];
+    $filter = function (?array $data) use ($allowed, $sensitive): ?array {
+        if ($data === null) return null;
+        $out = [];
+        foreach ($data as $k => $v) {
+            if (!is_string($k)) continue;
+            $kl = strtolower($k);
+            $blocked = false;
+            foreach ($sensitive as $s) {
+                if (strpos($kl, $s) !== false) { $blocked = true; break; }
+            }
+            if ($blocked) continue;
+            if (!in_array($kl, $allowed, true)) continue;
+            // Strip any HTML/code from string values so a description or
+            // free-text field can never land as a code block in the log.
+            if (is_string($v)) {
+                $v = trim(strip_tags($v));
+                if ($v === '') continue;
+            }
+            $out[$k] = $v;
+        }
+        return $out === [] ? null : $out;
+    };
+    $old = $filter($old);
+    $new = $filter($new);
+
     $stmt = DB::pdo()->prepare(
         'INSERT INTO admin_audit_log
             (admin_id, action, entity_type, entity_id, old_values, new_values, ip_address, user_agent)

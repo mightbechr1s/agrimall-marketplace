@@ -11,9 +11,47 @@ function fmt_json(?string $json): string
     }
     $decoded = json_decode($json, true);
     if (!is_array($decoded)) {
-        return e($json);
+        return e(strip_tags((string) $json));
     }
-    return e(json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    // Defense in depth: redact anything sensitive that might have slipped
+    // through, strip tags from strings, and cap the rendered size.
+    $sensitive = ['password', 'token', 'secret', 'csrf', 'email', 'phone',
+        'hash', 'otp', 'ssn', 'card', 'cvv', 'key'];
+    $clean = function ($v) use (&$clean, $sensitive): mixed {
+        if (is_array($v)) {
+            $out = [];
+            foreach ($v as $k => $val) {
+                if (is_string($k)) {
+                    $kl = strtolower($k);
+                    foreach ($sensitive as $s) {
+                        if (strpos($kl, $s) !== false) {
+                            $out[$k] = '[redacted]';
+                            continue 2;
+                        }
+                    }
+                }
+                $out[$k] = $clean($val);
+            }
+            return $out;
+        }
+        if (is_string($v)) {
+            $v = trim(strip_tags($v));
+            if (mb_strlen($v) > 200) {
+                $v = mb_substr($v, 0, 200) . '…';
+            }
+            return $v;
+        }
+        return $v;
+    };
+    $decoded = $clean($decoded);
+    $out = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    if ($out === false) {
+        return '—';
+    }
+    if (mb_strlen($out) > 1500) {
+        $out = mb_substr($out, 0, 1500) . "\n… (truncated)";
+    }
+    return e($out);
 }
 
 $entityFilter = trim((string) ($_GET['entity'] ?? ''));

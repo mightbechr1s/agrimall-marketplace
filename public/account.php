@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ->execute(['email' => $newEmail, 'id' => $userId]);
                 $user['email'] = $newEmail;
                 $success = $l($copy['account'], 'email_updated');
-                audit_log('account_email_changed', 'user', $userId, null, ['email' => $newEmail]);
+                audit_log('account_email_changed', 'user', $userId, null, ['changed' => 'email']);
             }
         }
     } elseif ($action === 'password') {
