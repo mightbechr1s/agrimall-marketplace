@@ -81,11 +81,14 @@ try {
 
   & $mysql -u root -e "DROP DATABASE IF EXISTS animal_marketplace_test; CREATE DATABASE animal_marketplace_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>&1 | Out-Null
   (Get-Content (Join-Path $repo 'database\schema.sql') -Raw) -replace 'animal_marketplace', 'animal_marketplace_test' | & $mysql -u root 2>&1 | Out-Null
+  $prevEap = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
   foreach ($m in (Get-ChildItem (Join-Path $repo 'database\migrations\*.sql') | Sort-Object Name)) {
     $r = ((Get-Content $m.FullName -Raw) -replace 'animal_marketplace', 'animal_marketplace_test') | & $mysql -u root --database=animal_marketplace_test 2>&1
     # a migration may print a result set; only ERROR counts as failure
     if ($r -match 'ERROR') { "MIGRATION FAIL $($m.Name): $r" }
   }
+  $ErrorActionPreference = $prevEap
   $ids = & $php (Join-Path $repo 'tests\http_seed.php') 2>&1 | ConvertFrom-Json
   "seeded ids: buyer=$($ids.buyer) farmer=$($ids.farmer) open=$($ids.openOrder) blocked=$($ids.blocked) admin=$($ids.admin)"
 

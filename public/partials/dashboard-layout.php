@@ -21,7 +21,6 @@ $sidebarMenus = [
     'buyer' => [
         ['page' => 'dashboard',  'label' => 'Dashboard',   'icon' => 'bi-grid-1x2-fill',  'href' => 'dashboard.php'],
         ['page' => 'browse',     'label' => 'Goods',      'icon' => 'bi-shop',           'href' => 'browse.php'],
-        ['page' => 'cart',       'label' => 'Cart',        'icon' => 'bi-basket3-fill',   'href' => 'cart.php'],
         ['page' => 'orders',     'label' => 'My Orders',   'icon' => 'bi-receipt-cutoff', 'href' => 'orders.php'],
         ['page' => 'saved',      'label' => 'Saved',       'icon' => 'bi-heart',          'href' => 'saved.php'],
     ],
@@ -179,6 +178,22 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
                 ? sprintf(t($navCopy['notifications'], 'unread_label'), $unreadCount)
                 : t($navCopy['notifications'], 'read_label');
             ?>
+            <?php if ($role === 'buyer'): ?>
+            <?php
+              $dashCartCount = 0;
+              try {
+                  $dcc = DB::pdo()->prepare('SELECT COUNT(*) FROM cart_items WHERE buyer_id = :id');
+                  $dcc->execute(['id' => current_user_id()]);
+                  $dashCartCount = (int) $dcc->fetchColumn();
+              } catch (Exception $e) {
+                  error_log('dashboard-layout: cart-count lookup failed: ' . $e->getMessage());
+              }
+            ?>
+            <a href="cart.php" class="cart-pill" aria-label="Basket, <?= $dashCartCount ?> items">
+              <span class="cart-count"><?= $dashCartCount ?></span>
+              <i class="bi bi-basket" aria-hidden="true"></i>
+            </a>
+            <?php endif; ?>
             <a href="notifications.php" class="sidebar-icon-btn notif-btn" aria-label="<?= e($notifLabel) ?>">
                 <i class="bi bi-bell" aria-hidden="true"></i>
                 <?php if ($unreadCount > 0): ?>
