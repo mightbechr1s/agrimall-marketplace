@@ -315,12 +315,16 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
 // Flash rendered here so redirect targets show it; flash_get() clears on read.
     if ($flashSuccess = flash_get('success')): ?>
   <div class="container">
-    <div class="alert alert-success alert-dismissible fade show" role="alert"><?= e($flashSuccess) ?></div>
+    <div class="alert alert-success alert-dismissible fade show" role="alert"><?= e($flashSuccess) ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
   </div>
 <?php endif; ?>
 <?php if ($flashError = flash_get('error')): ?>
   <div class="container">
-    <div class="alert alert-danger alert-dismissible fade show" role="alert"><?= e($flashError) ?></div>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert"><?= e($flashError) ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
   </div>
 <?php endif; ?>
 

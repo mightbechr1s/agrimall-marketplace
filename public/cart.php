@@ -30,10 +30,14 @@ $items = $stmt->fetchAll();
 require __DIR__ . '/partials/dashboard-layout.php';
 ?>
     <?php if ($flash = flash_get('success')): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert"><?= e($flash) ?></div>
+        <div class="alert alert-success alert-dismissible fade show" role="alert"><?= e($flash) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
     <?php endif; ?>
     <?php if ($flash = flash_get('error')): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert"><?= e($flash) ?></div>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert"><?= e($flash) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
     <?php endif; ?>
 
     <div class="dash-panel mt-2">
@@ -117,7 +121,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 </table>
             </div>
 
-            <div class="card mt-3">
+            <div class="card mt-4">
                 <div class="card-body">
                     <h5 class="mb-3">Delivery Details</h5>
                     <form method="post" action="cart_checkout.php" class="row g-3">

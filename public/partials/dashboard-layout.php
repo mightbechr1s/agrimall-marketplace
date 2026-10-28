@@ -214,12 +214,16 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
       // Mirrors header.php; flash_get() clears on read — first layout wins.
       if ($flashSuccess = flash_get('success')): ?>
       <div class="container px-3 pt-3">
-        <div class="alert alert-success alert-dismissible fade show" role="alert"><?= e($flashSuccess) ?></div>
+        <div class="alert alert-success alert-dismissible fade show" role="alert"><?= e($flashSuccess) ?>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
       </div>
     <?php endif; ?>
     <?php if ($flashError = flash_get('error')): ?>
       <div class="container px-3 pt-3">
-        <div class="alert alert-danger alert-dismissible fade show" role="alert"><?= e($flashError) ?></div>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert"><?= e($flashError) ?>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
       </div>
     <?php endif; ?>
 

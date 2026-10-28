@@ -498,13 +498,6 @@ require __DIR__ . '/partials/dashboard-layout.php';
     </div>
 <?php else: ?>
     <!-- Buyer Dashboard -->
-    <div class="dash-section-header">
-        <h1>My Orders</h1>
-        <p>Track your orders, discover fresh produce from verified farms.</p>
-        <a href="browse.php" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Browse Market</a>
-        <a href="orders.php" class="btn btn-outline btn-sm"><i class="bi bi-receipt me-1"></i>My Orders</a>
-    </div>
-
     <div class="row g-4 mb-4" data-reveal="stagger">
         <?php foreach ($stats as $label => $data): ?>
             <div class="col-12 col-sm-6 col-lg-4">
