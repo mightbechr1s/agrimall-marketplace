@@ -108,13 +108,25 @@ if ($sidebarShell) {
         $categories = ['fruits', 'livestock-dairy', 'poultry', 'seafood', 'vegetables'];
         sort($categories);
       }
+      $filterCounts = ['all' => 0, 'deals' => 0, 'trending' => 0];
+      $catCounts = [];
+      try {
+        $filterCounts['all'] = (int) DB::pdo()->query("SELECT COUNT(*) FROM v_active_listings")->fetchColumn();
+        $filterCounts['deals'] = (int) DB::pdo()->query("SELECT COUNT(*) FROM v_active_listings WHERE discount_percent > 0")->fetchColumn();
+        $filterCounts['trending'] = (int) DB::pdo()->query("SELECT COUNT(*) FROM v_active_listings WHERE (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = v_active_listings.id) >= 3")->fetchColumn();
+        foreach (DB::pdo()->query("SELECT category_slug, COUNT(*) c FROM v_active_listings GROUP BY category_slug")->fetchAll(PDO::FETCH_KEY_PAIR) as $slug => $c) {
+            $catCounts[strtolower((string)$slug)] = (int) $c;
+        }
+      } catch (Exception $e) { }
       ?>
-      <button class="filter-pill <?= $categoryFilter === '' && !$dealsFilter ? 'is-active' : '' ?>" type="button" data-filter="all" data-filter-url="browse.php<?= $q !== '' ? '?q=' . urlencode($q) : '' ?>">All</button>
-      <button class="filter-pill <?= $dealsFilter ? 'is-active' : '' ?>" type="button" data-filter="deals" data-filter-url="browse.php?deals=1<?= $q !== '' ? '&q=' . urlencode($q) : '' ?>">Deals</button>
-      <button class="filter-pill <?= $trendingFilter ? 'is-active' : '' ?>" type="button" data-filter="trending" data-filter-url="browse.php?trending=1<?= $q !== '' ? '&q=' . urlencode($q) : '' ?>">Trending</button>
+
+      <button class="filter-pill <?= $categoryFilter === '' && !$dealsFilter ? 'is-active' : '' ?>" type="button" data-filter="all" data-filter-url="browse.php<?= $q !== '' ? '?q=' . urlencode($q) : '' ?>">All (<?= (int) $filterCounts['all'] ?>)</button>
+      <button class="filter-pill <?= $dealsFilter ? 'is-active' : '' ?>" type="button" data-filter="deals" data-filter-url="browse.php?deals=1<?= $q !== '' ? '&q=' . urlencode($q) : '' ?>">Deals (<?= (int) $filterCounts['deals'] ?>)</button>
+      <button class="filter-pill <?= $trendingFilter ? 'is-active' : '' ?>" type="button" data-filter="trending" data-filter-url="browse.php?trending=1<?= $q !== '' ? '&q=' . urlencode($q) : '' ?>">Trending (<?= (int) $filterCounts['trending'] ?>)</button>
       <?php foreach ($categories as $cat): ?>
         <?php $catUrl = 'browse.php?category=' . urlencode($cat) . ($q !== '' ? '&q=' . urlencode($q) : ''); ?>
-        <button class="filter-pill <?= $categoryFilter === $cat ? 'is-active' : '' ?>" type="button" data-filter="<?php echo strtolower($cat); ?>" data-filter-url="<?= e($catUrl) ?>"><?php echo htmlspecialchars(formatCatLabel($cat)); ?></button>
+        <?php $catSlug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($cat))); ?>
+        <button class="filter-pill <?= $categoryFilter === $cat ? 'is-active' : '' ?>" type="button" data-filter="<?php echo strtolower($cat); ?>" data-filter-url="<?= e($catUrl) ?>"><?php echo htmlspecialchars(formatCatLabel($cat)); ?> (<?= (int) ($catCounts[$catSlug] ?? 0) ?>)</button>
       <?php endforeach; ?>
     </div>
 
@@ -391,29 +403,7 @@ if ($sidebarShell) {
 
             include __DIR__ . '/partials/empty-state.php';
 
-            // Popular right now: keep dead-ends discoverable.
-            $popStmt = DB::pdo()->query(
-                "SELECT pl.id, pl.name, pl.price_per_unit, qu.symbol AS unit_symbol,
-                        (SELECT li.image_path FROM listing_images li WHERE li.listing_id = pl.id AND li.is_primary = 1 ORDER BY li.sort_order LIMIT 1) AS primary_image
-                 FROM produce_listings pl
-                 JOIN quantity_units qu ON qu.id = pl.unit_id
-                 WHERE pl.status = 'active'
-                 ORDER BY (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = pl.id) DESC, pl.published_at DESC
-                 LIMIT 3"
-            );
-            $popular = $popStmt ? $popStmt->fetchAll(PDO::FETCH_ASSOC) : [];
-            if (!$dealsFilter && !$trendingFilter && $popular): ?>
-                <div class="mt-4">
-                    <h6 class="mb-2">Popular right now</h6>
-                    <div class="d-flex gap-2 flex-wrap">
-                        <?php foreach ($popular as $p): ?>
-                            <a href="listing.php?id=<?= (int) $p['id'] ?>" class="btn btn-outline btn-sm">
-                                <?= e($p['name']) ?> · <?= money($p['price_per_unit']) ?>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-            <?php endif; ?>
+        ?>
         </div>
       <?php endif; ?>
     </div>
