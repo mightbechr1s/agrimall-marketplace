@@ -4589,12 +4589,6 @@ article.card:focus-within .thumb img { transform: scale(1.04); }
   background: var(--primary);
 }
 
-/* === Auth split layout === */
-.auth-left {
-  background-image:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(10, 25, 15, 0.85) 100%),
-    url("../images/products/farmer.jpg");
-}
 .auth-left-logo {
   display: block;
   height: 2.6rem;
