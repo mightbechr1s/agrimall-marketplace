@@ -46,7 +46,7 @@ require __DIR__ . '/partials/header.php';
                 <div class="hero-image-wrapper">
                     <img src="assets/images/products/farmer.jpg"
                          alt="Filipino farmer harvesting rice"
-                         class="hero-image"
+                         class="img-shimmer hero-image"
                          onerror="this.onerror=null;this.parentNode.classList.add('image-failed');">
                 </div>
                 <div class="origin-badge">Verified Origin</div>
@@ -82,7 +82,7 @@ require __DIR__ . '/partials/header.php';
                 <div class="story-figure">
                     <img src="assets/images/products/seedlings.jpg"
                          alt="Young vegetable seedlings growing on the farm"
-                         class="story-figure-img"
+                         class="img-shimmer story-figure-img"
                          loading="lazy"
                          onerror="this.onerror=null;this.src='assets/images/products/market.jpg';">
                 </div>

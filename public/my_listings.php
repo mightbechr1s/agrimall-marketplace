@@ -108,10 +108,13 @@ require __DIR__ . '/partials/dashboard-layout.php';
     include __DIR__ . '/partials/pager.php';
     ?>
 <?php else: ?>
-<div class="empty-state">
-    <i class="bi bi-basket3"></i>
-    <p>No listings yet. <a href="create_listing.php">Create your first listing.</a></p>
-</div>
+<?php
+$icon = '<i class="bi bi-basket3" aria-hidden="true"></i>';
+$title = 'No listings yet';
+$description = 'Create your first listing so buyers can find your produce.';
+$action = ['href' => 'create_listing.php', 'label' => 'Create a listing', 'class' => 'btn btn-primary btn-sm'];
+require __DIR__ . '/partials/empty-state.php';
+?>
 <?php endif; ?>
 </div>
 </section>

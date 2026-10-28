@@ -177,21 +177,21 @@ if ($role === 'admin') {
     $stats = [
         'Total Orders' => [
             'value' => $orderTotal,
-            'trend' => '',
+            'trend' => $activeOrders . ' active',
             'icon' => 'bi-receipt',
             'variant' => 'info',
             'href' => 'orders.php'
         ],
         'Active Orders' => [
             'value' => $activeOrders,
-            'trend' => '',
+            'trend' => 'in progress',
             'icon' => 'bi-clock',
             'variant' => 'warning',
             'href' => 'orders.php'
         ],
         'Completed' => [
             'value' => $completedOrders,
-            'trend' => '',
+            'trend' => 'delivered',
             'icon' => 'bi-check-circle',
             'variant' => 'success',
             'href' => 'completed_orders.php'
@@ -445,14 +445,14 @@ require __DIR__ . '/partials/dashboard-layout.php';
                            data-unit-symbol="<?= e($order['unit_symbol']) ?>"
                            data-total-raw="<?= (float) $order['unit_price'] * (float) $order['quantity'] + (float) $order['delivery_fee'] ?>"
                            data-delivery-method="<?= e($order['delivery_method'] ?? '') ?>">
-                            <td class="text-nowrap order-id-tag">#<?= $orderId ?></td>
-                            <td><?= e($order['buyer_name']) ?></td>
-                            <td><?= e($order['listing_name']) ?></td>
-                            <td class="text-end"><?= $fmtQty($order['quantity'], $order['unit_symbol']) ?></td>
-                            <td class="text-end"><?= order_total($order) ?></td>
-                            <td><?= status_badge($order['status']) ?></td>
-                            <td class="text-end date-col text-muted"><?= e(date('M j, g:i A', strtotime($order['created_at']))) ?></td>
-                            <td class="text-end action-col">
+                            <td class="text-nowrap order-id-tag" data-label="Order">#<?= $orderId ?></td>
+                            <td data-label="Buyer"><?= e($order['buyer_name']) ?></td>
+                            <td data-label="Item"><?= e($order['listing_name']) ?></td>
+                            <td class="text-end" data-label="Qty"><?= $fmtQty($order['quantity'], $order['unit_symbol']) ?></td>
+                            <td class="text-end" data-label="Total"><?= order_total($order) ?></td>
+                            <td data-label="Status"><?= status_badge($order['status']) ?></td>
+                            <td class="text-end date-col text-muted" data-label="Placed"><?= e(date('M j, g:i A', strtotime($order['created_at']))) ?></td>
+                            <td class="text-end action-col" data-label="Actions">
                                 <a href="/order.php?id=<?= $order['id'] ?>" class="btn btn-sm btn-primary">
                                     <i class="bi bi-eye me-1"></i>View
                                 </a>
@@ -476,14 +476,13 @@ require __DIR__ . '/partials/dashboard-layout.php';
             include __DIR__ . '/partials/pager.php';
             ?>
         <?php else: ?>
-        <div class="empty-state">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon" aria-hidden="true">
-            <path d="M5.757 1.071a.5.5 0 0 1 .172.686L3.383 6h9.234l1.12-4.243a.5.5 0 0 1 .172-.686zM.5 8a.5.5 0 0 1 .5.5V13a1.5 1.5 0 0 0 1.5 1.5h9a1.5 1.5 0 0 0 1.5-1.5V8.5a.5.5 0 0 1 1 0v4.5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 0.5 12.5V8.5a.5.5 0 0 1 .5-.5z"/>
-          </svg>
-          <h2 class="empty-state-title">No orders yet</h2>
-          <p class="empty-state-description">Once buyers find your listings, orders will appear here.</p>
-          <a href="browse.php" class="btn btn-primary">Browse Marketplace</a>
-        </div>
+        <?php
+        $icon = '<i class="bi bi-inbox" aria-hidden="true"></i>';
+        $title = 'No orders yet';
+        $description = 'Once buyers find your listings, orders will appear here.';
+        $action = ['href' => 'browse.php', 'label' => 'Browse Marketplace', 'class' => 'btn btn-primary btn-sm'];
+        require __DIR__ . '/partials/empty-state.php';
+        ?>
         <?php endif; ?>
     </div>
 
@@ -517,14 +516,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                                 <?= e(is_string($data['value']) ? $data['value'] : (string) $data['value']) ?>
                             </div>
                             <div class="stat-label"><?= e($label) ?></div>
-                            <div class="stat-trend text-success small"><?= $data['trend'] ?> this week</div>
-                            <!-- SVG sparkline -->
-                            <div class="stat-sparkline mt-2">
-                                <svg width="60" height="20" viewBox="0 0 60 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill="none" stroke="currentColor" stroke-width="1.5"
-                                          d="M5,10 Q15,5 25,10 T45,10 L55,10"/>
-                                </svg>
-                            </div>
+                            <div class="stat-trend text-success small"><?= e($data['trend']) ?></div>
                         </div>
                     </div>
                 </div>
@@ -572,14 +564,14 @@ require __DIR__ . '/partials/dashboard-layout.php';
                            data-created-at="<?= e($order['created_at']) ?>"
                            data-unit-symbol="<?= e($order['unit_symbol']) ?>"
                            data-total-raw="<?= (float) $order['unit_price'] * (float) $order['quantity'] + (float) $order['delivery_fee'] ?>">
-                            <td class="text-nowrap order-id-tag">#<?= $orderId ?></td>
-                            <td><?= e($order['farm_name']) ?></td>
-                            <td><?= e($order['listing_name']) ?></td>
-                            <td class="text-end"><?= $fmtQty($order['quantity'], $order['unit_symbol']) ?></td>
-                            <td class="text-end"><?= order_total($order) ?></td>
-                            <td><?= status_badge($order['status']) ?></td>
-                            <td class="text-end date-col text-muted"><?= e(date('M j, g:i A', strtotime($order['created_at']))) ?></td>
-                            <td class="text-end action-col">
+                            <td class="text-nowrap order-id-tag" data-label="Order">#<?= $orderId ?></td>
+                            <td data-label="Farm"><?= e($order['farm_name']) ?></td>
+                            <td data-label="Item"><?= e($order['listing_name']) ?></td>
+                            <td class="text-end" data-label="Qty"><?= $fmtQty($order['quantity'], $order['unit_symbol']) ?></td>
+                            <td class="text-end" data-label="Total"><?= order_total($order) ?></td>
+                            <td data-label="Status"><?= status_badge($order['status']) ?></td>
+                            <td class="text-end date-col text-muted" data-label="Placed"><?= e(date('M j, g:i A', strtotime($order['created_at']))) ?></td>
+                            <td class="text-end action-col" data-label="Actions">
                                 <a href="/order.php?id=<?= $order['id'] ?>" class="btn btn-sm btn-primary">
                                     <i class="bi bi-eye me-1"></i>View
                                 </a>
@@ -603,14 +595,13 @@ require __DIR__ . '/partials/dashboard-layout.php';
             include __DIR__ . '/partials/pager.php';
             ?>
         <?php else: ?>
-        <div class="empty-state">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon" aria-hidden="true">
-            <path d="M5.757 1.071a.5.5 0 0 1 .172.686L3.383 6h9.234l1.12-4.243a.5.5 0 0 1 .172-.686zM.5 8a.5.5 0 0 1 .5.5V13a1.5 1.5 0 0 0 1.5 1.5h9a1.5 1.5 0 0 0 1.5-1.5V8.5a.5.5 0 0 1 1 0v4.5a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 0.5 12.5V8.5a.5.5 0 0 1 .5-.5z"/>
-          </svg>
-          <h2 class="empty-state-title">No orders yet</h2>
-          <p class="empty-state-description">Browse the marketplace to find fresh produce from verified farms.</p>
-          <a href="browse.php" class="btn btn-primary">Browse Marketplace</a>
-        </div>
+        <?php
+        $icon = '<i class="bi bi-basket3" aria-hidden="true"></i>';
+        $title = 'No orders yet';
+        $description = 'Browse the marketplace to find fresh produce from verified farms.';
+        $action = ['href' => 'browse.php', 'label' => 'Browse Market', 'class' => 'btn btn-primary btn-sm'];
+        require __DIR__ . '/partials/empty-state.php';
+        ?>
         <?php endif; ?>
     </div>
 

@@ -65,6 +65,13 @@ $orderOrdered = array_values(array_filter(array_map(
     $orderFlowOrder
 )));
 
+// Share-of-whole denominators for the inline bars (share of the rows shown).
+$listingShownTotal = array_sum(array_map(function ($r) { return (int) $r['cnt']; }, $listingOrdered));
+$ordersShownTotal = array_sum(array_map(function ($r) { return (int) $r['cnt']; }, $orderOrdered));
+$sharePct = function (int $count, int $total): float {
+    return $total > 0 ? round($count / $total * 100, 1) : 0.0;
+};
+
 require __DIR__ . '/partials/dashboard-layout.php';
 ?>
 <div class="dash-section-header">
@@ -95,9 +102,13 @@ require __DIR__ . '/partials/dashboard-layout.php';
                         </thead>
                         <tbody>
                             <?php foreach ($listingOrdered as $row): ?>
+                                <?php $listingPct = $sharePct((int) $row['cnt'], $listingShownTotal); ?>
                                 <tr>
                                     <td><?= status_badge($row['status']) ?></td>
-                                    <td class="text-end"><?= (int) $row['cnt'] ?></td>
+                                    <td class="text-end">
+                                        <span class="cell-count"><?= (int) $row['cnt'] ?></span>
+                                        <span class="share-bar" aria-hidden="true"><span style="width:<?= $listingPct ?>%"></span></span>
+                                    </td>
                                     <td class="text-end"><?= rtrim(rtrim(number_format((float) $row['qty'], 2), '0'), '.') ?></td>
                                 </tr>
                             <?php endforeach; ?>
@@ -112,7 +123,13 @@ require __DIR__ . '/partials/dashboard-layout.php';
                     </table>
                 </div>
                 <?php else: ?>
-                    <p class="text-muted small mb-0">No listings yet.</p>
+                    <?php
+                    $icon = '<i class="bi bi-basket3" aria-hidden="true"></i>';
+                    $title = 'No listings yet';
+                    $description = 'Create your first produce listing to see quantities here.';
+                    $action = ['href' => 'create_listing.php', 'label' => 'Create a listing', 'class' => 'btn btn-primary btn-sm'];
+                    require __DIR__ . '/partials/empty-state.php';
+                    ?>
                 <?php endif; ?>
             </div>
             <div class="col-lg-6">
@@ -129,9 +146,13 @@ require __DIR__ . '/partials/dashboard-layout.php';
                         </thead>
                         <tbody>
                             <?php foreach ($orderOrdered as $row): ?>
+                                <?php $orderPct = $sharePct((int) $row['cnt'], $ordersShownTotal); ?>
                                 <tr>
                                     <td><?= status_badge($row['status']) ?></td>
-                                    <td class="text-end"><?= (int) $row['cnt'] ?></td>
+                                    <td class="text-end">
+                                        <span class="cell-count"><?= (int) $row['cnt'] ?></span>
+                                        <span class="share-bar" aria-hidden="true"><span style="width:<?= $orderPct ?>%"></span></span>
+                                    </td>
                                     <td class="text-end"><?= money((float) $row['produce'] + (float) $row['fees']) ?></td>
                                 </tr>
                             <?php endforeach; ?>
@@ -146,7 +167,13 @@ require __DIR__ . '/partials/dashboard-layout.php';
                     </table>
                 </div>
                 <?php else: ?>
-                    <p class="text-muted small mb-0">No orders yet.</p>
+                    <?php
+                    $icon = '<i class="bi bi-inbox" aria-hidden="true"></i>';
+                    $title = 'No orders yet';
+                    $description = 'Orders will appear here as buyers check out your produce.';
+                    $action = ['href' => 'browse.php', 'label' => 'View market', 'class' => 'btn btn-outline btn-sm'];
+                    require __DIR__ . '/partials/empty-state.php';
+                    ?>
                 <?php endif; ?>
             </div>
         </div>
