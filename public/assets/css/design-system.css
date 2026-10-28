@@ -2248,7 +2248,7 @@ h1, h2, h3, h4, h5, h6,
   background-color: #0A190F;
   background-image:
     linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(10, 25, 15, 0.85) 100%),
-    url("assets/images/products/auth-banner.jpg");
+    url("../images/products/auth-banner.jpg");
   background-size: auto, cover;
   background-position: center, center;
   background-repeat: no-repeat;
