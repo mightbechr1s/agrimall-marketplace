@@ -124,6 +124,25 @@ if ($sidebarShell) {
       </div>
       <div class="d-flex gap-2 overflow-auto pb-2" id="recently-viewed-list"></div>
     </div>
+    <?php
+      $activeFilters = [];
+      if ($q !== '') $activeFilters[] = ['label' => 'Search: ' . $q, 'href' => http_build_query(array_merge($_GET, ['q' => '']))];
+      if ($categoryFilter !== '') $activeFilters[] = ['label' => 'Category: ' . $categoryFilter, 'href' => http_build_query(array_merge($_GET, ['category' => '']))];
+      if ($dealsFilter) $activeFilters[] = ['label' => 'Deals only', 'href' => http_build_query(array_merge($_GET, ['deals' => '']))];
+      if ($trendingFilter) $activeFilters[] = ['label' => 'Trending', 'href' => http_build_query(array_merge($_GET, ['trending' => '']))];
+      $clearAllHref = 'browse.php';
+    ?>
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+      <span class="text-muted small"><?= (int) $total ?> result<?= $total === 1 ? '' : 's' ?></span>
+      <?php foreach ($activeFilters as $af): ?>
+        <a href="browse.php?<?= e($af['href']) ?>" class="badge rounded-pill text-bg-light border text-decoration-none">
+          <?= e($af['label']) ?> <i class="bi bi-x" aria-hidden="true"></i>
+        </a>
+      <?php endforeach; ?>
+      <?php if ($activeFilters): ?>
+        <a href="browse.php" class="small text-decoration-none">Clear all</a>
+      <?php endif; ?>
+    </div>
     <div class="grid" id="product-grid" data-reveal="stagger">
       <?php
       $listings = [];

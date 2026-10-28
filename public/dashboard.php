@@ -68,6 +68,13 @@ if ($role === 'admin') {
             'variant' => 'warning',
             'href' => 'admin_reports.php?t=orders'
         ],
+        'Completed Orders' => [
+            'value' => (int) $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'completed'")->fetchColumn(),
+            'trend' => 'all time',
+            'icon' => 'bi-check2-all',
+            'variant' => 'success',
+            'href' => 'admin_reports.php?t=orders'
+        ],
     ];
     $orders = $pdo->query('SELECT id, order_number, buyer_name, farm_name, listing_name, unit_symbol,
                                   quantity, unit_price, delivery_fee, delivery_method, status, created_at
@@ -81,6 +88,13 @@ if ($role === 'admin') {
     $recentAudit = $pdo->query('SELECT al.action, al.entity_type, al.entity_id, al.created_at, u.email AS admin_email
                                 FROM (SELECT * FROM admin_audit_log ORDER BY created_at DESC LIMIT 5) al
                                 LEFT JOIN users u ON u.id = al.admin_id')->fetchAll();
+
+    $expiredListings = 0;
+    $heldOrders = 0;
+    $suspendedUsers = 0;
+    try { $expiredListings = (int) $pdo->query("SELECT COUNT(*) FROM produce_listings WHERE status = 'active' AND expiry_date IS NOT NULL AND expiry_date <> '' AND expiry_date < CURDATE()")->fetchColumn(); } catch (Throwable $e) { }
+    try { $heldOrders = (int) $pdo->query("SELECT COUNT(*) FROM orders WHERE admin_hold = 1")->fetchColumn(); } catch (Throwable $e) { }
+    try { $suspendedUsers = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE status = 'suspended'")->fetchColumn(); } catch (Throwable $e) { }
 
 } elseif ($role === 'farmer') {
     $pdo = DB::pdo();
@@ -295,6 +309,28 @@ require __DIR__ . '/partials/dashboard-layout.php';
         </div>
         <?php endif; ?>
     </div>
+
+    <!-- Needs attention -->
+    <?php if ($expiredListings > 0 || $heldOrders > 0 || $suspendedUsers > 0): ?>
+    <div class="dash-panel mt-4">
+        <div class="dash-panel-header">
+            <h2><i class="bi bi-exclamation-triangle me-2"></i>Needs attention</h2>
+        </div>
+        <div class="dash-panel-body">
+            <ul class="list-unstyled mb-0 small">
+                <?php if ($expiredListings > 0): ?>
+                    <li class="mb-1"><i class="bi bi-calendar-x me-1 text-warning" aria-hidden="true"></i><?= (int) $expiredListings ?> expired listing<?= $expiredListings === 1 ? '' : 's' ?> still active</li>
+                <?php endif; ?>
+                <?php if ($heldOrders > 0): ?>
+                    <li class="mb-1"><i class="bi bi-pause-circle me-1 text-warning" aria-hidden="true"></i><?= (int) $heldOrders ?> held order<?= $heldOrders === 1 ? '' : 's' ?> awaiting resolution</li>
+                <?php endif; ?>
+                <?php if ($suspendedUsers > 0): ?>
+                    <li class="mb-1"><i class="bi bi-slash-circle me-1 text-danger" aria-hidden="true"></i><?= (int) $suspendedUsers ?> suspended account<?= $suspendedUsers === 1 ? '' : 's' ?></li>
+                <?php endif; ?>
+            </ul>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Farmer Verifications + Audit Activity -->
     <div class="row g-4 mt-4">
