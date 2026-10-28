@@ -8,10 +8,14 @@ $mode = $mode ?? 'grid';
 $showActions = $showActions ?? true;
 $isSaved = $listing['is_saved'] ?? false;
 $isFresh = $listing['is_fresh'] ?? false;
-$unit = $listing['unit'] ?? 'kg';
-$imageUrl = asset($listing['image_path'] ?: fallback_produce_image());
+$price = $listing['price'] ?? $listing['price_per_unit'] ?? 0;
+$unit = $listing['unit'] ?? $listing['unit_symbol'] ?? 'kg';
+$title = $listing['title'] ?? $listing['name'] ?? 'Untitled Listing';
+$category = $listing['category'] ?? $listing['category_name'] ?? 'Produce';
+$imagePath = $listing['image_path'] ?? $listing['primary_image'] ?? null;
+$imageUrl = asset($imagePath ?: fallback_produce_image());
 $listingUrl = "listing.php?id=" . (int) $listing['id'];
-$farmerUrl = ($listing['farmer_slug'] ?? '') ? "profile.php?u=" . urlencode($listing['farmer_slug']) : 'browse.php';
+$farmerUrl = !empty($listing['farmer_id']) ? 'profile.php?id=' . (int) $listing['farmer_id'] : 'browse.php';
 // Relative path (no leading slash): is_safe_path() rejects absolute; raw REQUEST_URI would fall back to dashboard.
 $returnPath = ltrim((string) ($_SERVER['REQUEST_URI'] ?? ''), '/') ?: 'browse.php';
 
@@ -27,18 +31,18 @@ $cardClasses = $isFarmer ? 'card' : 'card h-100';
 if ($mode === 'horizontal') $cardClasses .= ' flex-row';
 if ($mode === 'featured') $cardClasses .= ' feature-card';
 ?>
-<article class="<?= e($cardClasses) ?>" data-reveal="stagger" data-category="<?= e(strtolower($listing['category'] ?? '')) ?>" itemscope itemtype="https://schema.org/Product">
+<article class="<?= e($cardClasses) ?>" data-reveal="stagger" data-listing-url="<?= e($listingUrl) ?>" data-category="<?= e(strtolower($category)) ?>" itemscope itemtype="https://schema.org/Product">
   <div class="thumb" itemprop="image">
     <?php if (!$isFarmer): ?>
     <div class="badges-top">
       <span class="badge <?= e($freshClass) ?>" itemprop="availability" content="http://schema.org/InStock"><?= e($freshLabel) ?></span>
-      <span class="badge badge-normal"><?= e($listing['category'] ?? 'Produce') ?></span>
+      <span class="badge badge-normal"><?= e($category) ?></span>
     </div>
     <?php endif; ?>
     <?php if ($mode === 'featured'): ?>
       <img src="<?= e($imageUrl) ?>" alt="" loading="eager" width="600" height="450" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null;this.src='assets/images/products/market.jpg'">
     <?php else: ?>
-      <img src="<?= e($imageUrl) ?>" alt="<?= e($listing['title'] ?? 'Produce') ?>" loading="lazy" width="400" height="400" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null;this.src='assets/images/products/market.jpg'">
+      <img src="<?= e($imageUrl) ?>" alt="<?= e($title) ?>" loading="lazy" width="400" height="400" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null;this.src='assets/images/products/market.jpg'">
     <?php endif; ?>
     <?php if ($mode === 'featured' && !empty($listing['origin'])): ?>
       <span class="origin-badge"><?= e($listing['origin']) ?></span>
@@ -58,7 +62,7 @@ if ($mode === 'featured') $cardClasses .= ' feature-card';
 
     <div class="row">
       <div class="col">
-        <h3 class="listing-name" itemprop="name"><a href="<?= e($listingUrl) ?>"><?= e($listing['title'] ?? 'Untitled Listing') ?></a></h3>
+        <h3 class="listing-name" itemprop="name"><a href="<?= e($listingUrl) ?>"><?= e($title) ?></a></h3>
       </div>
     </div>
 
@@ -72,10 +76,20 @@ if ($mode === 'featured') $cardClasses .= ' feature-card';
     </div>
     <?php endif; ?>
 
+    <?php if (!empty($listing['discount_percent']) && (int) $listing['discount_percent'] > 0): ?>
+      <div class="mb-1"><span class="badge" style="background:#7c3aed;color:#fff;"><i class="bi bi-tag-fill"></i> <?= (int) $listing['discount_percent'] ?>% OFF</span></div>
+    <?php endif; ?>
+
     <div class="row" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
       <div class="col">
-        <span class="price" itemprop="price" content="<?= e(number_format($listing['price'], 2)) ?>">
-          ₱<?= e(number_format($listing['price'], 2)) ?>
+        <span class="price" itemprop="price" content="<?= e(number_format($price, 2)) ?>">
+          <?php if (!empty($listing['discount_percent']) && (int) $listing['discount_percent'] > 0): ?>
+            <?php $dealP = round((float) $price * (1 - (int) $listing['discount_percent'] / 100), 2); ?>
+            <span class="text-decoration-line-through text-muted small"><?= e(number_format($price, 2)) ?></span>
+            <span class="text-danger fw-bold"><?= e(number_format($dealP, 2)) ?></span>
+          <?php else: ?>
+            &#8369;<?= e(number_format($price, 2)) ?>
+          <?php endif; ?>
           <small>/<?= e($unit) ?></small>
         </span>
         <meta itemprop="priceCurrency" content="PHP">

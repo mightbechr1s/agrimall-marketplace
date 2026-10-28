@@ -82,10 +82,27 @@ try {
     if ($del->rowCount() > 0) {
         $msg = t($savedCopy, 'removed');
     } else {
-        $pdo->prepare('INSERT INTO saved_listings (user_id, listing_id) VALUES (:user, :listing)')
-            ->execute(['user' => current_user_id(), 'listing' => $listingId]);
+        $priceStmt = $pdo->prepare('SELECT price_per_unit FROM produce_listings WHERE id = :id');
+        $priceStmt->execute(['id' => $listingId]);
+        $savePrice = $priceStmt->fetchColumn();
+        $pdo->prepare('INSERT INTO saved_listings (user_id, listing_id, price_at_save) VALUES (:user, :listing, :price)')
+            ->execute(['user' => current_user_id(), 'listing' => $listingId, 'price' => $savePrice]);
         $nowSaved = true;
         $msg = t($savedCopy, 'saved');
+        // Notify the seller that a buyer saved their listing (engagement signal).
+        try {
+            $fStmt = $pdo->prepare('SELECT farmer_id, name FROM produce_listings WHERE id = :id');
+            $fStmt->execute(['id' => $listingId]);
+            $listingRow = $fStmt->fetch();
+            if ($listingRow) {
+                notify_user($pdo, (int) $listingRow['farmer_id'], 'messages',
+                    'Someone saved your listing',
+                    (string) $listingRow['name'] . ' was saved by a buyer.',
+                    'my_listings.php');
+            }
+        } catch (Throwable $e) {
+            error_log('save notify failed: ' . $e->getMessage());
+        }
     }
     $pdo->commit();
     $respond(true, $nowSaved, $return, $msg);

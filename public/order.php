@@ -51,6 +51,17 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <a href="/dashboard.php" class="btn btn-outline btn-sm">Back to Dashboard</a>
     </div>
 
+    <?php if ($order['status'] === 'delivery_fee_review'): ?>
+        <div class="alert alert-warning" role="status">
+            <i class="bi bi-truck me-1"></i>
+            <?php if ($role === 'farmer'): ?>
+                <strong>Quote needed:</strong> enter the delivery fee below and click "Set Fee" to send the quote to the buyer.
+            <?php else: ?>
+                <strong>Awaiting delivery fee quote:</strong> the farmer is preparing a delivery fee. You'll be notified once it's set.
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
     <?php if ($flash = flash_get('success')): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <?= e($flash) ?>

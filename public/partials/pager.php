@@ -35,7 +35,7 @@ if (!function_exists('pager_href')) {
     }
 }
 ?>
-<nav aria-label="Pagination" class="d-flex justify-content-center gap-1 flex-wrap my-4" role="navigation">
+<nav aria-label="Pagination" class="browse-pager d-flex justify-content-center gap-1 flex-wrap my-4" role="navigation">
     <!-- Previous -->
     <?php if ($page > 1): ?>
         <a href="<?= e(pager_href($page - 1, $pageParam, $paramPrefix)) ?>" class="btn btn-outline btn-sm" aria-label="<?= e($labels['prev']) ?> page">

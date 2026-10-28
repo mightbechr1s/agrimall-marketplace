@@ -133,6 +133,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $error = $l($copy['account'], 'err_name_required');
         }
+    } elseif ($action === 'contact' && $role === 'farmer') {
+        $contactPhone = trim((string) ($_POST['contact_phone'] ?? ''));
+        $contactEmail = trim((string) ($_POST['contact_email'] ?? ''));
+        $facebook = trim((string) ($_POST['facebook_url'] ?? ''));
+        $instagram = trim((string) ($_POST['instagram_url'] ?? ''));
+        $tiktok = trim((string) ($_POST['tiktok_url'] ?? ''));
+        $website = trim((string) ($_POST['website_url'] ?? ''));
+        if ($contactEmail !== '' && !filter_var($contactEmail, FILTER_VALIDATE_EMAIL)) {
+            $error = 'Invalid email address.';
+        } else {
+            DB::pdo()->prepare(
+                'UPDATE farmer_profiles
+                    SET contact_phone = :cp, contact_email = :ce, facebook_url = :fb,
+                        instagram_url = :ig, tiktok_url = :tt, website_url = :ws
+                  WHERE user_id = :id'
+            )->execute([
+                'cp' => $contactPhone ?: null,
+                'ce' => $contactEmail ?: null,
+                'fb' => $facebook ?: null,
+                'ig' => $instagram ?: null,
+                'tt' => $tiktok ?: null,
+                'ws' => $website ?: null,
+                'id' => $userId,
+            ]);
+            $success = 'Contact details updated.';
+            security_event_log('account_contact_changed', ['fields' => ['contact_phone','contact_email','facebook_url','instagram_url','tiktok_url','website_url']]);
+            audit_log('account_name_changed', 'user', $userId);
+        }
     }
 }
 
@@ -252,6 +280,52 @@ require __DIR__ . '/partials/dashboard-layout.php';
             </form>
         <?php endif; ?>
 
+        <?php if ($role === 'farmer'): ?>
+        <form method="post" action="account.php" class="account-form">
+            <?= csrf_field() ?>
+            <input type="hidden" name="account_action" value="contact">
+            <fieldset>
+                <legend>Contact details (shown on your farm profile)</legend>
+                <p class="account-hint">Let buyers reach you directly — phone, email, social media. Chat is not available in-app.</p>
+                <?php
+                $cp = DB::pdo()->prepare('SELECT contact_phone, contact_email, facebook_url, instagram_url, tiktok_url, website_url FROM farmer_profiles WHERE user_id = :id');
+                $cp->execute(['id' => $userId]);
+                $contact = $cp->fetch() ?: [];
+                ?>
+                <div class="form-group">
+                    <label class="form-label" for="contact_phone">Phone</label>
+                    <input class="form-control" type="tel" id="contact_phone" name="contact_phone"
+                           value="<?= e($contact['contact_phone'] ?? '') ?>" maxlength="30">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="contact_email">Public email</label>
+                    <input class="form-control" type="email" id="contact_email" name="contact_email"
+                           value="<?= e($contact['contact_email'] ?? '') ?>" maxlength="255">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="facebook_url">Facebook URL</label>
+                    <input class="form-control" type="url" id="facebook_url" name="facebook_url"
+                           value="<?= e($contact['facebook_url'] ?? '') ?>" maxlength="255" placeholder="https://facebook.com/...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="instagram_url">Instagram URL</label>
+                    <input class="form-control" type="url" id="instagram_url" name="instagram_url"
+                           value="<?= e($contact['instagram_url'] ?? '') ?>" maxlength="255" placeholder="https://instagram.com/...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="tiktok_url">TikTok URL</label>
+                    <input class="form-control" type="url" id="tiktok_url" name="tiktok_url"
+                           value="<?= e($contact['tiktok_url'] ?? '') ?>" maxlength="255" placeholder="https://tiktok.com/@...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="website_url">Website</label>
+                    <input class="form-control" type="url" id="website_url" name="website_url"
+                           value="<?= e($contact['website_url'] ?? '') ?>" maxlength="255" placeholder="https://...">
+                </div>
+                <button class="btn btn-primary" type="submit">Save contact details</button>
+            </fieldset>
+        </form>
+        <?php endif; ?>
         <form method="post" action="account.php" class="account-form">
             <?= csrf_field() ?>
             <input type="hidden" name="account_action" value="email">

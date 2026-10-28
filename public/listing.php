@@ -54,6 +54,14 @@ $imageStmt = DB::pdo()->prepare('SELECT image_path FROM listing_images WHERE lis
 $imageStmt->execute(['id' => $id]);
 $images = $imageStmt->fetchAll(PDO::FETCH_COLUMN);
 
+// Social proof counts.
+$saveCountStmt = DB::pdo()->prepare('SELECT COUNT(*) FROM saved_listings WHERE listing_id = :id');
+$saveCountStmt->execute(['id' => $id]);
+$saveCount = (int) $saveCountStmt->fetchColumn();
+$soldWeekStmt = DB::pdo()->prepare("SELECT COUNT(*) FROM orders WHERE listing_id = :id AND status = 'completed' AND completed_at >= (NOW() - INTERVAL 7 DAY)");
+$soldWeekStmt->execute(['id' => $id]);
+$soldWeek = (int) $soldWeekStmt->fetchColumn();
+
 $pageTitle = $item['name'];
 $fmtQty = function ($value, $symbol): string {
     return rtrim(rtrim(number_format((float) $value, 4), '0'), '.') . ' ' . e($symbol);
@@ -97,9 +105,7 @@ $fmtQty = function ($value, $symbol): string {
                 </div>
             <?php else: ?>
                 <div class="listing-placeholder" data-reveal>
-                    <div class="placeholder-icon d-flex align-items-center justify-content-center">
-                        <i class="bi bi-basket3" aria-hidden="true"></i>
-                    </div>
+                    <img src="<?= e(asset('assets/images/products/placeholder.svg')) ?>" class="d-block w-100" alt="<?= e($item['name']) ?>" style="max-height: 480px; object-fit: contain;">
                 </div>
             <?php endif; ?>
         </div>
@@ -117,22 +123,57 @@ $fmtQty = function ($value, $symbol): string {
                 </div>
 
                 <h1 class="listing-title"><?= e($item['name']) ?></h1>
-                <p class="listing-origin">
-                    <i class="bi bi-geo-alt-fill" aria-hidden="true"></i>
-                    <?= e($item['farm_name']) ?> &middot; <?= e($item['barangay']) ?>, <?= e($item['municipality_city']) ?>, <?= e($item['province']) ?>
-                </p>
+                <div class="card border-0 shadow-sm mt-3 mb-3">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center" style="width:36px;height:36px;"><i class="bi bi-shop"></i></span>
+                            <div>
+                                <div class="fw-semibold small"><?= e($item['farm_name']) ?></div>
+                                <div class="text-muted small"><i class="bi bi-geo-alt-fill"></i> <?= e($item['barangay']) ?>, <?= e($item['municipality_city']) ?>, <?= e($item['province']) ?></div>
+                            </div>
+                            <?php if ($item['verification_status'] === 'approved'): ?>
+                                <span class="badge text-bg-success ms-auto"><i class="bi bi-patch-check-fill"></i> Verified</span>
+                            <?php endif; ?>
+                        </div>
+                        <a href="profile.php?id=<?= (int) $item['farmer_id'] ?>" class="btn btn-outline-primary btn-sm w-100 mt-2">View farm &amp; products</a>
+                    </div>
+                </div>
 
                 <div class="listing-price">
                     <span class="amount"><?= money($item['price_per_unit']) ?></span>
                     <span class="per">/ <?= e($item['unit_symbol']) ?></span>
+                    <?php if (!empty($item['discount_percent']) && (int) $item['discount_percent'] > 0): ?>
+                        <?php $dealPrice = round((float) $item['price_per_unit'] * (1 - (int) $item['discount_percent'] / 100), 2); ?>
+                        <span class="badge ms-2" style="background:#7c3aed;color:#fff;"><?= (int) $item['discount_percent'] ?>% OFF</span>
+                        <div class="text-danger fw-bold mt-1"><?= money($dealPrice) ?> <small class="text-muted">deal price</small></div>
+                    <?php endif; ?>
+                    <?php
+                      $harvest = $item['harvest_date'] ?? null;
+                      $freshLabel = null;
+                      if ($harvest) {
+                        $days = (int) floor((time() - strtotime($harvest)) / 86400);
+                        $freshLabel = $days <= 0 ? 'Picked today' : ($days === 1 ? 'Picked 1 day ago' : 'Picked ' . $days . ' days ago');
+                      }
+                    ?>
+                    <?php if ($freshLabel): ?>
+                        <span class="badge text-bg-light text-muted ms-2" style="font-size:12px;vertical-align:middle;"><?= e($freshLabel) ?></span>
+                    <?php endif; ?>
                 </div>
                 <div class="listing-meta">
-                    <?= $fmtQty($item['available_quantity'], $item['unit_symbol']) ?> <?= $l($copy['listing'], 'available') ?>
+                    <span class="badge text-bg-success"><i class="bi bi-box-seam me-1"></i>In stock: <?= $fmtQty($item['available_quantity'], $item['unit_symbol']) ?></span>
                     <span class="sep">&middot;</span>
                     <?= $l($copy['listing'], 'min_order') ?> <?= $fmtQty($item['minimum_order_qty'], $item['unit_symbol']) ?>
                     <span class="sep">&middot;</span>
                     <span class="text-muted small">Min. total: <?= money($item['price_per_unit'] * $item['minimum_order_qty']) ?> for <?= $fmtQty($item['minimum_order_qty'], $item['unit_symbol']) ?></span>
                 </div>
+                <?php if ($saveCount > 0): ?>
+                    <p class="text-muted small mb-1 mt-1"><i class="bi bi-heart-fill text-danger me-1" aria-hidden="true"></i><?= $saveCount === 1 ? '1 person has saved this product' : $saveCount . ' people have saved this product' ?></p>
+                <?php else: ?>
+                    <p class="text-muted small mb-1 mt-1"><i class="bi bi-heart me-1" aria-hidden="true"></i>Be the first to save this product</p>
+                <?php endif; ?>
+                <?php if ($soldWeek > 0): ?>
+                    <p class="text-muted small mb-2 mt-1"><i class="bi bi-bag-check text-success me-1" aria-hidden="true"></i><?= $soldWeek === 1 ? '1 sold this week' : $soldWeek . ' sold this week' ?></p>
+                <?php endif; ?>
 
                 <p class="listing-desc"><?= nl2br(e($item['description'] ?? '')) ?></p>
 

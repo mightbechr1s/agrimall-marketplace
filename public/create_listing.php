@@ -56,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim((string) ($_POST['name'] ?? ''));
     $description = trim((string) ($_POST['description'] ?? ''));
     $pricePerUnit = number_in($_POST['price_per_unit'] ?? null, 0.01, MAX_DELIVERY_FEE);
+    $discountPercent = max(0, min(90, (int) ($_POST['discount_percent'] ?? 0)));
     $availableQuantity = number_in($_POST['available_quantity'] ?? null, 0, MAX_QUANTITY);
     $minimumOrderQty = number_in($_POST['minimum_order_qty'] ?? null, 0.0001, MAX_QUANTITY);
     $maxQtyRaw = $_POST['maximum_order_qty'] ?? '';
@@ -205,6 +206,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         try {
             if ($editing) {
+                // Capture old price/qty for save-alerts before overwriting.
+                $oldStmt = DB::pdo()->prepare('SELECT price_per_unit, available_quantity FROM produce_listings WHERE id = :id');
+                $oldStmt->execute(['id' => $editId]);
+                $oldListing = $oldStmt->fetch() ?: ['price_per_unit' => $pricePerUnit, 'available_quantity' => $availableQuantity];
+
                 // Edit: available_quantity is deliberately absent here. It moves
                 // through stock_apply() below so the ledger stays in step
                 // (FR-LIST-029/030) instead of being silently overwritten.
@@ -212,6 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'UPDATE produce_listings
                         SET category_id = :category_id, unit_id = :unit_id, name = :name,
                             description = :description, price_per_unit = :price_per_unit,
+                            discount_percent = :discount_percent,
                             minimum_order_qty = :minimum_order_qty, maximum_order_qty = :maximum_order_qty,
                             harvest_date = :harvest_date, expiry_date = :expiry_date, is_organic = :is_organic
                       WHERE id = :id AND farmer_id = :farmer_id'
@@ -222,6 +229,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'name' => $name,
                     'description' => $description,
                     'price_per_unit' => $pricePerUnit,
+                    'discount_percent' => $discountPercent,
                     'minimum_order_qty' => $minimumOrderQty,
                     'maximum_order_qty' => $maximumOrderQty,
                     'harvest_date' => $harvestDate,
@@ -248,16 +256,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $delta > 0 ? 'restock' : 'spoilage', null, $farmerId,
                         'Quantity corrected from ' . qty_str($before) . ' to ' . qty_str($availableQuantity) . ' via listing edit.');
                 }
+
+                // Price-drop / restock alerts for buyers who saved this listing.
+                try {
+                    $alerts = [];
+                    if ($pricePerUnit < (float) $oldListing['price_per_unit']) {
+                        $alerts[] = ['title' => 'Price dropped on a saved item', 'body' => $name . ' is now ' . money($pricePerUnit) . ' (was ' . money($oldListing['price_per_unit']) . ').'];
+                    }
+                    if ($availableQuantity > (float) $oldListing['available_quantity']) {
+                        $alerts[] = ['title' => 'Back in stock', 'body' => $name . ' is available again (' . qty_str($availableQuantity) . ' ' . $unitSymbol . ').'];
+                    }
+                    if ($alerts) {
+                        $savedBuyers = DB::pdo()->prepare('SELECT DISTINCT user_id FROM saved_listings WHERE listing_id = :id');
+                        $savedBuyers->execute(['id' => $listingId]);
+                        foreach ($savedBuyers->fetchAll(PDO::FETCH_COLUMN) as $buyerId) {
+                            foreach ($alerts as $a) {
+                                notify_user(DB::pdo(), (int) $buyerId, 'messages', $a['title'], $a['body'], 'listing.php?id=' . $listingId);
+                            }
+                        }
+                    }
+                } catch (Throwable $e) {
+                    error_log('save alert failed: ' . $e->getMessage());
+                }
             } else {
                 // Insert listing
                 $stmt = DB::pdo()->prepare(
                     'INSERT INTO produce_listings
                         (farmer_id, category_id, unit_id, name, description, price_per_unit,
-                         available_quantity, minimum_order_qty, maximum_order_qty,
+                         discount_percent, available_quantity, minimum_order_qty, maximum_order_qty,
                          harvest_date, expiry_date, is_organic, status, published_at)
                      VALUES
                         (:farmer_id, :category_id, :unit_id, :name, :description, :price_per_unit,
-                         :available_quantity, :minimum_order_qty, :maximum_order_qty,
+                         :discount_percent, :available_quantity, :minimum_order_qty, :maximum_order_qty,
                          :harvest_date, :expiry_date, :is_organic, :status, NOW())'
                 );
                 $stmt->execute([
@@ -267,6 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'name' => $name,
                     'description' => $description,
                     'price_per_unit' => $pricePerUnit,
+                    'discount_percent' => $discountPercent,
                     'available_quantity' => $availableQuantity,
                     'minimum_order_qty' => $minimumOrderQty,
                     'maximum_order_qty' => $maximumOrderQty,
@@ -423,6 +454,13 @@ require __DIR__ . '/partials/dashboard-layout.php';
                         <label class="form-label" for="price_per_unit"><?= $l($copy['lf'], 'price') ?></label>
                         <input class="form-control" type="number" id="price_per_unit" name="price_per_unit"
                                step="0.01" min="0.01" value="<?= e($old['price_per_unit'] ?? '') ?>" required placeholder="0.00" />
+                    </div>
+
+                    <div>
+                        <label class="form-label" for="discount_percent">Discount % (deal)</label>
+                        <input class="form-control" type="number" id="discount_percent" name="discount_percent"
+                               step="1" min="0" max="90" value="<?= e($old['discount_percent'] ?? 0) ?>" placeholder="0">
+                        <small class="text-muted">0 = no deal. Set 1-90 for a discounted price.</small>
                     </div>
 
                     <div>

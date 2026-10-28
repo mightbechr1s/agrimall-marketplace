@@ -4493,3 +4493,16 @@ td .empty-state {
 body.legal-page { padding: 2rem; font-family: var(--font-body); }
 body.legal-page h2 { margin-top: 2rem; }
 body.legal-page section { margin-bottom: 2rem; }
+
+/* Stretched-link cards: keep interactive controls above the click overlay. */
+.card-actions, .card .btn, .card form { position: relative; z-index: 2; }
+
+/* Consistent spacing: card bodies and grids use one rhythm. */
+.card-body { padding: 1rem 1.25rem; }
+.grid { gap: 1.25rem; }
+.dash-panel .card-body { padding: 1rem 1.25rem; }
+
+/* Skeleton loaders for AJAX fetches. */
+.skeleton { background: linear-gradient(90deg, var(--canvas-deep,#eee) 25%, var(--canvas,#f5f5f5) 50%, var(--canvas-deep,#eee) 75%); background-size: 200% 100%; animation: skeleton-shimmer 1.4s infinite; border-radius: 6px; }
+@keyframes skeleton-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.skeleton-card { height: 220px; }

@@ -27,4 +27,32 @@ $st = $pdo->prepare(
 $st->execute();
 $c4 = $st->rowCount();
 
+// Expiry nudge: tell buyers whose saved listings expire within 2 days.
+try {
+    $rows = $pdo->query(
+        "SELECT DISTINCT sl.user_id, pl.id, pl.name, pl.expiry_date
+           FROM saved_listings sl
+           JOIN produce_listings pl ON pl.id = sl.listing_id
+          WHERE pl.status = 'active'
+            AND pl.expiry_date IS NOT NULL
+            AND pl.expiry_date BETWEEN CURDATE() AND (CURDATE() + INTERVAL 2 DAY)"
+    )->fetchAll();
+    foreach ($rows as $r) {
+        // Guard against duplicate nudges within 24h.
+        $dup = $pdo->prepare(
+            "SELECT 1 FROM notifications
+              WHERE user_id = :u AND link = :l AND title = 'Saved item expiring soon'
+                AND created_at > (NOW() - INTERVAL 1 DAY) LIMIT 1"
+        );
+        $dup->execute(['u' => $r['user_id'], 'l' => 'listing.php?id=' . $r['id']]);
+        if ($dup->fetch()) continue;
+        notify_user($pdo, (int) $r['user_id'], 'messages',
+            'Saved item expiring soon',
+            $r['name'] . ' expires on ' . $r['expiry_date'] . '. Order soon or it may be gone.',
+            'listing.php?id=' . $r['id']);
+    }
+} catch (Throwable $e) {
+    error_log('expiry nudge failed: ' . $e->getMessage());
+}
+
 echo "pruned: rate_limits={$c1}, password_resets={$c2}, read notifications={$c3}, over caps={$c4}\n";

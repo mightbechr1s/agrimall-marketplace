@@ -529,8 +529,18 @@ function status_variant(string $status): string
 /** Status chip. */
 function status_badge(string $status): string
 {
+    static $labels = [
+        'admin_deactivated' => 'Removed by admin',
+        'sold_out' => 'Sold out',
+        'out_of_stock' => 'Out of stock',
+        'delivery_fee_review' => 'Fee review',
+        'ready_for_pickup' => 'Ready for pickup',
+        'out_for_delivery' => 'Out for delivery',
+    ];
+    $label = $labels[$status] ?? str_replace('_', ' ', $status);
+    $display = array_key_exists($status, $labels) ? $label : ucwords($label);
     return '<span class="dash-badge dash-badge--' . status_variant($status) . '">'
-        . e(str_replace('_', ' ', $status)) . '</span>';
+        . e($display) . '</span>';
 }
 
 /** Generate a human order reference like AM-20260915-4F9E2C. */
@@ -546,7 +556,7 @@ function order_ref(): string
  */
 function fallback_produce_image(): string
 {
-    return 'assets/images/products/market.jpg';
+    return 'assets/images/products/placeholder.svg';
 }
 
 /**
