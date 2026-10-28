@@ -124,25 +124,6 @@ if ($sidebarShell) {
       </div>
       <div class="d-flex gap-2 overflow-auto pb-2" id="recently-viewed-list"></div>
     </div>
-    <?php
-      $activeFilters = [];
-      if ($q !== '') $activeFilters[] = ['label' => 'Search: ' . $q, 'href' => http_build_query(array_merge($_GET, ['q' => '']))];
-      if ($categoryFilter !== '') $activeFilters[] = ['label' => 'Category: ' . $categoryFilter, 'href' => http_build_query(array_merge($_GET, ['category' => '']))];
-      if ($dealsFilter) $activeFilters[] = ['label' => 'Deals only', 'href' => http_build_query(array_merge($_GET, ['deals' => '']))];
-      if ($trendingFilter) $activeFilters[] = ['label' => 'Trending', 'href' => http_build_query(array_merge($_GET, ['trending' => '']))];
-      $clearAllHref = 'browse.php';
-    ?>
-    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-      <span class="text-muted small"><?= (int) $total ?> result<?= $total === 1 ? '' : 's' ?></span>
-      <?php foreach ($activeFilters as $af): ?>
-        <a href="browse.php?<?= e($af['href']) ?>" class="badge rounded-pill text-bg-light border text-decoration-none">
-          <?= e($af['label']) ?> <i class="bi bi-x" aria-hidden="true"></i>
-        </a>
-      <?php endforeach; ?>
-      <?php if ($activeFilters): ?>
-        <a href="browse.php" class="small text-decoration-none">Clear all</a>
-      <?php endif; ?>
-    </div>
     <div class="grid" id="product-grid" data-reveal="stagger">
       <?php
       $listings = [];
@@ -220,6 +201,24 @@ if ($sidebarShell) {
       }
 
       $totalPages = $listingsFailed ? 0 : $totalPages; ?>
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3" style="grid-column: 1 / -1;">
+      <span class="text-muted small"><?= (int) ($total ?? 0) ?> result<?= ($total ?? 0) === 1 ? '' : 's' ?></span>
+      <?php
+        $activeFilters = [];
+        if ($q !== '') $activeFilters[] = ['label' => 'Search: ' . $q, 'href' => http_build_query(array_merge($_GET, ['q' => '']))];
+        if ($categoryFilter !== '') $activeFilters[] = ['label' => 'Category: ' . $categoryFilter, 'href' => http_build_query(array_merge($_GET, ['category' => '']))];
+        if ($dealsFilter) $activeFilters[] = ['label' => 'Deals only', 'href' => http_build_query(array_merge($_GET, ['deals' => '']))];
+        if ($trendingFilter) $activeFilters[] = ['label' => 'Trending', 'href' => http_build_query(array_merge($_GET, ['trending' => '']))];
+      ?>
+      <?php foreach ($activeFilters as $af): ?>
+        <a href="browse.php?<?= e($af['href']) ?>" class="badge rounded-pill text-bg-light border text-decoration-none">
+          <?= e($af['label']) ?> <i class="bi bi-x" aria-hidden="true"></i>
+        </a>
+      <?php endforeach; ?>
+      <?php if ($activeFilters): ?>
+        <a href="browse.php" class="small text-decoration-none">Clear all</a>
+      <?php endif; ?>
+    </div>
       <?php if ($listings): ?>
         <?php foreach ($listings as $item): ?>
           <article class="card" data-reveal="stagger" data-listing-url="listing.php?id=<?php echo (int) $item['id']; ?>" data-category="<?php echo e(strtolower($item['category_name'] ?? '')); ?>">
@@ -447,9 +446,9 @@ if ($sidebarShell) {
 <?php /* The marketplace is a public page that a signed-in visitor happens to be
      viewing, so it keeps the public footer only for logged-out visitors; the
      logged-in shell uses dashboard-footer (no public footer). */ ?>
-<?php if (!$sidebarShell): ?>
-<?php require __DIR__ . '/partials/footer.php'; ?>
-<?php endif; ?>
 <?php if ($sidebarShell): ?>
 <?php require __DIR__ . '/partials/dashboard-footer.php'; ?>
+<?php require __DIR__ . '/partials/footer.php'; ?>
+<?php else: ?>
+<?php require __DIR__ . '/partials/footer.php'; ?>
 <?php endif; ?>
