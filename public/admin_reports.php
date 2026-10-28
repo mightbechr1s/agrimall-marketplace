@@ -888,15 +888,33 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 <?php endif; ?>
+<?php if ($type === 'registration'): ?>
+<form method="post" action="admin_user_action.php" id="bulk-user-form" class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <?= csrf_field() ?>
+    <select name="action" class="form-select form-select-sm" style="max-width: 140px;" required>
+        <option value="">Bulk action…</option>
+        <option value="activate">Activate</option>
+        <option value="suspend">Suspend</option>
+    </select>
+    <input type="text" name="reason" class="form-control form-control-sm" style="max-width: 240px;" placeholder="Reason (required for suspend)" maxlength="500">
+    <button type="submit" class="btn btn-sm btn-outline-primary" onclick="var ids=[]; document.querySelectorAll('.user-cb:checked').forEach(function(cb){ids.push(cb.value);}); if(!ids.length){alert('Select at least one user.');return false;} var f=document.getElementById('bulk-user-form'); f.querySelectorAll('input[name=\'user_ids[]\']').forEach(function(e){e.remove();}); ids.forEach(function(id){var i=document.createElement('input');i.type='hidden';i.name='user_ids[]';i.value=id;f.appendChild(i);}); return true;">Apply</button>
+</form>
+<?php endif; ?>
 <div class="table-responsive">
     <table class="dash-table align-middle report-table">
         <?php if ($type === 'registration'): ?>
         <thead><tr>
+            <th><input type="checkbox" id="selectAllUsers" aria-label="Select all" onclick="document.querySelectorAll('.user-cb').forEach(function(cb){cb.checked=this.checked;},this);"></th>
             <th class="text-nowrap col-when">Registered</th><th class="col-email">Email</th><th class="col-role">Role</th><th class="col-status">Status</th><th>Action</th>
         </tr></thead>
         <tbody>
             <?php foreach ($rows as $r): ?>
             <tr>
+                <td>
+                    <?php if ((int) $r['id'] !== (int) current_user_id()): ?>
+                        <input type="checkbox" class="user-cb" value="<?= (int) $r['id'] ?>" aria-label="Select user">
+                    <?php endif; ?>
+                </td>
                 <td class="cell-muted text-nowrap"><?= e(date('Y-m-d', strtotime($r['created_at']))) ?></td>
                 <td><?= e($r['email']) ?></td>
                 <td><span class="dash-badge <?= $r['role'] === 'farmer' ? 'dash-badge--role-farmer' : ($r['role'] === 'admin' ? 'dash-badge--role-admin' : 'dash-badge--role-buyer') ?>"><?= e(ucfirst($r['role'])) ?></span></td>

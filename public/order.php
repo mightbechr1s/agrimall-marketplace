@@ -351,6 +351,34 @@ require __DIR__ . '/partials/dashboard-layout.php';
                     <?php endif; ?>
 
                 <?php elseif ($role === 'admin'): ?>
+                    <?php if (!empty($order['admin_hold'])): ?>
+                        <div class="alert alert-warning small mb-2">
+                            <strong>Held by administrator.</strong>
+                            <?php if (!empty($order['admin_hold_reason'])): ?>
+                                <div class="mt-1"><?= e($order['admin_hold_reason']) ?></div>
+                            <?php endif; ?>
+                        </div>
+                        <form method="post" action="/order_action.php" class="action-form w-100 mb-2">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                            <input type="hidden" name="action" value="release_hold">
+                            <button type="submit" class="btn btn-outline-primary w-100 btn-sm">Release hold</button>
+                        </form>
+                        <form method="post" action="/order_action.php" class="action-form w-100 mb-2">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                            <input type="hidden" name="action" value="cancel_held">
+                            <div class="mb-2">
+                                <label class="form-label small">Reason (required)</label>
+                                <textarea name="reason" class="form-control form-control-sm" rows="2" maxlength="<?= FIELD_LIMITS['reason'] ?>" required></textarea>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="restore_stock" value="1" id="restoreStock">
+                                <label class="form-check-label small" for="restoreStock">Restore stock</label>
+                            </div>
+                            <button type="submit" class="btn btn-outline-danger w-100 btn-sm">Cancel held order</button>
+                        </form>
+                    <?php endif; ?>
                     <?php if (!in_array($order['status'], ['completed', 'rejected', 'cancelled'])): ?>
                         <form method="post" action="/order_action.php" class="action-form w-100 mb-2">
                             <?= csrf_field() ?>

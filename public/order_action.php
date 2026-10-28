@@ -229,6 +229,42 @@ try {
             $logReason = 'Order cancelled by ' . $role . ': ' . ($reason ?: 'No reason provided.');
             break;
 
+        case 'release_hold':
+            if ($role !== 'admin') {
+                throw new UserFacingException(t($ordersCopy, 'admin_only') ?? 'Admin only.');
+            }
+            if (empty($order['admin_hold'])) {
+                throw new UserFacingException('Order is not on hold.');
+            }
+            $pdo->prepare('UPDATE orders SET admin_hold = 0, admin_hold_reason = NULL WHERE id = :id')
+                ->execute(['id' => $orderId]);
+            $newStatus = $oldStatus;
+            $logReason = 'Administrative hold released by admin.';
+            break;
+
+        case 'cancel_held':
+            if ($role !== 'admin') {
+                throw new UserFacingException(t($ordersCopy, 'admin_only') ?? 'Admin only.');
+            }
+            if (empty($order['admin_hold'])) {
+                throw new UserFacingException('Order is not on hold.');
+            }
+            if (in_array($oldStatus, ['completed', 'rejected', 'cancelled'], true)) {
+                throw new UserFacingException(sprintf(t($ordersCopy, 'cannot_cancel_status'), $oldStatus));
+            }
+            $restore = !empty($_POST['restore_stock']);
+            $newStatus = 'cancelled';
+            $ts = date('Y-m-d H:i:s');
+            $pdo->prepare('UPDATE orders SET status = :status, admin_hold = 0, admin_hold_reason = NULL, cancellation_reason = :reason, cancelled_by_role = :crole, cancelled_at = :ts WHERE id = :id')
+                ->execute(['status' => $newStatus, 'reason' => $reason ?: 'Cancelled by administrator.', 'crole' => 'admin', 'ts' => $ts, 'id' => $orderId]);
+            if ($restore && in_array($oldStatus, ['confirmed', 'preparing', 'ready_for_pickup', 'out_for_delivery'], true)) {
+                stock_apply($pdo, (int) $order['listing_id'], (float) $order['quantity'],
+                    'return', $orderId, $userId,
+                    'Stock restored: held order ' . ($order['order_number']) . ' cancelled by admin.');
+            }
+            $logReason = 'Held order cancelled by admin' . ($restore ? ' (stock restored)' : ' (stock not restored)') . ': ' . ($reason ?: 'No reason provided.');
+            break;
+
         default:
             throw new UserFacingException(sprintf(t($ordersCopy, 'unknown_action'), $action));
     }
