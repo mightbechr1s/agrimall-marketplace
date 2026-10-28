@@ -147,15 +147,26 @@ require __DIR__ . '/partials/dashboard-layout.php';
             <div class="dash-panel p-4 mt-4">
                 <h5 class="mb-3">Participants</h5>
                 <div class="participants-grid">
+                    <?php
+                      $confirmed = in_array($order['status'], ['confirmed','preparing','ready_for_pickup','out_for_delivery','completed'], true);
+                    ?>
                     <div class="participant-card">
                         <strong>Buyer</strong>
                         <span class="participant-name"><?= e($order['buyer_name']) ?></span>
-                        <small class="text-muted"><?= e($order['buyer_phone'] ?? 'No phone') ?></small>
+                        <?php if ($confirmed): ?>
+                          <small class="text-muted"><?= e($order['buyer_phone'] ?? 'No phone') ?></small>
+                        <?php else: ?>
+                          <small class="text-muted fst-italic">Contact details shared after confirmation.</small>
+                        <?php endif; ?>
                     </div>
                     <div class="participant-card">
                         <strong>Farm</strong>
                         <span class="participant-name"><?= e($order['farm_name']) ?></span>
-                        <small class="text-muted"><?= e($order['farmer_contact_person'] ?? '') ?> - <?= e($order['farmer_phone'] ?? 'No phone') ?></small>
+                        <?php if ($confirmed): ?>
+                          <small class="text-muted"><?= e($order['farmer_contact_person'] ?? '') ?> - <?= e($order['farmer_phone'] ?? 'No phone') ?></small>
+                        <?php else: ?>
+                          <small class="text-muted fst-italic">Contact details shared after confirmation.</small>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -205,6 +216,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                                 <div class="mb-2">
                                     <label class="form-label small">Delivery Fee (₱)</label>
                                     <input type="number" step="0.01" min="0" max="<?= MAX_DELIVERY_FEE ?>" name="delivery_fee" class="form-control form-control-sm" value="0.00" required>
+                                    <div class="form-text small">Enter 0 for free delivery.</div>
                                 </div>
                             <?php endif; ?>
                             <button type="submit" class="btn btn-primary w-100 btn-sm">
@@ -221,6 +233,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                             <div class="mb-2">
                                 <label class="form-label small">Delivery Fee (₱)</label>
                                 <input type="number" step="0.01" min="0" max="<?= MAX_DELIVERY_FEE ?>" name="delivery_fee" class="form-control form-control-sm" value="<?= (float) $order['delivery_fee'] ?>" required>
+                                <div class="form-text small">Enter 0 for free delivery.</div>
                             </div>
                             <button type="submit" class="btn btn-outline w-100 btn-sm">
                                 Set Fee
