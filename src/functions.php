@@ -418,6 +418,28 @@ function require_login(): void
     if (!current_user_id()) {
         redirect_to('/login.php');
     }
+    // Invalidate sessions of suspended users (FR-ADM-004).
+    static $statusChecked = false;
+    if (!$statusChecked) {
+        $statusChecked = true;
+        try {
+            $st = DB::pdo()->prepare('SELECT status FROM users WHERE id = :id');
+            $st->execute(['id' => current_user_id()]);
+            $status = $st->fetchColumn();
+            if ($status !== 'active') {
+                // Destroy session and bounce.
+                $_SESSION = [];
+                if (ini_get('session.use_cookies')) {
+                    $p = session_get_cookie_params();
+                    setcookie(session_name(), '', time() - 42000, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
+                }
+                session_destroy();
+                redirect_to('/login.php');
+            }
+        } catch (Throwable $e) {
+            error_log('require_login status check failed: ' . $e->getMessage());
+        }
+    }
 }
 
 /** Require a specific role; otherwise bounce with 403. */
@@ -537,9 +559,30 @@ function status_badge(string $status): string
         'ready_for_pickup' => 'Ready for pickup',
         'out_for_delivery' => 'Out for delivery',
     ];
+    static $icons = [
+        'pending' => 'bi-hourglass-split',
+        'delivery_fee_review' => 'bi-cash-coin',
+        'confirmed' => 'bi-check-circle',
+        'preparing' => 'bi-box-seam',
+        'ready_for_pickup' => 'bi-bag-check',
+        'out_for_delivery' => 'bi-truck',
+        'completed' => 'bi-check2-all',
+        'rejected' => 'bi-x-circle',
+        'cancelled' => 'bi-slash-circle',
+        'active' => 'bi-check-circle',
+        'paused' => 'bi-pause-circle',
+        'draft' => 'bi-pencil',
+        'sold_out' => 'bi-x-square',
+        'archived' => 'bi-archive',
+        'admin_deactivated' => 'bi-shield-x',
+        'suspended' => 'bi-slash-circle',
+        'expired' => 'bi-calendar-x',
+    ];
     $label = $labels[$status] ?? str_replace('_', ' ', $status);
     $display = array_key_exists($status, $labels) ? $label : ucwords($label);
+    $icon = $icons[$status] ?? 'bi-circle';
     return '<span class="dash-badge dash-badge--' . status_variant($status) . '">'
+        . '<i class="bi ' . e($icon) . ' me-1" aria-hidden="true"></i>'
         . e($display) . '</span>';
 }
 

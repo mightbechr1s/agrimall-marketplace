@@ -55,6 +55,11 @@ if ($mode === 'featured') $cardClasses .= ' feature-card';
       <div class="badges-top">
         <?php if (listing_is_expired($listing)): ?>
           <span class="badge text-bg-warning" data-testid="expired-badge"><?= $l($copy['listing'], 'expired_badge') ?></span>
+        <?php elseif (!empty($listing['expiry_date']) && strtotime($listing['expiry_date']) <= strtotime('+3 days')): ?>
+          <span class="badge text-bg-warning"><i class="bi bi-calendar-event me-1" aria-hidden="true"></i>Expires soon</span>
+        <?php endif; ?>
+        <?php if (isset($listing['available_quantity']) && (float)$listing['available_quantity'] > 0 && (float)$listing['available_quantity'] <= 5): ?>
+          <span class="badge text-bg-danger"><i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Low stock</span>
         <?php endif; ?>
         <span class="badge <?= $status === 'active' ? 'badge-fresh' : 'badge-normal' ?>"><?= e(ucfirst(str_replace('_', ' ', $status))) ?></span>
         <span class="badge badge-location"><i class="bi bi-geo-alt" aria-hidden="true"></i><?= e($listing['farm_name'] ?? '') ?><?= !empty($listing['province']) ? ' · ' . e($listing['province']) : '' ?></span>
@@ -121,25 +126,31 @@ if ($mode === 'featured') $cardClasses .= ' feature-card';
     <?php elseif ($showActions && current_user_role() === 'buyer'): ?>
       <div class="card-actions mt-auto">
         <div class="d-flex gap-2 align-items-center">
-          <form method="post" action="cart_add.php" class="mb-0" data-buy-now="true">
-            <?= csrf_field() ?>
-            <input type="hidden" name="listing_id" value="<?= (int) $listing['id'] ?>">
-            <input type="hidden" name="quantity" value="<?= (float) ($listing['minimum_order_qty'] ?? 1) ?>">
-            <input type="hidden" name="buy_now" value="1">
-            <input type="hidden" name="return_to" value="<?= e($returnPath) ?>">
-            <button type="submit" class="btn btn-primary btn-sm w-100" aria-label="Buy now">
-              <i class="bi bi-lightning-charge-fill me-1" aria-hidden="true"></i>Buy Now
+          <?php if (listing_is_expired($listing)): ?>
+            <button type="button" class="btn btn-secondary btn-sm w-100" disabled aria-disabled="true" title="This listing has expired and can no longer be ordered.">
+              <i class="bi bi-calendar-x me-1" aria-hidden="true"></i>Expired — not for sale
             </button>
-          </form>
-          <form method="post" action="cart_add.php" class="mb-0" data-ajax="true">
-            <?= csrf_field() ?>
-            <input type="hidden" name="listing_id" value="<?= (int) $listing['id'] ?>">
-            <input type="hidden" name="quantity" value="<?= (float) ($listing['minimum_order_qty'] ?? 1) ?>">
-            <input type="hidden" name="return_to" value="<?= e($returnPath) ?>">
-            <button type="submit" class="btn btn-outline-primary btn-icon" title="Add to cart" aria-label="Add to cart">
-              <i class="bi bi-cart-plus" aria-hidden="true"></i>
-            </button>
-          </form>
+          <?php else: ?>
+            <form method="post" action="cart_add.php" class="mb-0" data-buy-now="true">
+              <?= csrf_field() ?>
+              <input type="hidden" name="listing_id" value="<?= (int) $listing['id'] ?>">
+              <input type="hidden" name="quantity" value="<?= (float) ($listing['minimum_order_qty'] ?? 1) ?>">
+              <input type="hidden" name="buy_now" value="1">
+              <input type="hidden" name="return_to" value="<?= e($returnPath) ?>">
+              <button type="submit" class="btn btn-primary btn-sm w-100" aria-label="Buy now">
+                <i class="bi bi-lightning-charge-fill me-1" aria-hidden="true"></i>Buy Now
+              </button>
+            </form>
+            <form method="post" action="cart_add.php" class="mb-0" data-ajax="true">
+              <?= csrf_field() ?>
+              <input type="hidden" name="listing_id" value="<?= (int) $listing['id'] ?>">
+              <input type="hidden" name="quantity" value="<?= (float) ($listing['minimum_order_qty'] ?? 1) ?>">
+              <input type="hidden" name="return_to" value="<?= e($returnPath) ?>">
+              <button type="submit" class="btn btn-outline-primary btn-icon" title="Add to cart" aria-label="Add to cart">
+                <i class="bi bi-cart-plus" aria-hidden="true"></i>
+              </button>
+            </form>
+          <?php endif; ?>
           <form method="post" action="saved_toggle.php" class="mb-0" data-save-ajax="true">
             <?= csrf_field() ?>
             <input type="hidden" name="listing_id" value="<?= (int) $listing['id'] ?>">

@@ -892,7 +892,7 @@ document.addEventListener('DOMContentLoaded', function(){
     <table class="dash-table align-middle report-table">
         <?php if ($type === 'registration'): ?>
         <thead><tr>
-            <th class="text-nowrap col-when">Registered</th><th class="col-email">Email</th><th class="col-role">Role</th><th class="col-status">Status</th>
+            <th class="text-nowrap col-when">Registered</th><th class="col-email">Email</th><th class="col-role">Role</th><th class="col-status">Status</th><th>Action</th>
         </tr></thead>
         <tbody>
             <?php foreach ($rows as $r): ?>
@@ -901,6 +901,28 @@ document.addEventListener('DOMContentLoaded', function(){
                 <td><?= e($r['email']) ?></td>
                 <td><span class="dash-badge <?= $r['role'] === 'farmer' ? 'dash-badge--role-farmer' : ($r['role'] === 'admin' ? 'dash-badge--role-admin' : 'dash-badge--role-buyer') ?>"><?= e(ucfirst($r['role'])) ?></span></td>
                 <td><?= status_badge($r['status']) ?></td>
+                <td>
+                    <?php if ((int) $r['id'] !== (int) current_user_id()): ?>
+                      <?php if ($r['status'] === 'active'): ?>
+                        <form method="post" action="admin_user_action.php" class="d-inline">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="user_id" value="<?= (int) $r['id'] ?>">
+                            <input type="hidden" name="action" value="suspend">
+                            <input type="text" name="reason" class="form-control form-control-sm d-inline-block" style="width:160px;" placeholder="Reason (required)" required maxlength="500">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Suspend this account?');">Suspend</button>
+                        </form>
+                      <?php else: ?>
+                        <form method="post" action="admin_user_action.php" class="d-inline">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="user_id" value="<?= (int) $r['id'] ?>">
+                            <input type="hidden" name="action" value="activate">
+                            <button type="submit" class="btn btn-sm btn-outline-success">Activate</button>
+                        </form>
+                      <?php endif; ?>
+                    <?php else: ?>
+                        <span class="text-muted small">You</span>
+                    <?php endif; ?>
+                </td>
             </tr>
             <?php endforeach; ?>
         </tbody>

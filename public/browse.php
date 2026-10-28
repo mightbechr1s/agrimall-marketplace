@@ -190,7 +190,7 @@ if ($sidebarShell) {
         }
 
         $offset = ($page - 1) * 12;
-        $stmt = DB::pdo()->prepare("SELECT v_active_listings.*, (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = v_active_listings.id) AS save_count, (SELECT COUNT(*) FROM orders o WHERE o.listing_id = v_active_listings.id AND o.status = 'completed' AND o.completed_at >= (NOW() - INTERVAL 7 DAY)) AS sold_week FROM v_active_listings WHERE $where ORDER BY CASE WHEN discount_percent > 0 THEN 0 ELSE 1 END, CASE WHEN (SELECT COUNT(*) FROM saved_listings sl2 WHERE sl2.listing_id = v_active_listings.id) >= 3 THEN 0 ELSE 1 END, published_at DESC LIMIT 12 OFFSET :offset");
+        $stmt = DB::pdo()->prepare("SELECT v_active_listings.*, (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = v_active_listings.id) AS save_count, (SELECT COUNT(*) FROM orders o WHERE o.listing_id = v_active_listings.id AND o.status = 'completed' AND o.completed_at >= (NOW() - INTERVAL 7 DAY)) AS sold_week FROM v_active_listings WHERE $where ORDER BY CASE WHEN discount_percent > 0 THEN 0 ELSE 1 END, CASE WHEN (SELECT COUNT(*) FROM saved_listings sl2 WHERE sl2.listing_id = v_active_listings.id) >= 3 THEN 0 ELSE 1 END, is_expired ASC, published_at DESC LIMIT 12 OFFSET :offset");
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         foreach ($bind as $k => $v) $stmt->bindValue($k, $v);
         $stmt->execute();
