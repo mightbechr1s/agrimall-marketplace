@@ -4605,3 +4605,17 @@ article.card:focus-within .thumb img { transform: scale(1.04); }
   .dash-panel { padding: .75rem; }
   .sidebar-topbar-title { font-size: .85rem; }
 }
+
+/* === Empty state clipboard icon (tinted circle) === */
+.empty-state-icon-wrapper .bi,
+.empty-state .empty-state-icon {
+  width: 4rem;
+  height: 4rem;
+  border-radius: var(--radius-pill);
+  background: var(--primary-tint);
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: .75rem;
+}

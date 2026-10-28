@@ -4,7 +4,7 @@
  * Required: $title; optional: $icon, $description, $action, $actions, $size, $class.
  * Read with ?? so caller values win and nothing needs unsetting.
  */
-$icon = $icon ?? '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon"><path d="M2 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4z"/><path d="M2 7h4l1 2h2l1-2h4"/></svg>';
+$icon = $icon ?? '<i class="bi bi-clipboard2" aria-hidden="true"></i>';
 $title = $title ?? 'No records found';
 $description = $description ?? '';
 $action = $action ?? null;

@@ -173,13 +173,10 @@ try {
     ok 'a logged-out search miss does not offer the dashboard' (-not ($ctaAnon -match 'dashboard\.php')) 'offers dashboard to a visitor'
 
     "`n--- footer seller link ---"
-    # register.php bounces signed-in visitors, so the link is hidden for them
-    $footAuth = [regex]::Match($missAuth, '(?s)<footer.*?</footer>').Value
-    if (-not $footAuth) { throw "no <footer> found, footer assertions would pass vacuously" }
+    # signed-in visitors now use the dashboard footer, so only the logged-out
+    # public footer is checked for the seller link.
     $footAnon = [regex]::Match($missAnon, '(?s)<footer.*?</footer>').Value
     if (-not $footAnon) { throw "no <footer> found for the logged-out view" }
-    ok 'a signed-in viewer is not offered the seller link in the footer' (-not ($footAuth -match 'register\.php')) 'footer still offers registration'
-    ok 'the signed-in footer keeps the rest of the farmers section' ($footAuth -match 'For farmers') 'farmers heading disappeared with the link'
     ok 'a logged-out visitor is still offered the seller link' ($footAnon -match 'register\.php') 'seller link missing for a visitor'
 
     "`n--- account name change ---"

@@ -332,7 +332,7 @@ if ($sidebarShell) {
           <?php
             // A load failure is not an empty marketplace, so it gets its own
             // message and a retry instead of the stock copy below.
-            $icon = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="empty-state-icon"><path d="M8 1a.5.5 0 0 1 .5.5V3h1.5a.5.5 0 0 1 0 1H8.5v1.5h1a.5.5 0 0 1 0 1h-1v1.5h1.5a.5.5 0 0 1 0 1H8.5V9.5h1a.5.5 0 0 1 0 1h-1V11h1.5a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V12H6a.5.5 0 0 1 0-1h1.5V9.5h-1a.5.5 0 0 1 0-1h1V7H7a.5.5 0 0 1 0-1h1.5V4.5H7a.5.5 0 0 1 0-1h.5V1.5A.5.5 0 0 1 8 1z"/><path d="M2 2.5a.5.5 0 0 1 .5.5V4h1a.5.5 0 0 1 0 1h-1v1h1a.5.5 0 0 1 0 1h-1v1h1a.5.5 0 0 1 0 1h-1v3.5a.5.5 0 0 1-1 0V8H1.5a.5.5 0 0 1 0-1H2V6H1a.5.5 0 0 1 0-1h1V4H1.5a.5.5 0 0 1 0-1H2V3a.5.5 0 0 1 .5-.5z"/>';
+            $icon = '<i class="bi bi-clipboard2" aria-hidden="true"></i>';
 
             if ($listingsFailed) {
                 // The errors block is keyed locale-first, so the nested
@@ -448,7 +448,6 @@ if ($sidebarShell) {
      logged-in shell uses dashboard-footer (no public footer). */ ?>
 <?php if ($sidebarShell): ?>
 <?php require __DIR__ . '/partials/dashboard-footer.php'; ?>
-<?php require __DIR__ . '/partials/footer.php'; ?>
 <?php else: ?>
 <?php require __DIR__ . '/partials/footer.php'; ?>
 <?php endif; ?>
