@@ -4596,3 +4596,12 @@ article.card:focus-within .thumb img { transform: scale(1.04); }
   margin-bottom: 1.1rem;
 }
 
+
+/* === Batch 3 polish: focus rings, 320px safety === */
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.stat-card:focus-visible, .cart-pill:focus-visible, .sidebar-icon-btn:focus-visible, .sidebar-link:focus-visible { outline-offset: 3px; }
+@media (max-width: 359.98px) {
+  .auth-wrap { padding: 0; }
+  .dash-panel { padding: .75rem; }
+  .sidebar-topbar-title { font-size: .85rem; }
+}

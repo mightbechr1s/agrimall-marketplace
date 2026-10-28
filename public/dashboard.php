@@ -226,7 +226,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
     <div class="row g-4 mb-4" data-reveal="stagger">
         <?php foreach ($stats as $label => $data): ?>
             <div class="col-12 col-sm-6 col-lg-3">
-<div class="stat-card stat-card--<?= e($data['variant'] ?? 'info') ?>" data-reveal="stagger" data-href="<?= e($data['href'] ?? '#') ?>" onclick="if(this.dataset.href&&this.dataset.href!=='#')window.location.href=this.dataset.href;" style="cursor:pointer;">
+<div class="stat-card stat-card--<?= e($data['variant'] ?? 'info') ?>" data-reveal="stagger" data-href="<?= e($data['href'] ?? '#') ?>" tabindex="0" role="link" onclick="if(this.dataset.href&&this.dataset.href!=='#')window.location.href=this.dataset.href;" onkeydown="if((event.key==='Enter'||event.key===' ')&&this.dataset.href&&this.dataset.href!=='#'){event.preventDefault();window.location.href=this.dataset.href;}" style="cursor:pointer;">
                     <div class="stat-content">
                         <div class="stat-icon"><i class="bi <?= e($data['icon']) ?>" aria-hidden="true"></i></div>
                         <div class="stat-body">
