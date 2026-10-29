@@ -83,7 +83,7 @@ $fmtQty = function ($value, $symbol): string {
                     <div class="carousel-inner">
                         <?php foreach ($images as $index => $imageUrl): ?>
                             <div class="carousel-item <?= $index === 0 ? 'active' : '' ?>">
-                                <img src="<?= e(asset($imageUrl)) ?>" class="d-block w-100" alt="<?= e($item['name']) ?>" onerror="this.onerror=null;this.src='<?= e(asset('assets/images/listings/mangoes.svg')) ?>'">
+                                <img src="<?= e(asset($imageUrl)) ?>" class="d-block w-100" alt="<?= e($item['name']) ?>" onerror="this.onerror=null;this.src='<?= e(asset(fallback_produce_image())) ?>'">
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -105,7 +105,7 @@ $fmtQty = function ($value, $symbol): string {
                 </div>
             <?php else: ?>
                 <div class="listing-placeholder" data-reveal>
-                    <img src="<?= e(asset('assets/images/products/placeholder.svg')) ?>" class="d-block w-100" alt="<?= e($item['name']) ?>" style="max-height: 480px; object-fit: contain;">
+                    <img src="<?= e(asset(fallback_produce_image())) ?>" class="d-block w-100" alt="<?= e($item['name']) ?>" style="max-height: 480px; object-fit: contain;">
                 </div>
             <?php endif; ?>
         </div>
@@ -142,7 +142,7 @@ $fmtQty = function ($value, $symbol): string {
                 <div class="listing-price">
                     <span class="amount"><?= money($item['price_per_unit']) ?></span>
                     <span class="per">/ <?= e($item['unit_symbol']) ?></span>
-                    <?php if (!empty($item['discount_percent']) && (int) $item['discount_percent'] > 0): ?>
+                    <?php if (!empty($item['discount_percent']) && (int) $item['discount_percent'] > 0 && !listing_is_expired($item)): ?>
                         <?php $dealPrice = round((float) $item['price_per_unit'] * (1 - (int) $item['discount_percent'] / 100), 2); ?>
                         <span class="badge ms-2" style="background:#7c3aed;color:#fff;"><?= (int) $item['discount_percent'] ?>% OFF</span>
                         <div class="text-danger fw-bold mt-1"><?= money($dealPrice) ?> <small class="text-muted">deal price</small></div>

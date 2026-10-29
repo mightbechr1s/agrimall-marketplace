@@ -214,19 +214,19 @@ function makeOrder(PDO $pdo, int $buyerId, int $farmerId, int $listingId, float 
              'delivery_fee', 'delivery_method', 'delivery_address', 'status', 'created_at',
              'preferred_pickup_date', 'preferred_pickup_time'];
     $bind = [
-        'number' => 'ORD-' . strtoupper(bin2hex(random_bytes(4))),
+        'order_number' => 'ORD-' . strtoupper(bin2hex(random_bytes(4))),
         'buyer_id' => $buyerId,
         'farmer_id' => $farmerId,
         'listing_id' => $listingId,
         'quantity' => $qty,
         'unit_price' => $price,
         'delivery_fee' => $fee,
-        'method' => $method,
-        'address' => $address,
+        'delivery_method' => $method,
+        'delivery_address' => $address,
         'status' => $status,
         'created_at' => $created,
-        'pickup_date' => $method === 'pickup' ? date('Y-m-d', strtotime('+2 days')) : null,
-        'pickup_time' => $method === 'pickup' ? '09:00:00' : null,
+        'preferred_pickup_date' => $method === 'pickup' ? date('Y-m-d', strtotime('+2 days')) : null,
+        'preferred_pickup_time' => $method === 'pickup' ? '09:00:00' : null,
     ];
     if ($status === 'rejected') {
         $cols[] = 'rejection_reason';

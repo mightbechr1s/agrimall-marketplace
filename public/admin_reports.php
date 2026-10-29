@@ -896,7 +896,15 @@ document.addEventListener('DOMContentLoaded', function(){
         <option value="activate">Activate</option>
         <option value="suspend">Suspend</option>
     </select>
-    <input type="text" name="reason" class="form-control form-control-sm" style="max-width: 240px;" placeholder="Reason (required for suspend)" maxlength="500">
+    <select name="reason" class="form-select form-select-sm" style="flex:1 1 160px; min-width:140px; max-width:260px;" required onchange="var n=this.nextElementSibling; if(n) n.style.display=(this.value==='Other')?'':'none';">
+        <option value="">Reason (required for suspend)</option>
+        <option value="Incomplete verification">Incomplete verification</option>
+        <option value="Policy violation">Policy violation</option>
+        <option value="Fraudulent activity">Fraudulent activity</option>
+        <option value="Spam or abuse">Spam or abuse</option>
+        <option value="Other">Other</option>
+    </select>
+    <input type="text" name="reason_other" class="form-control form-control-sm" style="flex:1 1 180px; min-width:140px; max-width:320px; display:none;" placeholder="Specify reason" maxlength="500">
     <button type="submit" class="btn btn-sm btn-outline-primary" onclick="var ids=[]; document.querySelectorAll('.user-cb:checked').forEach(function(cb){ids.push(cb.value);}); if(!ids.length){alert('Select at least one user.');return false;} var f=document.getElementById('bulk-user-form'); f.querySelectorAll('input[name=\'user_ids[]\']').forEach(function(e){e.remove();}); ids.forEach(function(id){var i=document.createElement('input');i.type='hidden';i.name='user_ids[]';i.value=id;f.appendChild(i);}); return true;">Apply</button>
 </form>
 <?php endif; ?>
@@ -922,11 +930,19 @@ document.addEventListener('DOMContentLoaded', function(){
                 <td>
                     <?php if ((int) $r['id'] !== (int) current_user_id()): ?>
                       <?php if ($r['status'] === 'active'): ?>
-                        <form method="post" action="admin_user_action.php" class="d-inline">
+                        <form method="post" action="admin_user_action.php" class="d-flex align-items-center gap-2 flex-wrap">
                             <?= csrf_field() ?>
                             <input type="hidden" name="user_id" value="<?= (int) $r['id'] ?>">
                             <input type="hidden" name="action" value="suspend">
-                            <input type="text" name="reason" class="form-control form-control-sm d-inline-block" style="width:160px;" placeholder="Reason (required)" required maxlength="500">
+                            <select name="reason" class="form-select form-select-sm" style="flex:1 1 120px; min-width:110px;" required onchange="var n=this.nextElementSibling; if(n) n.style.display=(this.value==='Other')?'':'none';">
+                                <option value="">Reason</option>
+                                <option value="Incomplete verification">Incomplete verification</option>
+                                <option value="Policy violation">Policy violation</option>
+                                <option value="Fraudulent activity">Fraudulent activity</option>
+                                <option value="Spam or abuse">Spam or abuse</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <input type="text" name="reason_other" class="form-control form-control-sm" style="flex:1 1 140px; min-width:120px; display:none;" placeholder="Specify reason" maxlength="500">
                             <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Suspend this account?');">Suspend</button>
                         </form>
                       <?php else: ?>

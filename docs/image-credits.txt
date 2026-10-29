@@ -1,0 +1,4 @@
+# Product Image Credits
+
+- `public/assets/images/products/chicken_eggs_tray.jpg` — “Chicken eggs in tray” by Maksym Kozlenko, [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), via https://commons.wikimedia.org/wiki/File:Chicken_eggs_in_tray.jpg. Downloaded at 960 × 713 pixels.
+- `public/assets/images/products/lansones.jpg` — “Lanzones.jpg” by Mike Gonzalez (TheCoffee), [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/), via https://commons.wikimedia.org/wiki/File:Lanzones.jpg. Downloaded at 960 × 720 pixels.

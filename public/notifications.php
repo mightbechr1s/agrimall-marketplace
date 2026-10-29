@@ -128,15 +128,23 @@ require __DIR__ . '/partials/dashboard-layout.php';
             </ul>
 
             <?php if ($totalPages > 1): ?>
-                <?php
-                $labels = [
-                    'prev' => $l($copy['ui'], 'pager_prev'),
-                    'next' => $l($copy['ui'], 'pager_next'),
-                    'page' => $l($copy['ui'], 'pager_page'),
-                    'of'   => $l($copy['ui'], 'pager_of'),
-                ];
-                include __DIR__ . '/partials/pager.php';
-                ?>
+                <nav aria-label="Notifications pagination" class="d-flex justify-content-between align-items-center gap-2 mt-3">
+                    <?php if ($page > 1): ?>
+                        <a href="notifications.php?page=<?= $page - 1 ?>" class="btn btn-outline btn-sm">
+                            <i class="bi bi-chevron-left" aria-hidden="true"></i> <?= e($l($copy['ui'], 'pager_prev')) ?>
+                        </a>
+                    <?php else: ?>
+                        <span></span>
+                    <?php endif; ?>
+                    <span class="text-muted small"><?= e($l($copy['ui'], 'pager_page')) ?> <?= $page ?> <?= e($l($copy['ui'], 'pager_of')) ?> <?= $totalPages ?></span>
+                    <?php if ($page < $totalPages): ?>
+                        <a href="notifications.php?page=<?= $page + 1 ?>" class="btn btn-outline btn-sm">
+                            <?= e($l($copy['ui'], 'pager_next')) ?> <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                        </a>
+                    <?php else: ?>
+                        <span></span>
+                    <?php endif; ?>
+                </nav>
             <?php endif; ?>
         <?php endif; ?>
     </div>

@@ -15,11 +15,11 @@ $sql = 'SELECT al.*, u.email AS admin_email
 $params = [];
 $where = [];
 if ($entityFilter !== '') {
-    $where[] = 'al.entity_type = :entity';
+    $where[] = 'entity_type = :entity';
     $params['entity'] = $entityFilter;
 }
 if ($actionFilter !== '') {
-    $where[] = 'al.action LIKE :action';
+    $where[] = 'action LIKE :action';
     $params['action'] = '%' . $actionFilter . '%';
 }
 if ($where) {

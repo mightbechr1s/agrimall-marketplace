@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($role === 'farmer') {
         $farmerLabels = [
             'farm_name' => $l($copy['auth'], 'farm_name'),
-            'contact_person' => $l($copy['auth'], 'contact_person'),
+            'contact_phone' => $l($copy['auth'], 'contact_phone'),
             'barangay' => $l($copy['auth'], 'barangay'),
             'municipality_city' => $l($copy['auth'], 'municipality'),
             'province' => $l($copy['auth'], 'province'),
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!in_array($farmer['valid_id_type'] ?? '', $allowedIdTypes, true)) {
             $errors[] = $l($copy['auth'], 'err_valid_id');
         }
-        if (!preg_match('/^(09|\+639)\d{9}$/', $farmer['contact_phone'] ?? '')) {
+        if (!preg_match('/^(09|\+639)[\d\s\-\(\)]{9,}$/', $farmer['contact_phone'] ?? '')) {
             $errors[] = 'Contact phone may only contain digits, spaces, +, -, and parentheses.';
         }
         if (!preg_match('/^[A-Za-z0-9\-]{3,50}$/', $farmer['valid_id_number'] ?? '')) {
@@ -109,26 +109,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ->prepare('INSERT INTO buyer_profiles (user_id, full_name) VALUES (:user_id, :full_name)')
                     ->execute(['user_id' => $userId, 'full_name' => $fullName]);
             } else {
-                $contactPerson = $farmer['contact_person'] !== '' ? $farmer['contact_person'] : $fullName;
+                $contactPerson = $fullName;
                 DB::pdo()
                     ->prepare(
                         'INSERT INTO farmer_profiles
-                            (user_id, farm_name, contact_person, contact_email,
+                            (user_id, farm_name, contact_person, contact_phone, contact_email,
                              address, barangay, municipality_city, province, region,
                              valid_id_type, valid_id_number, verification_status)
                          VALUES
-                            (:user_id, :farm_name, :contact_person, :email,
-                             :address, :barangay, :municipality, :province, :region,
+                            (:user_id, :farm_name, :contact_person, :contact_phone, :email,
+                             :address, :barangay, :municipality_city, :province, :region,
                              :valid_id_type, :valid_id_number, :verification_status)'
                     )
                     ->execute([
                         'user_id' => $userId,
                         'farm_name' => $farmer['farm_name'],
                         'contact_person' => $contactPerson,
+                        'contact_phone' => $farmer['contact_phone'],
                         'email' => $email,
                         'address' => sprintf('%s, %s, %s', $farmer['barangay'], $farmer['municipality_city'], $farmer['province']),
                         'barangay' => $farmer['barangay'],
-                        'municipality' => $farmer['municipality_city'],
+                        'municipality_city' => $farmer['municipality_city'],
                         'province' => $farmer['province'],
                         'region' => $farmer['region'],
                         'valid_id_type' => $farmer['valid_id_type'],
@@ -215,11 +216,11 @@ require __DIR__ . '/partials/header.php';
                                    value="<?= e($old['farm_name'] ?? '') ?>" placeholder="Green Valley Farm" maxlength="<?= FIELD_LIMITS['farm_name'] ?>" />
                         </div>
                         <div class="span-2">
-                            <label class="form-label required" for="contact_person"><?= $l($copy['auth'], 'contact_person') ?></label>
-                            <input class="form-control" type="text" id="contact_person" name="contact_person"
-                                   value="<?= e($old['contact_person'] ?? '') ?>" placeholder="Juan dela Cruz" maxlength="<?= FIELD_LIMITS['contact_person'] ?>"
-                                   aria-describedby="contact_person-help" />
-                            <div class="form-text" id="contact_person-help"><?= $l($copy['auth'], 'contact_helper') ?></div>
+                            <label class="form-label required" for="contact_phone"><?= $l($copy['auth'], 'contact_phone') ?></label>
+                            <input class="form-control" type="tel" id="contact_phone" name="contact_phone"
+                                   value="<?= e($old['contact_phone'] ?? '') ?>" placeholder="09XX XXX XXXX" maxlength="30"
+                                   aria-describedby="contact_phone-help" />
+                            <div class="form-text" id="contact_phone-help">Your mobile number for buyers to reach you.</div>
                         </div>
                         <div>
                             <label class="form-label required" for="barangay"><?= $l($copy['auth'], 'barangay') ?></label>

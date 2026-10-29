@@ -289,7 +289,7 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
         a.href = 'listing.php?id=' + it.id;
         a.className = 'text-decoration-none';
         a.style.cssText = 'min-width:120px;max-width:140px;';
-        a.innerHTML = '<div class="card h-100"><img src="' + (it.img || 'assets/images/products/placeholder.svg') + '" style="height:80px;object-fit:cover;" class="card-img-top" alt=""><div class="card-body p-2"><div class="small fw-semibold text-truncate">' + (it.name || '') + '</div><div class="small text-muted">' + (it.price || '') + '</div></div></div>';
+        a.innerHTML = '<div class="card h-100"><img src="' + (it.img || 'assets/images/products/market.jpg') + '" style="height:80px;object-fit:cover;" class="card-img-top" alt=""><div class="card-body p-2"><div class="small fw-semibold text-truncate">' + (it.name || '') + '</div><div class="small text-muted">' + (it.price || '') + '</div></div></div>';
         list.appendChild(a);
       });
       box.style.display = '';

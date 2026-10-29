@@ -82,14 +82,14 @@ if ($mode === 'featured') $cardClasses .= ' feature-card';
     </div>
     <?php endif; ?>
 
-    <?php if (!empty($listing['discount_percent']) && (int) $listing['discount_percent'] > 0): ?>
+    <?php if (!empty($listing['discount_percent']) && (int) $listing['discount_percent'] > 0 && !listing_is_expired($listing)): ?>
       <div class="mb-1"><span class="badge" style="background:#7c3aed;color:#fff;"><i class="bi bi-tag-fill"></i> <?= (int) $listing['discount_percent'] ?>% OFF</span></div>
     <?php endif; ?>
 
     <div class="row" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
       <div class="col">
         <span class="price" itemprop="price" content="<?= e(number_format($price, 2)) ?>">
-          <?php if (!empty($listing['discount_percent']) && (int) $listing['discount_percent'] > 0): ?>
+          <?php if (!empty($listing['discount_percent']) && (int) $listing['discount_percent'] > 0 && !listing_is_expired($listing)): ?>
             <?php $dealP = round((float) $price * (1 - (int) $listing['discount_percent'] / 100), 2); ?>
             <span class="text-decoration-line-through text-muted small"><?= e(number_format($price, 2)) ?></span>
             <span class="text-danger fw-bold"><?= e(number_format($dealP, 2)) ?></span>

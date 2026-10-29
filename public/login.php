@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim((string) ($_POST['email'] ?? ''));
     $password = (string) ($_POST['password'] ?? '');
 
-    $stmt = DB::pdo()->prepare('SELECT id, password_hash, role, status FROM users WHERE email = :email LIMIT 1');
+    $stmt = DB::pdo()->prepare('SELECT id, password_hash, role, status, session_version FROM users WHERE email = :email LIMIT 1');
     $stmt->execute(['email' => $email]);
     $user = $stmt->fetch();
 
@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             session_regenerate_id(true);
             $_SESSION['user_id'] = (int) $user['id'];
             $_SESSION['role'] = $user['role'];
+            $_SESSION['session_version'] = (int) ($user['session_version'] ?? 0);
 
             // Ticking issues a 30-day token; unticked revokes any previous token
             // so a stale cookie can't re-authenticate against explicit choice.

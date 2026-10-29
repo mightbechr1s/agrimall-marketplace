@@ -418,6 +418,19 @@ function require_login(): void
     if (!current_user_id()) {
         redirect_to('/login.php');
     }
+    // Invalidate sessions after admin status/version changes (FR-ADM-004).
+    try {
+        $stmt = DB::pdo()->prepare('SELECT session_version FROM users WHERE id = :id');
+        $stmt->execute(['id' => current_user_id()]);
+        $dbVersion = (int) $stmt->fetchColumn();
+        if ($dbVersion !== (int) ($_SESSION['session_version'] ?? -1)) {
+            session_unset();
+            session_destroy();
+            redirect_to('/login.php');
+        }
+    } catch (Throwable $e) {
+        // degrade: do not block page if DB unavailable
+    }
 }
 
 /** Require a specific role; otherwise bounce with 403. */
@@ -576,7 +589,7 @@ function order_ref(): string
  */
 function fallback_produce_image(): string
 {
-    return 'assets/images/products/placeholder.svg';
+    return 'assets/images/products/market.jpg';
 }
 
 /**

@@ -81,31 +81,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = $l($copy['account'], 'invalid_current_password');
         } elseif ($role === 'farmer') {
             $farmName = trim((string) ($_POST['farm_name'] ?? ''));
-            $contactPerson = trim((string) ($_POST['contact_person'] ?? ''));
+            $contactPhone = trim((string) ($_POST['contact_phone'] ?? ''));
 
-            $cur = DB::pdo()->prepare('SELECT farm_name, contact_person FROM farmer_profiles WHERE user_id = :id');
+            $cur = DB::pdo()->prepare('SELECT farm_name, contact_phone FROM farmer_profiles WHERE user_id = :id');
             $cur->execute(['id' => $userId]);
-            $current = $cur->fetch() ?: ['farm_name' => '', 'contact_person' => ''];
+            $current = $cur->fetch() ?: ['farm_name' => '', 'contact_phone' => ''];
 
-            if ($farmName === '' || $contactPerson === '') {
+            if ($farmName === '') {
                 $error = $l($copy['account'], 'err_name_required');
             } elseif (mb_strlen($farmName) > FIELD_LIMITS['farm_name']) {
                 $error = sprintf($l($copy['account'], 'err_too_long'), FIELD_LIMITS['farm_name']);
-            } elseif (mb_strlen($contactPerson) > FIELD_LIMITS['contact_person']) {
-                $error = sprintf($l($copy['account'], 'err_too_long'), FIELD_LIMITS['contact_person']);
-            } elseif (!preg_match('/^[A-Za-z0-9À-ÿ\s\'\-\.&,()]+$/', $farmName) || !preg_match('/[A-Za-z0-9À-ÿ]/', $farmName)) {
+            } elseif (!preg_match('/^[A-Za-z0-9\s\'\-\.&,()]+$/u', $farmName) || !preg_match('/[A-Za-z0-9]/u', $farmName)) {
                 $error = 'Farm name may only contain letters, numbers, spaces, and basic punctuation.';
-            } elseif (!preg_match('/^[A-Za-zÀ-ÿ\s\'\-\.]+$/', $contactPerson) || !preg_match('/[A-Za-zÀ-ÿ]/', $contactPerson)) {
-                $error = 'Contact person may only contain letters, spaces, hyphens, and apostrophes.';
-            } elseif ($farmName === $current['farm_name'] && $contactPerson === $current['contact_person']) {
+            } elseif ($contactPhone !== '' && !preg_match('/^(09|\+639)[\d\s\-\(\)]{9,}$/', $contactPhone)) {
+                $error = 'Contact number must be a valid Philippine mobile number (09XXXXXXXXX or +639XXXXXXXXX).';
+            } elseif ($farmName === $current['farm_name'] && $contactPhone === ($current['contact_phone'] ?? '')) {
                 $error = $l($copy['account'], 'name_same');
             } else {
                 DB::pdo()->prepare(
-                    'UPDATE farmer_profiles SET farm_name = :farm_name, contact_person = :contact_person
+                    'UPDATE farmer_profiles SET farm_name = :farm_name, contact_phone = :contact_phone
                       WHERE user_id = :id'
-                )->execute(['farm_name' => $farmName, 'contact_person' => $contactPerson, 'id' => $userId]);
+                )->execute(['farm_name' => $farmName, 'contact_phone' => $contactPhone ?: null, 'id' => $userId]);
                 $success = $l($copy['account'], 'name_updated');
-                security_event_log('account_name_changed', ['fields' => ['farm_name', 'contact_person']]);
+                security_event_log('account_name_changed', ['fields' => ['farm_name', 'contact_phone']]);
                 audit_log('account_name_changed', 'user', $userId);
             }
         } elseif ($role === 'buyer') {
@@ -134,7 +132,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = $l($copy['account'], 'err_name_required');
         }
     } elseif ($action === 'contact' && $role === 'farmer') {
-        $contactPhone = trim((string) ($_POST['contact_phone'] ?? ''));
         $contactEmail = trim((string) ($_POST['contact_email'] ?? ''));
         $facebook = trim((string) ($_POST['facebook_url'] ?? ''));
         $instagram = trim((string) ($_POST['instagram_url'] ?? ''));
@@ -142,14 +139,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $website = trim((string) ($_POST['website_url'] ?? ''));
         if ($contactEmail !== '' && !filter_var($contactEmail, FILTER_VALIDATE_EMAIL)) {
             $error = 'Invalid email address.';
+        } elseif ($facebook !== '' && !filter_var($facebook, FILTER_VALIDATE_URL)) {
+            $error = 'Invalid Facebook URL.';
+        } elseif ($instagram !== '' && !filter_var($instagram, FILTER_VALIDATE_URL)) {
+            $error = 'Invalid Instagram URL.';
+        } elseif ($tiktok !== '' && !filter_var($tiktok, FILTER_VALIDATE_URL)) {
+            $error = 'Invalid TikTok URL.';
+        } elseif ($website !== '' && !filter_var($website, FILTER_VALIDATE_URL)) {
+            $error = 'Invalid website URL.';
         } else {
             DB::pdo()->prepare(
                 'UPDATE farmer_profiles
-                    SET contact_phone = :cp, contact_email = :ce, facebook_url = :fb,
+                    SET contact_email = :ce, facebook_url = :fb,
                         instagram_url = :ig, tiktok_url = :tt, website_url = :ws
                   WHERE user_id = :id'
             )->execute([
-                'cp' => $contactPhone ?: null,
                 'ce' => $contactEmail ?: null,
                 'fb' => $facebook ?: null,
                 'ig' => $instagram ?: null,
@@ -177,14 +181,14 @@ $lastLogin = $user['last_login_at'] ? date('M j, g:i A', strtotime($user['last_l
 
 // Prefill for name form: read after POST so successful update
 // shows new value. Admins have no profile table.
-$nameValues = ['full_name' => '', 'farm_name' => '', 'contact_person' => ''];
+    $nameValues = ['full_name' => '', 'farm_name' => '', 'contact_phone' => ''];
 if ($role === 'farmer') {
-    $nStmt = DB::pdo()->prepare('SELECT farm_name, contact_person FROM farmer_profiles WHERE user_id = :id');
+    $nStmt = DB::pdo()->prepare('SELECT farm_name, contact_phone FROM farmer_profiles WHERE user_id = :id');
     $nStmt->execute(['id' => $userId]);
     $n = $nStmt->fetch();
     if ($n) {
         $nameValues['farm_name'] = (string) $n['farm_name'];
-        $nameValues['contact_person'] = (string) $n['contact_person'];
+        $nameValues['contact_phone'] = (string) ($n['contact_phone'] ?? '');
     }
 } elseif ($role === 'buyer') {
     $nStmt = DB::pdo()->prepare('SELECT full_name FROM buyer_profiles WHERE user_id = :id');
@@ -257,10 +261,10 @@ require __DIR__ . '/partials/dashboard-layout.php';
                                    maxlength="<?= FIELD_LIMITS['farm_name'] ?>">
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="contact_person"><?= e($l($copy['account'], 'label_contact_person')) ?></label>
-                            <input class="form-control" type="text" id="contact_person" name="contact_person"
-                                   value="<?= e($nameValues['contact_person']) ?>" required
-                                   maxlength="<?= FIELD_LIMITS['contact_person'] ?>">
+                            <label class="form-label" for="contact_phone">Contact number</label>
+                            <input class="form-control" type="tel" id="contact_phone" name="contact_phone"
+                                   value="<?= e($nameValues['contact_phone']) ?>"
+                                   maxlength="30">
                         </div>
                     <?php else: ?>
                         <div class="form-group">
@@ -293,10 +297,6 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 $contact = $cp->fetch() ?: [];
                 ?>
                 <div class="form-group">
-                    <label class="form-label" for="contact_phone">Phone</label>
-                    <input class="form-control" type="tel" id="contact_phone" name="contact_phone"
-                           value="<?= e($contact['contact_phone'] ?? '') ?>" maxlength="30">
-                </div>
                 <div class="form-group">
                     <label class="form-label" for="contact_email">Public email</label>
                     <input class="form-control" type="email" id="contact_email" name="contact_email"

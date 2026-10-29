@@ -29,7 +29,7 @@ $sidebarMenus = [
         ['page' => 'dashboard',  'label' => 'Dashboard',   'icon' => 'bi-grid-1x2-fill',  'href' => 'dashboard.php'],
         ['page' => 'goods',      'label' => 'Goods',      'icon' => 'bi-shop',           'href' => 'browse.php'],
         ['page' => 'verifications', 'label' => 'Verifications', 'icon' => 'bi-patch-check', 'href' => 'admin_verify.php'],
-        ['page' => 'users',      'label' => 'Users',       'icon' => 'bi-people',         'href' => 'admin_reports.php?t=registration'],
+
         ['page' => 'audit',      'label' => 'Audit Log',   'icon' => 'bi-journal-text',   'href' => 'admin_audit.php'],
         ['page' => 'reports',    'label' => 'Reports',     'icon' => 'bi-bar-chart-line', 'href' => 'admin_reports.php'],
     ],
@@ -205,7 +205,7 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
                     <span class="profile-avatar" style="background: <?= e($avatarBg[$role] ?? 'var(--accent)') ?>"><?= e($initials) ?></span>
                     <span class="profile-meta">
                         <span class="profile-name"><?= e($displayName) ?></span>
-                        <span class="role-pill"><?= e($roleLabels[$role] ?? ucfirst($role)) ?></span>
+                        <span class="role-pill"><?= e($roleLabels[$role] ?? ucfirst((string) ($role ?? ''))) ?></span>
                     </span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end profile-dd-menu">

@@ -14,9 +14,11 @@ $q = is_string($_GET['q'] ?? null) ? $_GET['q'] : '';
 // drive a huge LIKE scan or be stored in error/log output.
 $q = mb_substr($q, 0, FIELD_LIMITS['q']);
 $categoryFilter = trim((string) ($_GET['category'] ?? ''));
+$categoryFilter = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $categoryFilter));
 $dealsFilter = !empty($_GET['deals']);
 $trendingFilter = !empty($_GET['trending']);
 $page = max(1, (int)($_GET['page'] ?? 1));
+$perPage = 15;
 
 // Category label formatter
 function formatCatLabel($catName) {
@@ -112,7 +114,7 @@ if ($sidebarShell) {
       $catCounts = [];
       try {
         $filterCounts['all'] = (int) DB::pdo()->query("SELECT COUNT(*) FROM v_active_listings")->fetchColumn();
-        $filterCounts['deals'] = (int) DB::pdo()->query("SELECT COUNT(*) FROM v_active_listings WHERE discount_percent > 0")->fetchColumn();
+        $filterCounts['deals'] = (int) DB::pdo()->query("SELECT COUNT(*) FROM v_active_listings WHERE discount_percent > 0 AND is_expired = 0")->fetchColumn();
         $filterCounts['trending'] = (int) DB::pdo()->query("SELECT COUNT(*) FROM v_active_listings WHERE (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = v_active_listings.id) >= 3")->fetchColumn();
         foreach (DB::pdo()->query("SELECT category_slug, COUNT(*) c FROM v_active_listings GROUP BY category_slug")->fetchAll(PDO::FETCH_KEY_PAIR) as $slug => $c) {
             $catCounts[strtolower((string)$slug)] = (int) $c;
@@ -124,9 +126,9 @@ if ($sidebarShell) {
       <button class="filter-pill <?= $dealsFilter ? 'is-active' : '' ?>" type="button" data-filter="deals" data-filter-url="browse.php?deals=1<?= $q !== '' ? '&q=' . urlencode($q) : '' ?>">Deals (<?= (int) $filterCounts['deals'] ?>)</button>
       <button class="filter-pill <?= $trendingFilter ? 'is-active' : '' ?>" type="button" data-filter="trending" data-filter-url="browse.php?trending=1<?= $q !== '' ? '&q=' . urlencode($q) : '' ?>">Trending (<?= (int) $filterCounts['trending'] ?>)</button>
       <?php foreach ($categories as $cat): ?>
-        <?php $catUrl = 'browse.php?category=' . urlencode($cat) . ($q !== '' ? '&q=' . urlencode($q) : ''); ?>
         <?php $catSlug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($cat))); ?>
-        <button class="filter-pill <?= $categoryFilter === $cat ? 'is-active' : '' ?>" type="button" data-filter="<?php echo strtolower($cat); ?>" data-filter-url="<?= e($catUrl) ?>"><?php echo htmlspecialchars(formatCatLabel($cat)); ?> (<?= (int) ($catCounts[$catSlug] ?? 0) ?>)</button>
+        <?php $catUrl = 'browse.php?category=' . urlencode($catSlug) . ($q !== '' ? '&q=' . urlencode($q) : ''); ?>
+        <button class="filter-pill <?= $categoryFilter === $catSlug ? 'is-active' : '' ?>" type="button" data-filter="<?php echo strtolower($cat); ?>" data-filter-url="<?= e($catUrl) ?>"><?php echo htmlspecialchars(formatCatLabel($cat)); ?> (<?= (int) ($catCounts[$catSlug] ?? 0) ?>)</button>
       <?php endforeach; ?>
     </div>
 
@@ -159,7 +161,7 @@ if ($sidebarShell) {
             $sql .= " AND pc.slug = :cat";
           }
           if ($dealsFilter) {
-            $sql .= " AND pl.discount_percent > 0";
+            $sql .= " AND pl.discount_percent > 0 AND (pl.expiry_date IS NULL OR pl.expiry_date = '' OR pl.expiry_date >= CURDATE())";
           }
           if ($trendingFilter) {
             $sql .= " AND (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = pl.id) >= 3";
@@ -184,7 +186,7 @@ if ($sidebarShell) {
           $bind[':cat'] = $categoryFilter;
         }
         if ($dealsFilter) {
-          $where .= ' AND discount_percent > 0';
+          $where .= ' AND discount_percent > 0 AND is_expired = 0';
         }
         if ($trendingFilter) {
           $where .= ' AND (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = v_active_listings.id) >= 3';
@@ -196,13 +198,13 @@ if ($sidebarShell) {
         foreach ($bind as $k => $v) $countStmt->bindValue($k, $v);
         $countStmt->execute();
         $total = (int) $countStmt->fetchColumn();
-        $totalPages = (int) ceil($total / 12);
+        $totalPages = (int) ceil($total / $perPage);
         if ($totalPages > 0 && $page > $totalPages) {
           $page = $totalPages;
         }
 
-        $offset = ($page - 1) * 12;
-        $stmt = DB::pdo()->prepare("SELECT v_active_listings.*, (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = v_active_listings.id) AS save_count, (SELECT COUNT(*) FROM orders o WHERE o.listing_id = v_active_listings.id AND o.status = 'completed' AND o.completed_at >= (NOW() - INTERVAL 7 DAY)) AS sold_week FROM v_active_listings WHERE $where ORDER BY CASE WHEN discount_percent > 0 THEN 0 ELSE 1 END, CASE WHEN (SELECT COUNT(*) FROM saved_listings sl2 WHERE sl2.listing_id = v_active_listings.id) >= 3 THEN 0 ELSE 1 END, is_expired ASC, published_at DESC LIMIT 12 OFFSET :offset");
+        $offset = ($page - 1) * $perPage;
+        $stmt = DB::pdo()->prepare("SELECT v_active_listings.*, (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = v_active_listings.id) AS save_count, (SELECT COUNT(*) FROM orders o WHERE o.listing_id = v_active_listings.id AND o.status = 'completed' AND o.completed_at >= (NOW() - INTERVAL 7 DAY)) AS sold_week FROM v_active_listings WHERE $where ORDER BY CASE WHEN discount_percent > 0 THEN 0 ELSE 1 END, CASE WHEN (SELECT COUNT(*) FROM saved_listings sl2 WHERE sl2.listing_id = v_active_listings.id) >= 3 THEN 0 ELSE 1 END, is_expired ASC, published_at DESC LIMIT $perPage OFFSET :offset");
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         foreach ($bind as $k => $v) $stmt->bindValue($k, $v);
         $stmt->execute();
@@ -239,7 +241,7 @@ if ($sidebarShell) {
             <?php
               $categorySlug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $item['category_name'] ?? ''), '-'));
               $nameSlug = strtolower($item['name'] ?? '');
-              $fallbackPath = 'assets/images/products/placeholder.svg';
+              $fallbackPath = fallback_produce_image();
               $imagePath = $item['primary_image'] ?: $fallbackPath;
             ?>
             <div class="thumb" style="background: var(--canvas);">
@@ -250,7 +252,7 @@ if ($sidebarShell) {
                 <?php if (listing_is_expired($item)): ?>
                   <span class="badge text-bg-warning" data-testid="expired-badge"><?= $l($copy['listing'], 'expired_badge') ?></span>
                 <?php endif; ?>
-                <?php if (!empty($item['discount_percent']) && (int) $item['discount_percent'] > 0): ?>
+                <?php if (!empty($item['discount_percent']) && (int) $item['discount_percent'] > 0 && !listing_is_expired($item)): ?>
                   <span class="badge" style="background:#7c3aed;color:#fff;"><i class="bi bi-tag-fill"></i> <?= (int) $item['discount_percent'] ?>% OFF</span>
                 <?php endif; ?>
                 <?php if (!empty($item['save_count']) && (int) $item['save_count'] >= 3): ?>
@@ -260,6 +262,9 @@ if ($sidebarShell) {
                 <?php endif; ?>
                 <?php if (!empty($item['sold_week']) && (int) $item['sold_week'] > 0): ?>
                   <span class="badge" style="background:#16a34a;color:#fff;"><i class="bi bi-bag-check"></i> <?= (int) $item['sold_week'] ?> sold this week</span>
+                <?php endif; ?>
+                <?php if ((float)($item['available_quantity'] ?? 0) > 0 && (float)$item['available_quantity'] <= max(5, (float)($item['minimum_order_qty'] ?? 1) * 2)): ?>
+                  <span class="badge" style="background:#f97316;color:#fff;"><i class="bi bi-exclamation-triangle"></i> Only <?= rtrim(rtrim(number_format((float)$item['available_quantity'], 2), '0'), '.') ?> left</span>
                 <?php endif; ?>
                 <?php if ((int) ($item['is_organic'] ?? 0) === 1): ?>
                   <span class="badge text-bg-success"><i class="bi bi-leaf"></i> Organic</span>
@@ -281,7 +286,7 @@ if ($sidebarShell) {
               </div>
               <div class="d-flex justify-content-between align-items-baseline mt-1">
                 <div class="price mb-0">
-                  <?php if (!empty($item['discount_percent']) && (int) $item['discount_percent'] > 0): ?>
+                  <?php if (!empty($item['discount_percent']) && (int) $item['discount_percent'] > 0 && !listing_is_expired($item)): ?>
                     <?php $dealPrice = round((float)$item['price_per_unit'] * (1 - (int)$item['discount_percent'] / 100), 2); ?>
                     <span class="text-decoration-line-through text-muted small me-1"><?= money($item['price_per_unit']) ?></span>
                     <span class="text-danger fw-bold"><?= money($dealPrice) ?></span>

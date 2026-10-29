@@ -25,6 +25,9 @@ $ids = array_values(array_unique($ids));
 
 $action = trim((string) ($_POST['action'] ?? ''));
 $reason = trim((string) ($_POST['reason'] ?? ''));
+if ($reason === 'Other') {
+    $reason = trim((string) ($_POST['reason_other'] ?? ''));
+}
 
 if (!$ids || !in_array($action, ['activate', 'suspend'], true)) {
     flash_set('error', 'Invalid request.');
@@ -65,7 +68,7 @@ foreach ($ids as $targetId) {
 
     try {
         $pdo->beginTransaction();
-        $pdo->prepare('UPDATE users SET status = :s WHERE id = :id')
+        $pdo->prepare('UPDATE users SET status = :s, session_version = session_version + 1 WHERE id = :id')
             ->execute(['s' => $newStatus, 'id' => $targetId]);
         if ($action === 'suspend') {
             admin_cascade_suspend($pdo, $targetId, $target['role'], $reason);

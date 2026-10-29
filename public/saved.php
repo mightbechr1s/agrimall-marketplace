@@ -71,7 +71,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <?php foreach ($savedListings as $saved): ?>
                     <div class="card h-100">
                         <?php $img = $saved['primary_image'] ?: fallback_produce_image(); ?>
-                        <img src="<?= e(asset($img)) ?>" class="card-img-top" alt="<?= e($saved['name']) ?>" style="height:160px;object-fit:cover;" onerror="this.src='<?= e(asset('assets/images/products/placeholder.svg')) ?>'">
+                        <img src="<?= e(asset($img)) ?>" class="card-img-top" alt="<?= e($saved['name']) ?>" style="height:160px;object-fit:cover;" onerror="this.src='<?= e(asset(fallback_produce_image())) ?>'">
                         <div class="card-body d-flex flex-column">
                             <h6 class="card-title mb-1"><?= e($saved['name']) ?></h6>
                             <p class="text-muted small mb-2"><?= e($saved['farm_name']) ?> · <?= e($saved['category_name']) ?></p>

@@ -68,13 +68,6 @@ if ($role === 'admin') {
             'variant' => 'warning',
             'href' => 'admin_reports.php?t=orders'
         ],
-        'Completed Orders' => [
-            'value' => (int) $pdo->query("SELECT COUNT(*) FROM orders WHERE status = 'completed'")->fetchColumn(),
-            'trend' => 'all time',
-            'icon' => 'bi-check2-all',
-            'variant' => 'success',
-            'href' => 'admin_reports.php?t=orders'
-        ],
     ];
     $orders = $pdo->query('SELECT id, order_number, buyer_name, farm_name, listing_name, unit_symbol,
                                   quantity, unit_price, delivery_fee, delivery_method, status, created_at
@@ -152,7 +145,7 @@ if ($role === 'admin') {
     // Order history grows forever, so the table is paged and the totals come
     // from COUNT queries. Counting the fetched page would silently corrupt the
     // panel counts and the Total/Active/Completed stats below.
-    $ordersPerPage = 15;
+    $ordersPerPage = 5;
     $oc = $pdo->prepare('SELECT COUNT(*) FROM v_order_summary WHERE farmer_id = :id');
     $oc->execute(['id' => $userId]);
     $orderTotal = (int) $oc->fetchColumn();
@@ -168,7 +161,7 @@ if ($role === 'admin') {
 } else {
     // Buyer
     $pdo = DB::pdo();
-    $ordersPerPage = 15;
+    $ordersPerPage = 5;
     $oc = $pdo->prepare('SELECT COUNT(*) FROM v_order_summary WHERE buyer_id = :id');
     $oc->execute(['id' => $userId]);
     $orderTotal = (int) $oc->fetchColumn();
@@ -218,11 +211,6 @@ require __DIR__ . '/partials/dashboard-layout.php';
 
 <?php if ($role === 'admin'): ?>
     <!-- Admin Dashboard -->
-    <div class="dash-section-header">
-        <h1>Platform Overview</h1>
-        <p>Monitor AniMALL marketplace activity across all users and listings.</p>
-    </div>
-
     <div class="row g-4 mb-4" data-reveal="stagger">
         <?php foreach ($stats as $label => $data): ?>
             <div class="col-12 col-sm-6 col-lg-3">
@@ -415,12 +403,6 @@ require __DIR__ . '/partials/dashboard-layout.php';
 
 <?php elseif ($role === 'farmer'): ?>
     <!-- Farmer Dashboard -->
-    <div class="dash-section-header">
-        <h1>Farm Dashboard</h1>
-        <p>Manage your harvest, track orders, grow your reach.</p>
-        <a href="create_listing.php" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>New Listing</a>
-    </div>
-
     <div class="row g-4 mb-4" data-reveal="stagger">
         <?php foreach ($stats as $label => $data): ?>
             <div class="col-12 col-sm-6 col-lg-4">
@@ -498,19 +480,6 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 </tbody>
             </table>
         </div>
-            <?php
-            $page = $orderPage;
-            $totalPages = $orderPages;
-            $pageParam = 'orders_page';
-            $param = '';
-            $labels = [
-                'prev' => t($navCopy['ui'], 'pager_prev'),
-                'next' => t($navCopy['ui'], 'pager_next'),
-                'page' => t($navCopy['ui'], 'pager_page'),
-                'of'   => t($navCopy['ui'], 'pager_of'),
-            ];
-            include __DIR__ . '/partials/pager.php';
-            ?>
         <?php else: ?>
         <?php
         $icon = '<i class="bi bi-inbox" aria-hidden="true"></i>';
@@ -610,19 +579,6 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 </tbody>
             </table>
         </div>
-            <?php
-            $page = $orderPage;
-            $totalPages = $orderPages;
-            $pageParam = 'orders_page';
-            $param = '';
-            $labels = [
-                'prev' => t($navCopy['ui'], 'pager_prev'),
-                'next' => t($navCopy['ui'], 'pager_next'),
-                'page' => t($navCopy['ui'], 'pager_page'),
-                'of'   => t($navCopy['ui'], 'pager_of'),
-            ];
-            include __DIR__ . '/partials/pager.php';
-            ?>
         <?php else: ?>
         <?php
         $icon = '<i class="bi bi-basket3" aria-hidden="true"></i>';
