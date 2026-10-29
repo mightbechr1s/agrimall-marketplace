@@ -249,6 +249,9 @@ $fmtQty = function ($value, $symbol): string {
                                             | Max: <?= $fmtQty($item['maximum_order_qty'], $item['unit_symbol']) ?>
                                         <?php endif; ?>
                                     </div>
+                                    <div class="form-text text-warning small">
+                                        <i class="bi bi-info-circle me-1" aria-hidden="true"></i>Pending requests do not reserve stock; confirm promptly.
+                                    </div>
                                 </div>
 
                                 <div class="col-md-6">

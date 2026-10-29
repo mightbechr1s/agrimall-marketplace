@@ -17,6 +17,10 @@ $categoryFilter = trim((string) ($_GET['category'] ?? ''));
 $categoryFilter = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $categoryFilter));
 $dealsFilter = !empty($_GET['deals']);
 $trendingFilter = !empty($_GET['trending']);
+$priceMin = isset($_GET['price_min']) ? (float) $_GET['price_min'] : 0.0;
+$priceMax = isset($_GET['price_max']) ? (float) $_GET['price_max'] : 0.0;
+$sort = in_array(($_GET['sort'] ?? 'newest'), ['newest','price_asc','price_desc','expiry'], true) ? (string) ($_GET['sort'] ?? 'newest') : 'newest';
+$sortSql = ['newest'=>'published_at DESC','price_asc'=>'price_per_unit ASC','price_desc'=>'price_per_unit DESC','expiry'=>'expiry_date ASC'][$sort];
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 15;
 
@@ -132,6 +136,32 @@ if ($sidebarShell) {
       <?php endforeach; ?>
     </div>
 
+    <form method="get" action="browse.php" class="d-flex flex-wrap align-items-end gap-2 mb-3">
+      <?php if ($q !== ''): ?><input type="hidden" name="q" value="<?= e($q) ?>"><?php endif; ?>
+      <?php if ($categoryFilter !== ''): ?><input type="hidden" name="category" value="<?= e($categoryFilter) ?>"><?php endif; ?>
+      <?php if ($dealsFilter): ?><input type="hidden" name="deals" value="1"><?php endif; ?>
+      <?php if ($trendingFilter): ?><input type="hidden" name="trending" value="1"><?php endif; ?>
+      <div>
+        <label class="form-label small mb-1" for="priceMin">Min price</label>
+        <input type="number" step="0.01" min="0" class="form-control form-control-sm" id="priceMin" name="price_min" value="<?= $priceMin > 0 ? e($priceMin) : '' ?>" style="width:90px;">
+      </div>
+      <div>
+        <label class="form-label small mb-1" for="priceMax">Max price</label>
+        <input type="number" step="0.01" min="0" class="form-control form-control-sm" id="priceMax" name="price_max" value="<?= $priceMax > 0 ? e($priceMax) : '' ?>" style="width:90px;">
+      </div>
+      <div>
+        <label class="form-label small mb-1" for="sort">Sort</label>
+        <select class="form-select form-select-sm" id="sort" name="sort" style="width:140px;">
+          <option value="newest" <?= $sort === 'newest' ? 'selected' : '' ?>>Newest</option>
+          <option value="price_asc" <?= $sort === 'price_asc' ? 'selected' : '' ?>>Lowest price</option>
+          <option value="price_desc" <?= $sort === 'price_desc' ? 'selected' : '' ?>>Highest price</option>
+          <option value="expiry" <?= $sort === 'expiry' ? 'selected' : '' ?>>Expiring soon</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+      <a href="browse.php" class="btn btn-sm btn-outline-secondary">Reset</a>
+    </form>
+
     <div id="recently-viewed" class="mb-3" style="display:none;">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <h6 class="mb-0">Recently viewed</h6>
@@ -178,6 +208,8 @@ if ($sidebarShell) {
         } else {
           $where = "status = 'active'";
         }
+        if ($priceMin > 0) { $where .= ' AND price_per_unit >= :pmin'; $bind[':pmin'] = $priceMin; }
+        if ($priceMax > 0) { $where .= ' AND price_per_unit <= :pmax'; $bind[':pmax'] = $priceMax; }
         // Category filter applies to the whole catalogue, not just the
         // current page (was a client-side toggle that only hid cards).
         $bind = [];
@@ -191,6 +223,8 @@ if ($sidebarShell) {
         if ($trendingFilter) {
           $where .= ' AND (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = v_active_listings.id) >= 3';
         }
+        if ($priceMin > 0) { $where .= ' AND price_per_unit >= :pmin'; $bind[':pmin'] = $priceMin; }
+        if ($priceMax > 0) { $where .= ' AND price_per_unit <= :pmax'; $bind[':pmax'] = $priceMax; }
 
         // Count first: an out-of-range ?page= (bookmark, edited URL) is pulled back
         // onto the last page before it can become an OFFSET and show an empty grid.
@@ -204,7 +238,7 @@ if ($sidebarShell) {
         }
 
         $offset = ($page - 1) * $perPage;
-        $stmt = DB::pdo()->prepare("SELECT v_active_listings.*, (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = v_active_listings.id) AS save_count, (SELECT COUNT(*) FROM orders o WHERE o.listing_id = v_active_listings.id AND o.status = 'completed' AND o.completed_at >= (NOW() - INTERVAL 7 DAY)) AS sold_week FROM v_active_listings WHERE $where ORDER BY CASE WHEN discount_percent > 0 THEN 0 ELSE 1 END, CASE WHEN (SELECT COUNT(*) FROM saved_listings sl2 WHERE sl2.listing_id = v_active_listings.id) >= 3 THEN 0 ELSE 1 END, is_expired ASC, published_at DESC LIMIT $perPage OFFSET :offset");
+        $stmt = DB::pdo()->prepare("SELECT v_active_listings.*, (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = v_active_listings.id) AS save_count, (SELECT COUNT(*) FROM orders o WHERE o.listing_id = v_active_listings.id AND o.status = 'completed' AND o.completed_at >= (NOW() - INTERVAL 7 DAY)) AS sold_week FROM v_active_listings WHERE $where ORDER BY CASE WHEN discount_percent > 0 THEN 0 ELSE 1 END, CASE WHEN (SELECT COUNT(*) FROM saved_listings sl2 WHERE sl2.listing_id = v_active_listings.id) >= 3 THEN 0 ELSE 1 END, is_expired ASC, {$sortSql} LIMIT $perPage OFFSET :offset");
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         foreach ($bind as $k => $v) $stmt->bindValue($k, $v);
         $stmt->execute();
