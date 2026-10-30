@@ -58,7 +58,7 @@ echo "docs/decisions.txt: stated ceilings match the code\n";
 $pageSizes = [
     'Listings per page (My Listings)' => [$repoRoot . '/public/my_listings.php', '$listingsPerPage = ', 12],
     'Saved listings per page' => [$repoRoot . '/public/saved.php', '$perPage = ', 12],
-    'Order history per page (farmer/buyer)' => [$dash, '$ordersPerPage = ', 15],
+    'Order history per page (farmer/buyer)' => [$dash, '$ordersPerPage = ', 5],
 ];
 foreach ($pageSizes as $row => [$file, $needle, $expected]) {
     $src = (string) file_get_contents($file);

@@ -70,7 +70,7 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
       </div>
     </div>
   </div>
-  <p class="copyright">&copy; <?= date('Y') ?> AgriMALL &middot; FarmRoute Cooperative. Built for Philippine farms.</p>
+  <p class="copyright">&copy; <?= date('Y') ?> AgriMALL &middot; Built for Philippine farms.</p>
 </footer>
 
 <!-- Back to top button -->

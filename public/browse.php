@@ -98,6 +98,7 @@ if ($sidebarShell) {
       <label class="visually-hidden" for="market-search"><?= e($l($copy['search'], 'label')) ?></label>
       <input id="market-search" type="search" name="q" list="search-suggestions" placeholder="<?= e($l($copy['search'], 'placeholder')) ?>" value="<?php echo htmlspecialchars($q); ?>">
       <datalist id="search-suggestions"></datalist>
+      <button type="submit" class="search-form__submit" aria-label="<?= e($l($copy['search'], 'label')) ?>"><i class="bi bi-search" aria-hidden="true"></i></button>
     </form>
     <div class="filters" data-reveal>
       <?php
@@ -136,30 +137,32 @@ if ($sidebarShell) {
       <?php endforeach; ?>
     </div>
 
-    <form method="get" action="browse.php" class="d-flex flex-wrap align-items-end gap-2 mb-3">
+    <form method="get" action="browse.php" class="browse-filters">
       <?php if ($q !== ''): ?><input type="hidden" name="q" value="<?= e($q) ?>"><?php endif; ?>
       <?php if ($categoryFilter !== ''): ?><input type="hidden" name="category" value="<?= e($categoryFilter) ?>"><?php endif; ?>
       <?php if ($dealsFilter): ?><input type="hidden" name="deals" value="1"><?php endif; ?>
       <?php if ($trendingFilter): ?><input type="hidden" name="trending" value="1"><?php endif; ?>
-      <div>
-        <label class="form-label small mb-1" for="priceMin">Min price</label>
-        <input type="number" step="0.01" min="0" class="form-control form-control-sm" id="priceMin" name="price_min" value="<?= $priceMin > 0 ? e($priceMin) : '' ?>" style="width:90px;">
+      <div class="browse-filters__field">
+        <label for="priceMin">Min price</label>
+        <input type="number" step="0.01" min="0" id="priceMin" name="price_min" value="<?= $priceMin > 0 ? e($priceMin) : '' ?>">
       </div>
-      <div>
-        <label class="form-label small mb-1" for="priceMax">Max price</label>
-        <input type="number" step="0.01" min="0" class="form-control form-control-sm" id="priceMax" name="price_max" value="<?= $priceMax > 0 ? e($priceMax) : '' ?>" style="width:90px;">
+      <div class="browse-filters__field">
+        <label for="priceMax">Max price</label>
+        <input type="number" step="0.01" min="0" id="priceMax" name="price_max" value="<?= $priceMax > 0 ? e($priceMax) : '' ?>">
       </div>
-      <div>
-        <label class="form-label small mb-1" for="sort">Sort</label>
-        <select class="form-select form-select-sm" id="sort" name="sort" style="width:140px;">
+      <div class="browse-filters__field">
+        <label for="sort">Sort</label>
+        <select id="sort" name="sort">
           <option value="newest" <?= $sort === 'newest' ? 'selected' : '' ?>>Newest</option>
           <option value="price_asc" <?= $sort === 'price_asc' ? 'selected' : '' ?>>Lowest price</option>
           <option value="price_desc" <?= $sort === 'price_desc' ? 'selected' : '' ?>>Highest price</option>
           <option value="expiry" <?= $sort === 'expiry' ? 'selected' : '' ?>>Expiring soon</option>
         </select>
       </div>
-      <button type="submit" class="btn btn-sm btn-primary">Apply</button>
-      <a href="browse.php" class="btn btn-sm btn-outline-secondary">Reset</a>
+      <div class="browse-filters__actions">
+        <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+        <a href="browse.php" class="btn btn-sm btn-outline-secondary">Reset</a>
+      </div>
     </form>
 
     <div id="recently-viewed" class="mb-3" style="display:none;">

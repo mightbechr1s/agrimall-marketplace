@@ -30,6 +30,10 @@ logs/*
 # immediately and reads as evidence for a run nobody can reproduce.
 tests/axe-report.json
 
+# --- Automated database backups ---
+# Written by tools/backup.php; never commit a dump.
+backups/
+
 # --- Editors & OS junk ---
 .vscode/
 .idea/

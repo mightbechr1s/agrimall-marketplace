@@ -1,0 +1,69 @@
+AgriMALL automation
+===================
+
+Everything here is opt-in: nothing runs unless you schedule it.
+
+1. Database backup
+------------------
+    php tools\backup.php
+    php tools\backup.php --keep=14
+
+Writes backups\agrimall-YYYYmmdd-HHMMSS.sql, refuses a dump with no
+CREATE TABLE, and deletes all but the newest 7 by default. The backups/
+folder is gitignored.
+
+Windows Task Scheduler, daily at 02:00:
+
+    schtasks /create /tn "AgriMALL backup" /sc daily /st 02:00 /tr ^
+      "\"C:\xampp\php\php.exe\" \"C:\path\to\agrimall\tools\backup.php\""
+
+Restore check (do this once after setting it up):
+
+    mysql -u root animal_marketplace < backups\agrimall-YYYYmmdd-HHMMSS.sql
+
+2. Maintenance sweep
+--------------------
+    php tools\maintenance.php
+
+- prunes expired rate limits, password resets, and old notifications
+- sets listings to sold_out when stock reaches 0, and reactivates them
+  when stock is restored (also happens live inside stock_apply)
+- nudges farmers about orders pending for more than 3 days
+- nudges buyers about saved listings that expire within 2 days
+
+Windows Task Scheduler, daily at 03:00:
+
+    schtasks /create /tn "AgriMALL maintenance" /sc daily /st 03:00 /tr ^
+      "\"C:\xampp\php\php.exe\" \"C:\path\to\agrimall\tools\maintenance.php\""
+
+3. Email notifications
+----------------------
+Set mail.enabled to true in config/config.php once PHP can send mail
+(local MTA, or configure sendmail_path / an SMTP relay):
+
+    'mail' => [
+        'enabled' => true,
+        'from' => 'no-reply@agrimall.ph',
+    ],
+
+When enabled, order status changes and password-reset links are emailed.
+In-app notifications keep working regardless. With mail disabled, reset
+links still go to logs/security.log and never to the browser.
+
+4. CI
+-----
+.github/workflows/ci.yml runs lint, i18n parity, validation, PDF,
+security, and docs/code drift checks on every push and pull request.
+
+The HTTP, panel, and layout suites need MySQL and a running PHP server,
+so they stay local:
+
+    npm run test:http
+    npm run test:panels
+    npm run test:layout
+
+5. What is deliberately not automated
+-------------------------------------
+Stale pending orders are not auto-cancelled. Pending orders reserve no
+stock, and cancelling someone's order without a human decision is worse
+than a nudge. The sweep reminds the farmer instead.

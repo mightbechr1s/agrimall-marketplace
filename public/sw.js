@@ -4,7 +4,7 @@
  * Authenticated pages are never cached (Cache Storage survives logout).
  */
 
-const CACHE_NAME = 'animal-v17';
+const CACHE_NAME = 'agrimall-v19';
 const STATIC_ASSETS = [
   '/index.php',
   '/browse.php',

@@ -648,6 +648,16 @@ function stock_apply(PDO $pdo, int $listingId, float $delta, string $type, ?int 
     $pdo->prepare('UPDATE produce_listings SET available_quantity = :after WHERE id = :id')
         ->execute(['after' => $after, 'id' => $listingId]);
 
+    // Keep status in step with stock so farmers never flip "sold out" by hand.
+    // Only active <-> sold_out is touched; paused and archived stay as set.
+    if ($after <= 0) {
+        $pdo->prepare("UPDATE produce_listings SET status = 'sold_out' WHERE id = :id AND status = 'active'")
+            ->execute(['id' => $listingId]);
+    } elseif ($before <= 0) {
+        $pdo->prepare("UPDATE produce_listings SET status = 'active' WHERE id = :id AND status = 'sold_out'")
+            ->execute(['id' => $listingId]);
+    }
+
     $pdo->prepare(
         'INSERT INTO stock_adjustments
             (listing_id, adjustment_type, quantity_change, quantity_before, quantity_after, reference_type, reference_id, notes, created_by)
@@ -823,6 +833,28 @@ function notify_user(PDO $pdo, int $userId, string $category, string $title, ?st
     }
 }
 
+/**
+ * Send a plain-text email when config mail.enabled is on. Never throws:
+ * delivery is best-effort and must not roll back the action that caused it.
+ */
+function send_app_mail(string $to, string $subject, string $body): bool
+{
+    global $config;
+    if (empty($config['mail']['enabled']) || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+    $from = (string) ($config['mail']['from'] ?? 'no-reply@agrimall.ph');
+    $headers = 'From: ' . $from . "\r\n"
+        . "MIME-Version: 1.0\r\n"
+        . "Content-Type: text/plain; charset=UTF-8\r\n";
+    $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
+    $ok = @mail($to, $encodedSubject, $body, $headers);
+    if (!$ok) {
+        error_log('mail delivery failed: ' . $subject);
+    }
+    return $ok;
+}
+
 /** Notify one user that an order they are party to changed status. */
 function notify_order_status(PDO $pdo, int $userId, array $order, ?string $from, string $to, ?string $reason): void
 {
@@ -841,6 +873,16 @@ function notify_order_status(PDO $pdo, int $userId, array $order, ?string $from,
     $title = 'Order ' . $order['order_number'] . ' ' . $phrase;
     $body = $reason ? 'Note: ' . $reason : null;
     notify_user($pdo, $userId, 'orders', $title, $body, 'order.php?id=' . (int) $order['id']);
+
+    try {
+        $stmt = $pdo->prepare('SELECT email FROM users WHERE id = :id');
+        $stmt->execute(['id' => $userId]);
+        $email = (string) $stmt->fetchColumn();
+        $link = app_base_url() . '/order.php?id=' . (int) $order['id'];
+        send_app_mail($email, $title, $title . "\n\n" . ($body ?? '') . "\n\n" . $link);
+    } catch (Throwable $e) {
+        error_log('order status mail failed: ' . $e->getMessage());
+    }
 }
 
 /** Count a user's unread in-app notifications. Returns 0 on any failure. */
@@ -941,9 +983,23 @@ function password_reset_deliver_local(int $userId, string $rawToken): ?string
     $base = app_base_url();
     $link = $base . '/reset.php?token=' . rawurlencode($rawToken);
 
+    $emailed = false;
+    try {
+        $stmt = DB::pdo()->prepare('SELECT email FROM users WHERE id = :id');
+        $stmt->execute(['id' => $userId]);
+        $emailed = send_app_mail(
+            (string) $stmt->fetchColumn(),
+            'Reset your AgriMALL password',
+            "Use this link to choose a new password:\n\n{$link}\n\n"
+            . "If you did not ask for this, ignore this email."
+        );
+    } catch (Throwable $e) {
+        error_log('password reset mail failed: ' . $e->getMessage());
+    }
+
     security_event_log('password_reset_link_issued', [
         'user_id'    => $userId,
-        'delivered'  => 'local_log',
+        'delivered'  => $emailed ? 'email' : 'local_log',
     ]);
     error_log(
         sprintf('[%s] password reset link for user #%d: %s', date('c'), $userId, $link) . PHP_EOL,
@@ -951,6 +1007,9 @@ function password_reset_deliver_local(int $userId, string $rawToken): ?string
         (string) ($config['app']['security_log'] ?? (__DIR__ . '/../logs/security.log'))
     );
 
+    if ($emailed) {
+        return null;
+    }
     return local_reset_links_enabled() ? $link : null;
 }
 

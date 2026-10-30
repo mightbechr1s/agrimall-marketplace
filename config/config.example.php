@@ -45,4 +45,12 @@ return [
             'error_log' => __DIR__ . '/../logs/error.log',
         ],
     ],
+
+    // Outbound email. Off by default: PHP mail() needs a working local MTA or
+    // SMTP relay. When enabled, order status changes and password resets are
+    // also emailed; in-app notifications are unaffected.
+    'mail' => [
+        'enabled' => false,
+        'from' => 'no-reply@agrimall.ph',
+    ],
 ];

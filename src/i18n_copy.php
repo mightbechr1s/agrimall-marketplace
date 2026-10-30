@@ -3,7 +3,7 @@
 return [
     'hero' => [
         'en' => [
-            'eyebrow' => 'Direct from verified Filipino farms',
+            'eyebrow' => 'Direct from verified Filipino farms and raisers',
             'headline' => 'Farm to your door in 24 hours. No middlemen.',
             'subhead' => 'Verified farms and livestock raisers list today\'s harvest and stock. You order direct. Fair prices, fresher food.',
             'cta_primary' => 'Browse market',
@@ -15,7 +15,7 @@ return [
             'card_label' => 'Today\'s harvest',
         ],
         'tl' => [
-            'eyebrow' => 'Direkta mula sa mga na-verify na sakahan sa Pilipinas',
+            'eyebrow' => 'Direkta mula sa mga na-verify na sakahan at raiser sa Pilipinas',
             'headline' => 'Sariwa mula sa sakahan, sa pintuan mo sa 24 oras. Walang gitna.',
             'subhead' => 'Ang mga na-verify na magsasaka at nag-aalaga ng hayop ay naglilista ng kanilang ani at produkto ngayon. Direkta kang bumibili. Patas na presyo, mas sariwa.',
             'cta_primary' => 'Mag-browse',

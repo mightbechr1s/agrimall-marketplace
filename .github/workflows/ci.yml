@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, intl, fileinfo, gd
+          coverage: none
+
+      # Tests read config/config.php; the example is safe (no secrets).
+      - name: Prepare config
+        run: cp config/config.example.php config/config.php
+
+      - name: Lint
+        run: php tests/lint.php
+
+      - name: i18n parity
+        run: php tests/i18n-parity.php
+
+      - name: Validation helpers
+        run: php tests/validation.php
+
+      - name: PDF rendering
+        run: php tests/pdf_test.php
+
+      - name: Security checks
+        run: php tests/security_test.php
+
+      - name: Docs/code drift
+        run: php tests/docs_test.php

@@ -27,6 +27,37 @@ $st = $pdo->prepare(
 $st->execute();
 $c4 = $st->rowCount();
 
+// Status follows stock even when quantity changed outside stock_apply (manual
+// SQL, imports). Sold-out rows are hidden from the catalogue either way.
+$c5 = $pdo->exec("UPDATE produce_listings SET status = 'sold_out' WHERE status = 'active' AND available_quantity <= 0");
+$c6 = $pdo->exec("UPDATE produce_listings SET status = 'active' WHERE status = 'sold_out' AND available_quantity > 0");
+
+// Nudge farmers about orders still pending after 3 days. Pending orders do not
+// reserve stock, so a quiet order is a lost sale, not a locked one.
+try {
+    $rows = $pdo->query(
+        "SELECT id, order_number, farmer_id
+           FROM orders
+          WHERE status = 'pending' AND created_at < (NOW() - INTERVAL 3 DAY)"
+    )->fetchAll();
+    foreach ($rows as $r) {
+        $link = 'order.php?id=' . (int) $r['id'];
+        $dup = $pdo->prepare(
+            "SELECT 1 FROM notifications
+              WHERE user_id = :u AND link = :l AND title = 'Order still waiting for confirmation'
+                AND created_at > (NOW() - INTERVAL 1 DAY) LIMIT 1"
+        );
+        $dup->execute(['u' => $r['farmer_id'], 'l' => $link]);
+        if ($dup->fetch()) continue;
+        notify_user($pdo, (int) $r['farmer_id'], 'orders',
+            'Order still waiting for confirmation',
+            'Order ' . $r['order_number'] . ' has been pending for over 3 days.',
+            $link);
+    }
+} catch (Throwable $e) {
+    error_log('pending order nudge failed: ' . $e->getMessage());
+}
+
 // Expiry nudge: tell buyers whose saved listings expire within 2 days.
 try {
     $rows = $pdo->query(
@@ -56,3 +87,4 @@ try {
 }
 
 echo "pruned: rate_limits={$c1}, password_resets={$c2}, read notifications={$c3}, over caps={$c4}\n";
+echo "status sync: sold_out={$c5}, reactivated={$c6}\n";

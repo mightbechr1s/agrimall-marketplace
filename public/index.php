@@ -6,6 +6,51 @@ $copy = include __DIR__ . '/../src/i18n_copy.php';
 $heroCopy = $copy['hero'][locale_current()] ?? $copy['hero']['en'];
 
 $pageTitle = t($copy['hero'], 'headline');
+
+$previewListings = [];
+$categoryCounts = [];
+$verifiedFarmCount = 0;
+$activeListingCount = 0;
+try {
+    $pdo = DB::pdo();
+    $previewListings = $pdo->query(
+        "SELECT *, farm_name AS farmer_name
+           FROM v_active_listings
+          WHERE is_expired = 0
+          ORDER BY published_at DESC
+          LIMIT 4"
+    )->fetchAll();
+    $categoryCounts = $pdo->query(
+        "SELECT category_name, category_slug, COUNT(*) AS total
+           FROM v_active_listings
+          WHERE is_expired = 0
+          GROUP BY category_name, category_slug
+          ORDER BY total DESC, category_name
+          LIMIT 6"
+    )->fetchAll();
+    $verifiedFarmCount = (int) $pdo->query(
+        "SELECT COUNT(*) FROM farmer_profiles WHERE verification_status = 'approved'"
+    )->fetchColumn();
+    $activeListingCount = (int) $pdo->query(
+        "SELECT COUNT(*) FROM v_active_listings WHERE is_expired = 0"
+    )->fetchColumn();
+} catch (Throwable $e) {
+    error_log('landing data unavailable: ' . $e->getMessage());
+}
+
+$categoryIcon = static function (string $slug, string $name): string {
+    $key = strtolower($slug . ' ' . $name);
+    return match (true) {
+        str_contains($key, 'fruit') => 'bi-apple',
+        str_contains($key, 'egg'), str_contains($key, 'poultry') => 'bi-egg-fried',
+        str_contains($key, 'root') => 'bi-flower1',
+        str_contains($key, 'grain') => 'bi-basket3',
+        str_contains($key, 'herb') => 'bi-flower2',
+        str_contains($key, 'leaf') => 'bi-flower3',
+        default => 'bi-basket2',
+    };
+};
+
 require __DIR__ . '/partials/header.php';
 ?>
 
@@ -62,7 +107,11 @@ require __DIR__ . '/partials/header.php';
 <div class="trust-bar">
     <div class="container">
         <div class="row g-3">
-            <?php foreach ($copy['stats'][locale_current()]['items'] ?? $copy['stats']['en']['items'] as $stat): ?>
+            <?php
+            $landingStats = $copy['stats'][locale_current()]['items'] ?? $copy['stats']['en']['items'];
+            if (isset($landingStats[0])) $landingStats[0]['num'] = (string) $verifiedFarmCount;
+            if (isset($landingStats[1])) $landingStats[1]['num'] = (string) $activeListingCount;
+            foreach ($landingStats as $stat): ?>
             <div class="col-12 col-sm-4">
                 <div class="trust-metric">
                     <span class="trust-metric-num"><?= e($stat['num']) ?><?= e($stat['suffix']) ?></span>
@@ -73,6 +122,30 @@ require __DIR__ . '/partials/header.php';
         </div>
     </div>
 </div>
+
+<!-- Category strip -->
+<?php if ($categoryCounts): ?>
+<section class="category-strip py-4" aria-labelledby="category-strip-title" data-reveal>
+    <div class="container">
+        <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
+            <div>
+                <p class="eyebrow-pill mb-2">Shop by category</p>
+                <h2 class="section-title h3 mb-0" id="category-strip-title">What's growing today</h2>
+            </div>
+            <a href="browse.php" class="btn btn-outline-primary btn-sm">All listings</a>
+        </div>
+        <div class="category-tiles">
+            <?php foreach ($categoryCounts as $cat): ?>
+            <a class="category-tile" href="browse.php?category=<?= e($cat['category_slug']) ?>">
+                <span class="category-tile__icon"><i class="bi <?= e($categoryIcon($cat['category_slug'], $cat['category_name'])) ?>" aria-hidden="true"></i></span>
+                <span class="category-tile__name"><?= e($cat['category_name']) ?></span>
+                <span class="category-tile__count"><?= (int) $cat['total'] ?> listing<?= (int) $cat['total'] === 1 ? '' : 's' ?></span>
+            </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
 
 <!-- Our Story / Meet the farmers -->
 <section id="story" class="story-section py-5" data-reveal>
@@ -101,6 +174,28 @@ require __DIR__ . '/partials/header.php';
         </div>
     </div>
 </section>
+
+<!-- Fresh at the market -->
+<?php if ($previewListings): ?>
+<section class="market-preview py-5" aria-labelledby="market-preview-title" data-reveal>
+    <div class="container">
+        <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-4">
+            <div>
+                <p class="eyebrow-pill mb-2"><?= t($copy['preview'], 'section_title') ?></p>
+                <h2 class="section-title mb-0" id="market-preview-title"><?= t($copy['preview'], 'intro') ?></h2>
+            </div>
+            <a href="browse.php" class="btn btn-outline-primary">View all listings <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i></a>
+        </div>
+        <div class="row g-4">
+            <?php foreach ($previewListings as $listing): ?>
+            <div class="col-6 col-lg-3">
+                <?php $mode = 'grid'; $showActions = true; require __DIR__ . '/partials/listing-card.php'; ?>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
 
 <!-- How It Works -->
 <section id="steps" class="how-it-works" data-reveal>
