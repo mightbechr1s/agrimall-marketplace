@@ -97,7 +97,7 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><?= e($pageTitle) ?> | <?= e($config['app']['name'] ?? 'AniMALL') ?></title>
+    <title><?= e($pageTitle) ?> | <?= e($config['app']['name'] ?? 'AgriMALL') ?></title>
     <meta name="theme-color" content="#1B3B2B" />
     <link rel="icon" type="image/svg+xml" href="assets/branding/mark.svg" />
     <link rel="apple-touch-icon" href="assets/branding/mark.svg" />
@@ -125,8 +125,8 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
 <aside class="sidebar" id="sidebar" aria-label="Dashboard navigation">
     <div class="sidebar-header">
         <a href="index.php" class="sidebar-brand">
-            <img src="assets/branding/mark.svg" alt="AniMALL" class="sidebar-logo">
-            <span class="sidebar-brand-text">AniMALL</span>
+            <img src="assets/branding/mark.svg" alt="AgriMALL" class="sidebar-logo">
+            <span class="sidebar-brand-text">AgriMALL</span>
         </a>
         <button class="sidebar-toggle sidebar-toggle-brand" type="button" aria-label="Toggle sidebar" aria-expanded="false" aria-controls="sidebar">
             <span class="sidebar-toggle-lines" aria-hidden="true"><span></span><span></span><span></span></span>

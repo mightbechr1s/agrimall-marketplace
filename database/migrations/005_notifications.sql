@@ -1,4 +1,4 @@
--- AniMALL Migration 005: in-app notifications.
+-- AgriMALL Migration 005: in-app notifications.
 -- Run after 004 against `animal_marketplace`; additive, creates one table.
 
 USE `animal_marketplace`;

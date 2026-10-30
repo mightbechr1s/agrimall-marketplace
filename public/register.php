@@ -162,7 +162,7 @@ require __DIR__ . '/partials/header.php';
     <div class="auth-right">
         <div class="auth-card">
             <div class="auth-logo">
-                <a href="index.php"><img src="assets/branding/logo-horizontal.svg" alt="AniMALL"></a>
+                <a href="index.php"><img src="assets/branding/logo-horizontal.svg" alt="AgriMALL"></a>
             </div>
             <h1 class="auth-title"><?= $l($copy['auth'], 'reg_title') ?></h1>
             <p class="auth-subtitle"><?= $l($copy['auth'], 'reg_sub') ?></p>
@@ -381,16 +381,16 @@ require __DIR__ . '/partials/header.php';
                           <div id="privacyTermsBody" style="background:#fff;max-width:700px;width:100%;margin:auto;padding:2rem;border-radius:8px;max-height:70vh;overflow:auto;position:relative;">
                             <h2>Privacy Policy & Terms of Use</h2>
                             <h3>Privacy Policy</h3>
-                            <p>We respect your privacy. Your data is used only to operate the AniMALL marketplace and is never sold to third parties.</p>
+                            <p>We respect your privacy. Your data is used only to operate the AgriMALL marketplace and is never sold to third parties.</p>
                             <p>We collect account details, order history, and usage data to provide and improve the service.</p>
                             <p>Your personal information is stored securely and is only accessible to authorized personnel. We do not share your data with third-party advertisers.</p>
                             <p>You may request deletion of your account and associated data at any time through the account settings page.</p>
                             <p>Cookies are used solely for session management and preference storage. No tracking cookies are employed.</p>
                             <h3>Terms of Use</h3>
-                            <p>By creating an account, you agree to use AniMALL responsibly and not to post misleading or fraudulent listings.</p>
+                            <p>By creating an account, you agree to use AgriMALL responsibly and not to post misleading or fraudulent listings.</p>
                             <p>Farmers must verify their identity before selling. Buyers must honor confirmed orders.</p>
                             <p>All transactions are subject to our cancellation and refund policies as described in the order section.</p>
-                            <p>AniMALL reserves the right to suspend accounts that violate these terms or engage in fraudulent activity.</p>
+                            <p>AgriMALL reserves the right to suspend accounts that violate these terms or engage in fraudulent activity.</p>
                             <p>Prices and availability are set by farmers and may change without notice. Always confirm before ordering.</p>
                             <p>By proceeding, you acknowledge that you have read and understood both documents in full.</p>
                             <div class="text-center mt-3">

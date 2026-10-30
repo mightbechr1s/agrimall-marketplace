@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Starts (or stops) the local AniMALL stack: MariaDB and the PHP dev server.
+    Starts (or stops) the local AgriMALL stack: MariaDB and the PHP dev server.
 
 .DESCRIPTION
     The PHP dev server must be launched WITH public\router.php:

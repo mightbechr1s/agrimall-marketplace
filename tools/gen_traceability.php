@@ -203,7 +203,7 @@ $auto   = count($byStatus['automated']);
 $part   = count($byStatus['partial']);
 
 $out = [];
-$out[] = '# AniMALL Requirements Traceability Matrix';
+$out[] = '# AgriMALL Requirements Traceability Matrix';
 $out[] = '';
 $out[] = '> Generated file. Do not edit by hand. Source of truth for requirements is';
 $out[] = '> `docs/SRS.txt`; source of truth for evidence mapping is';

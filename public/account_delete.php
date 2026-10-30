@@ -101,7 +101,7 @@ require __DIR__ . '/partials/header.php';
 <main id="main-content" class="auth-wrap">
     <div class="auth-card auth-card--wide" data-reveal>
         <div class="auth-logo">
-            <a href="index.php"><img src="assets/branding/logo-horizontal.svg" alt="AniMALL"></a>
+            <a href="index.php"><img src="assets/branding/logo-horizontal.svg" alt="AgriMALL"></a>
         </div>
 
         <?php if ($done): ?>

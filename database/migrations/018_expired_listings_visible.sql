@@ -1,4 +1,4 @@
--- AniMALL Migration 018: keep expired active listings visible in the catalogue
+-- AgriMALL Migration 018: keep expired active listings visible in the catalogue
 -- (FR-LIST-033) so rejection is observable, and flag them as expired.
 DROP VIEW IF EXISTS `v_active_listings`;
 CREATE OR REPLACE VIEW `v_active_listings` AS

@@ -1,4 +1,4 @@
--- AniMALL Migration 002: Password resets + remember-me tokens
+-- AgriMALL Migration 002: Password resets + remember-me tokens
 -- Run after schema.sql against `animal_marketplace`
 
 USE `animal_marketplace`;

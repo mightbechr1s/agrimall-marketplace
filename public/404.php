@@ -37,7 +37,7 @@ $notFound = $copy['errors'][$locale]['404'] ?? $copy['errors']['en']['404'] ?? [
 
         <p class="small mt-4 mb-0 text-muted">
             <?= e($notFound['help_text'] ?? 'If you think this is a mistake, please') ?>
-            <a href="mailto:support@animal.ph"><?= e($notFound['contact_link'] ?? 'contact us') ?></a>.
+            <a href="mailto:support@agrimall.ph"><?= e($notFound['contact_link'] ?? 'contact us') ?></a>.
         </p>
     </div>
 </main>

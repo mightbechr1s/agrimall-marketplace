@@ -82,7 +82,7 @@ require __DIR__ . '/partials/header.php';
 
                     <section class="legal-block" data-reveal>
                         <h2 id="contact">7. Contact</h2>
-                        <p>Questions about cookies? Email <a href="mailto:support@animal.ph">support@animal.ph</a>.</p>
+                        <p>Questions about cookies? Email <a href="mailto:support@agrimall.ph">support@agrimall.ph</a>.</p>
                     </section>
                 </article>
             </div>
@@ -101,7 +101,7 @@ require __DIR__ . '/partials/header.php';
                         </ul>
                     </nav>
                     <div class="mt-4">
-                        <p class="text-center"><small>Legal Support: <a href="mailto:support@animal.ph">support@animal.ph</a></small></p>
+                        <p class="text-center"><small>Legal Support: <a href="mailto:support@agrimall.ph">support@agrimall.ph</a></small></p>
                     </div>
                 </aside>
             </div>

@@ -1,4 +1,4 @@
-# AniMALL robots.txt
+# AgriMALL robots.txt
 User-agent: *
 Allow: /
 

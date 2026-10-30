@@ -383,7 +383,7 @@ function initThemeToggle() {
   function persistTheme(pref) {
     localStorage.setItem(STORAGE_KEY, pref);
     // Sync to the account so the choice sticks across pages and devices.
-    const api = window.AniMALL || {};
+    const api = window.AgriMALL || {};
     if (api.userId && api.csrf) {
       const body = new URLSearchParams();
       body.append('csrf_token', api.csrf);

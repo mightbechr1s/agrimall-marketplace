@@ -84,7 +84,7 @@ function Repair-AnimalConfigSwap {
   if (-not (Test-Path -LiteralPath $Cfg)) { return $false }
 
   $text = [System.IO.File]::ReadAllText($Cfg)
-  # Anchor on quoted DB name so app's later 'name' => 'AniMALL' is safe.
+  # Anchor on quoted DB name so app's later 'name' => 'AgriMALL' is safe.
   $stale = "('name'\s*=>\s*')animal_marketplace_test(')"
   if ($text -notmatch $stale) { return $false }
 

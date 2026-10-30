@@ -4,7 +4,7 @@
  * rate_limits, read notifications and expired password_resets grew forever.
  * Run before a demo or wire into Task Scheduler:
  *
- *   schtasks /create /tn "AniMALL maintenance" /sc daily /st 03:00 /tr ^
+ *   schtasks /create /tn "AgriMALL maintenance" /sc daily /st 03:00 /tr ^
  *     "\"C:\xampp\php\php.exe\" \"C:\xampp\htdocs\animal\tools\maintenance.php\""
  */
 require __DIR__ . '/../src/bootstrap.php';

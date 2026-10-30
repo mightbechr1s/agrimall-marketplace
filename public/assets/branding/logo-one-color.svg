@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 96" role="img" aria-labelledby="title desc">
-  <title id="title">AniMALL one-color logo</title>
-  <desc id="desc">One-color detailed field-gate mark and AniMALL wordmark.</desc>
+  <title id="title">AgriMALL one-color logo</title>
+  <desc id="desc">One-color detailed field-gate mark and AgriMALL wordmark.</desc>
   <g fill="#153f2d">
     <g transform="translate(8 8) scale(1.25)">
       <path d="M32 4C19.8 18.5 10.5 36.5 3.5 60h14.7c3.5-12.7 8-23.7 13.8-33.5C37.8 36.3 42.3 47.3 45.8 60h14.7C53.5 36.5 44.2 18.5 32 4Z"/>
@@ -8,6 +8,6 @@
       <rect width="36" height="10" x="14" y="39" rx="5"/>
       <circle cx="32" cy="44" r="3.25" fill="#ffffff"/>
     </g>
-    <text x="106" y="66" font-family="Atkinson Hyperlegible, Trebuchet MS, sans-serif" font-size="58" font-weight="800" letter-spacing="-2">AniMALL</text>
+    <text x="106" y="66" font-family="Atkinson Hyperlegible, Trebuchet MS, sans-serif" font-size="58" font-weight="800" letter-spacing="-2">AgriMALL</text>
   </g>
 </svg>

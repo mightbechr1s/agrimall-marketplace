@@ -1,4 +1,4 @@
--- AniMALL Migration 014: farmer contact & social details (replaces out-of-scope chat).
+-- AgriMALL Migration 014: farmer contact & social details (replaces out-of-scope chat).
 -- Lets buyers reach farmers directly via phone/email/social instead of in-app messaging.
 
 ALTER TABLE `farmer_profiles`

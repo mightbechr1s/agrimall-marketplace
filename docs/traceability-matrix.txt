@@ -1,4 +1,4 @@
-# AniMALL Requirements Traceability Matrix
+# AgriMALL Requirements Traceability Matrix
 
 > Generated file. Do not edit by hand. Source of truth for requirements is
 > `docs/SRS.txt`; source of truth for evidence mapping is

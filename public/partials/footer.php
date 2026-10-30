@@ -2,7 +2,7 @@
 // Footer i18n is self-contained; works on any page without $copy/$l from caller.
 $footerCopy = $copy['footer'] ?? [
     'en' => [
-        'brand_tagline' => 'Philippine Agricultural Marketplace',
+        'brand_tagline' => 'Philippine Agribusiness Marketplace',
         'heading_market' => 'Market',
         'heading_for_farmers' => 'For farmers',
         'heading_company' => 'Company',
@@ -44,7 +44,7 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
 <footer class="footer" role="contentinfo">
   <div class="inside container">
     <div class="brand">
-      <img src="assets/branding/logo-reverse.svg" alt="AniMALL" class="brand-logo">
+      <img src="assets/branding/logo-reverse.svg" alt="AgriMALL" class="brand-logo">
       <div class="brand-tagline"><?= $f('brand_tagline') ?></div>
     </div>
     <div class="cols">
@@ -64,13 +64,13 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
       <div>
         <h2><?= $f('heading_company') ?></h2>
         <a href="index.php#story"><?= $f('link_our_story') ?></a>
-        <a href="mailto:support@animal.ph"><?= $f('link_contact') ?></a>
+        <a href="mailto:support@agrimall.ph"><?= $f('link_contact') ?></a>
         <a href="privacy.php"><?= $f('link_privacy') ?></a>
         <a href="terms.php"><?= $f('link_terms') ?></a>
       </div>
     </div>
   </div>
-  <p class="copyright">&copy; <?= date('Y') ?> AniMALL &middot; FarmRoute Cooperative. Built for Philippine farms.</p>
+  <p class="copyright">&copy; <?= date('Y') ?> AgriMALL &middot; FarmRoute Cooperative. Built for Philippine farms.</p>
 </footer>
 
 <!-- Back to top button -->

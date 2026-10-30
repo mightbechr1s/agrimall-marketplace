@@ -1,6 +1,6 @@
 {
-  "name": "AniMALL — Philippine Agricultural Marketplace",
-  "short_name": "AniMALL",
+  "name": "AgriMALL — Philippine Agribusiness Marketplace",
+  "short_name": "AgriMALL",
   "description": "Connecting verified Filipino farms directly with buyers. Farm to table, no middlemen.",
   "start_url": "/index.php",
   "display": "standalone",
@@ -28,7 +28,7 @@
     {
       "name": "How it Works",
       "short_name": "How it Works",
-      "description": "Learn how AniMALL connects farms to tables",
+      "description": "Learn how AgriMALL connects farms to tables",
       "url": "/index.php#steps",
       "icons": [{ "src": "assets/branding/mark.svg", "sizes": "192x192" }]
     }

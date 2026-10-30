@@ -1,4 +1,4 @@
--- AniMALL Migration 017: refresh v_active_listings to include discount_percent.
+-- AgriMALL Migration 017: refresh v_active_listings to include discount_percent.
 DROP VIEW IF EXISTS `v_active_listings`;
 CREATE OR REPLACE VIEW `v_active_listings` AS
 SELECT

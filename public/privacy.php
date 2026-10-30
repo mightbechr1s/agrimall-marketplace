@@ -16,7 +16,7 @@ require __DIR__ . '/partials/header.php';
                 <article class="legal-body">
                     <section class="legal-block" data-reveal>
                         <h2 id="who-we-are">1. Who we are</h2>
-                        <p>AniMALL ("we", "our", "us") operates this Philippine agricultural marketplace at the domain you are visiting. Our registered office is in the Philippines. You can contact us at <a href="mailto:support@animal.ph">support@animal.ph</a>.</p>
+                        <p>AgriMALL ("we", "our", "us") operates this Philippine agribusiness marketplace at the domain you are visiting. Our registered office is in the Philippines. You can contact us at <a href="mailto:support@agrimall.ph">support@agrimall.ph</a>.</p>
                     </section>
 
                     <hr class="legal-divider">
@@ -79,7 +79,7 @@ require __DIR__ . '/partials/header.php';
                             <li><strong>Portability</strong> — receive your data in a machine-readable format.</li>
                             <li><strong>Object</strong> — to processing based on legitimate interest.</li>
                         </ul>
-                        <p>To exercise any right, email <a href="mailto:support@animal.ph">support@animal.ph</a> with "Privacy Request" in the subject. We respond within 30 days.</p>
+                        <p>To exercise any right, email <a href="mailto:support@agrimall.ph">support@agrimall.ph</a> with "Privacy Request" in the subject. We respond within 30 days.</p>
                     </section>
 
                     <hr class="legal-divider">
@@ -119,7 +119,7 @@ require __DIR__ . '/partials/header.php';
 
                     <section class="legal-block" data-reveal>
                         <h2 id="contact">11. Contact</h2>
-                        <p>Questions? Email <a href="mailto:support@animal.ph">support@animal.ph</a> or write to our registered office.</p>
+                        <p>Questions? Email <a href="mailto:support@agrimall.ph">support@agrimall.ph</a> or write to our registered office.</p>
                     </section>
                 </article>
             </div>
@@ -142,7 +142,7 @@ require __DIR__ . '/partials/header.php';
                         </ul>
                     </nav>
                     <div class="mt-4">
-                        <p class="text-center"><small>Legal Support: <a href="mailto:support@animal.ph">support@animal.ph</a></small></p>
+                        <p class="text-center"><small>Legal Support: <a href="mailto:support@agrimall.ph">support@agrimall.ph</a></small></p>
                     </div>
                 </aside>
             </div>

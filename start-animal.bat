@@ -1,5 +1,5 @@
 @echo off
-REM AniMALL one-click start
+REM AgriMALL one-click start
 setlocal
 
 REM Start MySQL if not already running
@@ -26,5 +26,5 @@ if errorlevel 1 (
 )
 
 start "" "http://localhost:8000/login.php"
-echo AniMALL started. Close this window to keep running in background.
+echo AgriMALL started. Close this window to keep running in background.
 pause

@@ -1,4 +1,4 @@
--- AniMALL database schema: SRS v0.3 Section 11 entities, 3NF, MySQL 8.0+.
+-- AgriMALL database schema: SRS v0.3 Section 11 entities, 3NF, MySQL 8.0+.
 
 CREATE DATABASE IF NOT EXISTS `animal_marketplace`
   CHARACTER SET utf8mb4

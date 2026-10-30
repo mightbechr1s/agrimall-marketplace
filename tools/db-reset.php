@@ -1,6 +1,6 @@
 <?php
 /**
- * AniMALL database reset (Sprint 1, issue #4).
+ * AgriMALL database reset (Sprint 1, issue #4).
  *
  * Usage (PHP 8.1+ CLI; XAMPP: C:\xampp\php\php.exe tools\db-reset.php):
  *   php tools/db-reset.php --yes

@@ -1,6 +1,6 @@
 <?php
-$pageTitle = $pageTitle ?? ($config['app']['name'] ?? 'AniMALL');
-$appName = $config['app']['name'] ?? 'AniMALL';
+$pageTitle = $pageTitle ?? ($config['app']['name'] ?? 'AgriMALL');
+$appName = $config['app']['name'] ?? 'AgriMALL';
 $currentLocale = function_exists('locale_current') ? locale_current() : 'en';
 $isIndex = basename($_SERVER['SCRIPT_NAME'] ?? '') === 'index.php';
 
@@ -20,7 +20,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?= e($pageTitle) ?> | <?= e($appName) ?></title>
-    <meta name="description" content="<?= e($currentLocale === 'tl' ? 'AniMALL — Merkadong agrikultura ng Pilipinas. Mga na-verify na magsasaka, patas na presyo, sariwa mula sa sakahan.' : 'AniMALL — Philippine agricultural marketplace connecting verified farms directly with buyers. Farm to table, no middlemen.') ?>" />
+    <meta name="description" content="<?= e($currentLocale === 'tl' ? 'AgriMALL — Merkadong agrikultura at alagang hayop ng Pilipinas. Mga na-verify na magsasaka at raiser, patas na presyo, sariwa mula sa sakahan.' : 'AgriMALL — Philippine agribusiness marketplace connecting verified farms and raisers directly with buyers. Farm to table, no middlemen.') ?>" />
     <meta name="theme-color" content="#1F4B32" />
 
     <!-- Canonical & hreflang -->
@@ -35,7 +35,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
     <meta property="og:description" content="<?= e($i18nCopy['og_description'][$currentLocale] ?? $i18nCopy['og_description']['en'] ?? '') ?>" />
     <meta property="og:image" content="<?= e($baseUrl) ?>/assets/branding/mark.svg" />
     <meta property="og:url" content="<?= e($canonicalUrl) ?>" />
-    <meta property="og:site_name" content="AniMALL" />
+    <meta property="og:site_name" content="AgriMALL" />
     <meta property="og:locale" content="<?= $currentLocale === 'tl' ? 'tl_PH' : 'en_PH' ?>" />
 
     <!-- Twitter Card -->
@@ -112,10 +112,10 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
         {
           "@type": "LocalBusiness",
           "@id": "<?= e($canonicalUrl) ?>#business",
-          "name": "AniMALL",
+          "name": "AgriMALL",
           "description": <?= json_encode($currentLocale === 'tl'
                 ? 'Merkadong agrikultura ng Pilipinas. Mga na-verify na magsasaka, patas na presyo, sariwa mula sa sakahan.'
-                : 'Philippine agricultural marketplace connecting verified farms directly with buyers. Farm to table, no middlemen.', JSON_UNESCAPED_UNICODE) ?>,
+                : 'Philippine agribusiness marketplace connecting verified farms directly with buyers. Farm to table, no middlemen.', JSON_UNESCAPED_UNICODE) ?>,
           "url": "<?= e($canonicalUrl) ?>",
           "logo": "<?= e($baseUrl) ?>/assets/branding/mark.svg",
           "image": "<?= e($baseUrl) ?>/assets/branding/mark.svg",
@@ -189,8 +189,8 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
   <div class="nav-inner">
     <div class="nav-left">
       <div class="brand">
-        <a href="index.php" class="brand-link" aria-label="AniMALL home">
-          <img src="assets/branding/logo-horizontal.svg" alt="AniMALL" class="brand-logo">
+        <a href="index.php" class="brand-link" aria-label="AgriMALL home">
+          <img src="assets/branding/logo-horizontal.svg" alt="AgriMALL" class="brand-logo">
         </a>
       </div>
       <nav class="nav-links" aria-label="Main navigation" id="mainNav">

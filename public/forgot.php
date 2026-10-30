@@ -77,7 +77,7 @@ require __DIR__ . '/partials/header.php';
 <main id="main-content" class="auth-wrap">
     <div class="auth-card" data-reveal>
         <div class="auth-logo">
-            <a href="index.php"><img src="assets/branding/logo-horizontal.svg" alt="AniMALL"></a>
+            <a href="index.php"><img src="assets/branding/logo-horizontal.svg" alt="AgriMALL"></a>
         </div>
         <h1 class="auth-title"><?= $l($copy['auth'], 'forgot_title') ?></h1>
         <p class="auth-subtitle"><?= $l($copy['auth'], 'forgot_sub') ?></p>

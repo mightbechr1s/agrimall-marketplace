@@ -1,4 +1,4 @@
--- AniMALL Migration 012: hot-path composite indexes.
+-- AgriMALL Migration 012: hot-path composite indexes.
 -- Run after 011 against `animal_marketplace`. Guarded per index (the information_schema
 -- + PREPARE pattern of 002) so a rerun by tools/db-reset.php is a clean no-op.
 

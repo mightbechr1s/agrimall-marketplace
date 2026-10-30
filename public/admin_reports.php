@@ -611,7 +611,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
         $exportRows = $exportStmt->fetchAll();
     }
     header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="animal-' . strtolower($reportRef) . '.csv"');
+    header('Content-Disposition: attachment; filename="agrimall-' . strtolower($reportRef) . '.csv"');
     $out = fopen('php://output', 'w');
     if (!empty($exportRows)) {
         fputcsv($out, array_keys($exportRows[0]));
@@ -641,7 +641,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     }
     $pdf = build_report_pdf($reportTitle, $reportRef, $filters, $exportRows, $totals, $exportNote);
     header('Content-Type: application/pdf');
-    header('Content-Disposition: attachment; filename="animal-' . strtolower($reportRef) . '.pdf"');
+    header('Content-Disposition: attachment; filename="agrimall-' . strtolower($reportRef) . '.pdf"');
     header('Content-Length: ' . strlen($pdf));
     echo $pdf;
     exit;

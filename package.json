@@ -1,7 +1,7 @@
 {
   "name": "animal-marketplace",
   "version": "1.0.0",
-  "description": "AniMALL — Philippine Agricultural Marketplace",
+  "description": "AgriMALL - Philippine Agribusiness Marketplace",
   "private": true,
   "scripts": {
     "build:assets": "esbuild public/assets/css/styles.css --minify --outfile=public/assets/css/styles.min.css && esbuild public/assets/css/motion.css --minify --outfile=public/assets/css/motion.min.css && esbuild public/assets/js/motion.js --minify --outfile=public/assets/js/motion.min.js && esbuild public/assets/js/swipe.js --minify --outfile=public/assets/js/swipe.min.js",

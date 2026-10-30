@@ -20,12 +20,12 @@ $l = function ($dict, $key) use ($copy, $locale) {
     <h1>Privacy Policy & Terms of Use</h1>
     <section>
         <h2>Privacy Policy</h2>
-        <p>We respect your privacy. Your data is used only to operate the AniMALL marketplace and is never sold to third parties.</p>
+        <p>We respect your privacy. Your data is used only to operate the AgriMALL marketplace and is never sold to third parties.</p>
         <p>We collect account details, order history, and usage data to provide and improve the service.</p>
     </section>
     <section>
         <h2>Terms of Use</h2>
-        <p>By creating an account, you agree to use AniMALL responsibly and not to post misleading or fraudulent listings.</p>
+        <p>By creating an account, you agree to use AgriMALL responsibly and not to post misleading or fraudulent listings.</p>
         <p>Farmers must verify their identity before selling. Buyers must honor confirmed orders.</p>
     </section>
     <div class="text-center mt-4">

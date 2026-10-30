@@ -1,5 +1,5 @@
 <?php
-// AniMALL configuration.
+// AgriMALL configuration.
 // Copy to config/config.php and fill in real values. Never commit config.php.
 
 return [
@@ -12,7 +12,7 @@ return [
         'charset' => 'utf8mb4',
     ],
     'app' => [
-        'name' => 'AniMALL',
+        'name' => 'AgriMALL',
           // Leave empty: app_base_url() derives the host from the incoming request,
           // which is correct on localhost, on `php -S`, and on whatever host you
           // deploy to. Set this only if you need a fixed canonical host (e.g.
