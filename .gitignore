@@ -64,3 +64,5 @@ AGENTS.md
 *.prompt.txt
 # Scratchpad (temp artifacts, probes, one-shot scripts)
 scratchpad/
+
+.playwright-mcp/
