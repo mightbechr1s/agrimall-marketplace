@@ -1194,10 +1194,48 @@ function notify_user(PDO $pdo, int $userId, string $category, string $title, ?st
 function send_app_mail(string $to, string $subject, string $body): bool
 {
     global $config;
-    if (empty($config['mail']['enabled']) || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
         return false;
     }
-    $from = (string) ($config['mail']['from'] ?? 'no-reply@agrimall.ph');
+    $mailCfg = $config['mail'] ?? [];
+    $provider = (string) ($mailCfg['provider'] ?? 'mail');
+    $from = (string) ($mailCfg['from'] ?? 'no-reply@agrimall.ph');
+
+    if ($provider === 'resend') {
+        $apiKey = (string) ($mailCfg['resend_api_key'] ?? '');
+        if ($apiKey === '' || empty($mailCfg['enabled'])) {
+            return false;
+        }
+        $payload = json_encode([
+            'from' => $from,
+            'to' => [$to],
+            'subject' => $subject,
+            'text' => $body,
+        ]);
+        $ch = curl_init('https://api.resend.com/emails');
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $apiKey,
+                'Content-Type: application/json',
+            ],
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_TIMEOUT => 10,
+        ]);
+        $resp = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($code < 200 || $code >= 300) {
+            error_log('resend delivery failed (' . $code . '): ' . $resp);
+            return false;
+        }
+        return true;
+    }
+
+    if (empty($mailCfg['enabled'])) {
+        return false;
+    }
     $headers = 'From: ' . $from . "\r\n"
         . "MIME-Version: 1.0\r\n"
         . "Content-Type: text/plain; charset=UTF-8\r\n";

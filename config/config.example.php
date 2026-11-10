@@ -49,9 +49,14 @@ return [
     // Outbound email. Off by default: PHP mail() needs a working local MTA or
     // SMTP relay. When enabled, order status changes and password resets are
     // also emailed; in-app notifications are unaffected.
+    // provider: 'mail' (PHP mail, needs MTA) or 'resend' (Resend HTTP API,
+    // free tier 3000 emails/mo; set resend_api_key). Resend is recommended on
+    // free hosts like InfinityFree where outbound SMTP is blocked.
     'mail' => [
         'enabled' => false,
+        'provider' => 'mail',
         'from' => 'no-reply@agrimall.ph',
+        'resend_api_key' => '',
     ],
 
     // Web Push (VAPID). Generate a pair with `php tools/vapid-keys.php` and paste

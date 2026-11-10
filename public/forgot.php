@@ -64,9 +64,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'expires_at' => $expiresAt
             ]);
 
-            // No mail transport; link handed to operator over local-only channel.
-            // Returns null in production where token must never be displayed.
-            $resetLink = password_reset_deliver_local((int) $user['id'], $token);
+            // Try email delivery first (Resend or PHP mail).
+            $resetUrl = app_base_url() . '/reset.php?token=' . rawurlencode($token);
+            $sent = send_app_mail(
+                $email,
+                'Reset your AgriMALL password',
+                "Use this link to choose a new password (expires in 1 hour):\n\n" . $resetUrl
+            );
+
+            if (!$sent) {
+                // Fall back to local-only channel (dev mode).
+                $resetLink = password_reset_deliver_local((int) $user['id'], $token);
+            }
 
             $success = $l($copy['auth'], 'reset_success');
         } else {
