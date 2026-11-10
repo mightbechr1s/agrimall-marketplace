@@ -23,6 +23,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
 
+    // Bot detection: honeypot (time token skipped for login - rate limited already,
+    // and automated clients submit faster than 0.5s).
+    if (is_bot_request('login', $_POST, 'website', 0.0)) {
+        http_response_code(400);
+        exit(e($l($copy['auth'], 'err_rate_limit')));
+    }
+
     // Rate limit: 5 attempts / 15 min per IP+email (DB-backed)
     $rlKey = 'login_' . md5($_SERVER['REMOTE_ADDR'] . ':' . strtolower(trim((string) ($_POST['email'] ?? ''))));
     if (rate_limit_check($rlKey)) {
@@ -30,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit(e($l($copy['auth'], 'err_rate_limit')));
     }
 
-    $email = trim((string) ($_POST['email'] ?? ''));
+    $email = mb_substr(trim((string) ($_POST['email'] ?? '')), 0, FIELD_LIMITS['email'] ?? 255);
     $password = (string) ($_POST['password'] ?? '');
 
     $stmt = DB::pdo()->prepare('SELECT id, password_hash, role, status, session_version FROM users WHERE email = :email LIMIT 1');
@@ -95,6 +102,8 @@ require __DIR__ . '/partials/header.php';
 
             <form method="post" action="login.php">
                 <?= csrf_field() ?>
+                <?= honeypot_field() ?>
+                <?= issue_form_token('login') ?>
                 <?php if ($safeReturn !== 'dashboard.php'): ?>
                     <input type="hidden" name="return_to" value="<?= e($safeReturn) ?>">
                 <?php endif; ?>

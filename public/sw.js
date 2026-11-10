@@ -4,10 +4,8 @@
  * Authenticated pages are never cached (Cache Storage survives logout).
  */
 
-const CACHE_NAME = 'agrimall-v19';
+const CACHE_NAME = 'agrimall-v55';
 const STATIC_ASSETS = [
-  '/index.php',
-  '/browse.php',
   '/manifest.json'
 ];
 
@@ -24,6 +22,7 @@ const PRIVATE_PATHS = new Set([
   '/order.php',
   '/order_action.php',
   '/order_request.php',
+  '/push_pending.php',
   '/upload_image.php'
 ]);
 
@@ -107,7 +106,52 @@ self.addEventListener('fetch', (event) => {
   // Let the server handle API calls directly (avoid caching sensitive JSON).
   if (url.pathname.startsWith('/api/')) return;
 
+  // App downloads are large binaries served once per install; never cache them.
+  if (url.pathname.startsWith('/downloads/')) return;
+
   event.respondWith(networkFirst(request, url));
+});
+
+// Payload-less push: the message only wakes the worker. The text and link come
+// from /push_pending.php using the session cookie, so nothing sensitive passes
+// through the push service.
+self.addEventListener('push', (event) => {
+  event.waitUntil((async () => {
+    let data = { title: 'AgriMALL', body: 'You have a new notification.', url: '/notifications.php' };
+    try {
+      const response = await fetch('/push_pending.php', {
+        credentials: 'same-origin',
+        cache: 'no-store'
+      });
+      if (response.ok) {
+        const pending = await response.json();
+        if (pending && pending.title) data = { ...data, ...pending };
+      }
+    } catch (error) {
+      // Offline or logged out: still show something rather than a silent push.
+    }
+    await self.registration.showNotification(data.title, {
+      body: data.body || '',
+      icon: '/assets/branding/mark.svg',
+      badge: '/assets/branding/mark.svg',
+      data: { url: data.url || '/notifications.php' }
+    });
+  })());
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || '/notifications.php';
+  event.waitUntil((async () => {
+    const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clientList) {
+      if (new URL(client.url).origin === self.location.origin) {
+        client.navigate(target);
+        return client.focus();
+      }
+    }
+    return self.clients.openWindow(target);
+  })());
 });
 
 // Allow the page to trigger an immediate update.

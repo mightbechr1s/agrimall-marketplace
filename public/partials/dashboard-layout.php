@@ -11,35 +11,47 @@ $navCopy = include __DIR__ . '/../../src/i18n_copy.php';
 // Sidebar menu items per role
 $sidebarMenus = [
     'farmer' => [
-        ['page' => 'dashboard',      'label' => 'Dashboard',      'icon' => 'bi-grid-1x2-fill',  'href' => 'dashboard.php'],
-        ['page' => 'listings',       'label' => 'My Listings',    'icon' => 'bi-basket3',        'href' => 'my_listings.php'],
-        ['page' => 'orders',         'label' => 'Orders',         'icon' => 'bi-receipt-cutoff', 'href' => 'orders.php'],
-        ['page' => 'goods',          'label' => 'Goods',          'icon' => 'bi-shop',           'href' => 'browse.php'],
-        ['page' => 'analytics',      'label' => 'Analytics',      'icon' => 'bi-graph-up',       'href' => 'farmer_analytics.php'],
-        ['page' => 'reports',        'label' => 'Sales Report',  'icon' => 'bi-bar-chart-line', 'href' => 'farmer_reports.php'],
+        ['section' => 'Market', 'page' => 'dashboard',  'label' => 'Dashboard',      'icon' => 'bi-grid-1x2-fill',  'href' => 'dashboard.php'],
+        ['section' => 'Market', 'page' => 'goods',      'label' => 'Goods',          'icon' => 'bi-shop',           'href' => 'browse.php'],
+        ['section' => 'Selling', 'page' => 'listings', 'label' => 'My Listings',    'icon' => 'bi-basket3',        'href' => 'my_listings.php'],
+        ['section' => 'Selling', 'page' => 'orders',    'label' => 'Orders',         'icon' => 'bi-receipt-cutoff', 'href' => 'orders.php'],
+        ['section' => 'Insights', 'page' => 'analytics','label' => 'Analytics',      'icon' => 'bi-graph-up',       'href' => 'farmer_analytics.php'],
+        ['section' => 'Insights', 'page' => 'reports',  'label' => 'Sales Report',  'icon' => 'bi-bar-chart-line', 'href' => 'farmer_reports.php'],
     ],
     'buyer' => [
-        ['page' => 'dashboard',  'label' => 'Dashboard',   'icon' => 'bi-grid-1x2-fill',  'href' => 'dashboard.php'],
-        ['page' => 'browse',     'label' => 'Goods',      'icon' => 'bi-shop',           'href' => 'browse.php'],
-        ['page' => 'orders',     'label' => 'My Orders',   'icon' => 'bi-receipt-cutoff', 'href' => 'orders.php'],
-        ['page' => 'saved',      'label' => 'Saved',       'icon' => 'bi-heart',          'href' => 'saved.php'],
+        ['section' => 'Market', 'page' => 'dashboard',  'label' => 'Dashboard',   'icon' => 'bi-grid-1x2-fill',  'href' => 'dashboard.php'],
+        ['section' => 'Market', 'page' => 'browse',     'label' => 'Goods',      'icon' => 'bi-shop',           'href' => 'browse.php'],
+        ['section' => 'Orders', 'page' => 'orders',     'label' => 'My Orders',   'icon' => 'bi-receipt-cutoff', 'href' => 'orders.php'],
+        ['section' => 'Orders', 'page' => 'saved',      'label' => 'Saved',       'icon' => 'bi-heart',          'href' => 'saved.php'],
+        ['section' => 'Orders', 'page' => 'searches',   'label' => 'Saved Searches', 'icon' => 'bi-bookmark',    'href' => 'saved_searches.php'],
     ],
     'admin' => [
-        // Admin pages not yet implemented; menu links only to existing panels/pages.
-        ['page' => 'dashboard',  'label' => 'Dashboard',   'icon' => 'bi-grid-1x2-fill',  'href' => 'dashboard.php'],
-        ['page' => 'goods',      'label' => 'Goods',      'icon' => 'bi-shop',           'href' => 'browse.php'],
-        ['page' => 'verifications', 'label' => 'Verifications', 'icon' => 'bi-patch-check', 'href' => 'admin_verify.php'],
-
-        ['page' => 'audit',      'label' => 'Audit Log',   'icon' => 'bi-journal-text',   'href' => 'admin_audit.php'],
-        ['page' => 'reports',    'label' => 'Reports',     'icon' => 'bi-bar-chart-line', 'href' => 'admin_reports.php'],
+        ['section' => 'Platform', 'page' => 'dashboard',  'label' => 'Dashboard',   'icon' => 'bi-grid-1x2-fill',  'href' => 'dashboard.php'],
+        ['section' => 'Platform', 'page' => 'goods',      'label' => 'Goods',       'icon' => 'bi-shop',           'href' => 'browse.php'],
+        ['section' => 'Buying', 'page' => 'saved',       'label' => 'Saved',       'icon' => 'bi-heart',          'href' => 'saved.php'],
+        ['section' => 'Buying', 'page' => 'orders',      'label' => 'My Orders',   'icon' => 'bi-receipt-cutoff', 'href' => 'orders.php'],
+        ['section' => 'Moderation', 'page' => 'verifications', 'label' => 'Verifications', 'icon' => 'bi-patch-check', 'href' => 'admin_verify.php'],
+        ['section' => 'Moderation', 'page' => 'reviews',  'label' => 'Reviews',     'icon' => 'bi-star',           'href' => 'admin_reviews.php'],
+        ['section' => 'Insights', 'page' => 'reports',   'label' => 'Reports',     'icon' => 'bi-bar-chart-line', 'href' => 'admin_reports.php'],
+        ['section' => 'Insights', 'page' => 'audit',     'label' => 'Audit Log',   'icon' => 'bi-journal-text',   'href' => 'admin_audit.php'],
+        ['section' => 'Platform', 'page' => 'users',     'label' => 'Manage Users','icon' => 'bi-people',         'href' => 'admin_create_user.php'],
+    ],
+    'manager' => [
+        ['section' => 'Business', 'page' => 'dashboard',  'label' => 'Dashboard',   'icon' => 'bi-grid-1x2-fill',  'href' => 'dashboard.php'],
+        ['section' => 'Business', 'page' => 'goods',      'label' => 'Goods',       'icon' => 'bi-shop',           'href' => 'browse.php'],
+        ['section' => 'Buying', 'page' => 'saved',       'label' => 'Saved',       'icon' => 'bi-heart',          'href' => 'saved.php'],
+        ['section' => 'Buying', 'page' => 'orders',      'label' => 'My Orders',   'icon' => 'bi-receipt-cutoff', 'href' => 'orders.php'],
+        ['section' => 'Moderation', 'page' => 'verifications', 'label' => 'Verifications', 'icon' => 'bi-patch-check', 'href' => 'admin_verify.php'],
+        ['section' => 'Moderation', 'page' => 'reviews',  'label' => 'Reviews',     'icon' => 'bi-star',           'href' => 'admin_reviews.php'],
+        ['section' => 'Insights', 'page' => 'reports',   'label' => 'Reports',     'icon' => 'bi-bar-chart-line', 'href' => 'admin_reports.php'],
     ],
 ];
 $menu = $sidebarMenus[$role] ?? $sidebarMenus['buyer'];
 
 // Role display info
-$roleLabels = ['farmer' => 'Farmer', 'buyer' => 'Buyer', 'admin' => 'Administrator'];
-$roleIcons  = ['farmer' => 'bi-tree-fill', 'buyer' => 'bi-cart3', 'admin' => 'bi-shield-check'];
-$roleColors = ['farmer' => 'role-farmer', 'buyer' => 'role-buyer', 'admin' => 'role-admin'];
+$roleLabels = ['farmer' => 'Farmer', 'buyer' => 'Buyer', 'admin' => 'Administrator', 'manager' => 'Manager'];
+$roleIcons  = ['farmer' => 'bi-tree-fill', 'buyer' => 'bi-cart3', 'admin' => 'bi-shield-check', 'manager' => 'bi-briefcase'];
+$roleColors = ['farmer' => 'role-farmer', 'buyer' => 'role-buyer', 'admin' => 'role-admin', 'manager' => 'role-manager'];
 
 // Fetch user profile. Display name from role profile (not email local-part — showed "Qa.Buyer" before). Admins fall back to email.
 // Theme prefs ride along in the same query; <head> only applies them.
@@ -90,15 +102,15 @@ $memberSince = $userProfile['created_at'] ? date('M Y', strtotime($userProfile['
 $lastLogin = $userProfile['last_login_at'] ? date('M j, g:i A', strtotime($userProfile['last_login_at'])) : 'Never';
 
 // Avatar color based on role
-$avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' => '#C9A227'];
+$avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' => '#C9A227', 'manager' => '#6c757d'];
 ?>
 <!doctype html>
 <html lang="<?= e(function_exists('locale_current') ? locale_current() : 'en') ?>">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title><?= e($pageTitle) ?> | <?= e($config['app']['name'] ?? 'AgriMALL') ?></title>
-    <meta name="theme-color" content="#1B3B2B" />
+    <meta name="theme-color" content="#1b4332" />
     <link rel="icon" type="image/svg+xml" href="assets/branding/mark.svg" />
     <link rel="apple-touch-icon" href="assets/branding/mark.svg" />
 
@@ -138,6 +150,7 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
 
     
     <nav class="sidebar-nav" aria-label="Dashboard menu">
+        <?php $lastSection = null; ?>
         <?php foreach ($menu as $menuItem): ?>
             <?php
             $isActive = ($activePage === $menuItem['page']);
@@ -145,12 +158,24 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
                 $isActive = true;
             }
             $label = t($navCopy['dashboard_nav'], $menuItem['page']);
+            $section = $menuItem['section'] ?? null;
+            // Mark items that are also on the mobile bottom nav
+            $bottomNavHrefs = ['dashboard.php', 'browse.php', 'cart.php', 'my_listings.php', 'orders.php', 'saved.php', 'account.php'];
+            $isBottomNav = in_array($menuItem['href'], $bottomNavHrefs, true);
             ?>
-            <a href="<?= e($menuItem['href']) ?>" class="sidebar-link <?= $isActive ? 'is-active' : '' ?>" title="<?= e($label) ?>">
+            <?php if ($section && $section !== $lastSection): $lastSection = $section; ?>
+                <div class="sidebar-section-label"><?= e($section) ?></div>
+            <?php endif; ?>
+            <a href="<?= e($menuItem['href']) ?>" class="sidebar-link <?= $isActive ? 'is-active' : '' ?><?= $isBottomNav ? ' mobile-bottom-dup' : '' ?>" title="<?= e($label) ?>">
                 <i class="bi <?= e($menuItem['icon']) ?>" aria-hidden="true"></i>
                 <span><?= e($label) ?></span>
             </a>
         <?php endforeach; ?>
+        <div class="sidebar-section-label sidebar-app-label"><?= e(t($navCopy['dashboard_nav'], 'get_app')) ?></div>
+        <a href="get_app.php" class="sidebar-link sidebar-app-link" title="<?= e(t($navCopy['dashboard_nav'], 'get_app')) ?>">
+            <i class="bi bi-google-play" aria-hidden="true"></i>
+            <span><?= e(t($navCopy['dashboard_nav'], 'get_app')) ?></span>
+        </a>
     </nav>
 </aside>
 

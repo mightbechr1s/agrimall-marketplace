@@ -376,6 +376,26 @@ function remember_revoke(?int $userId = null): void
 }
 
 /**
+ * Invalidate every credential for a user after a password change: mobile API
+ * tokens, remember-me, and all PHP sessions via session_version.
+ */
+function revoke_user_credentials(int $userId, bool $keepCurrentSession = false): void
+{
+    $pdo = DB::pdo();
+    $pdo->prepare('DELETE FROM api_tokens WHERE user_id = :id')->execute(['id' => $userId]);
+    $pdo->prepare('UPDATE users SET session_version = session_version + 1 WHERE id = :id')
+        ->execute(['id' => $userId]);
+    remember_revoke($userId);
+
+    // Keep the session that just changed the password signed in.
+    if ($keepCurrentSession && (int) ($_SESSION['user_id'] ?? 0) === $userId) {
+        $stmt = $pdo->prepare('SELECT session_version FROM users WHERE id = :id');
+        $stmt->execute(['id' => $userId]);
+        $_SESSION['session_version'] = (int) $stmt->fetchColumn();
+    }
+}
+
+/**
  * Resume a session from the remember-me cookie when no PHP session is active.
  *
  * ponytail: one remembered device per user (users.remember_token is one slot)
@@ -395,7 +415,7 @@ function remember_resume(): void
     }
 
     $stmt = DB::pdo()->prepare(
-        'SELECT id, role, status FROM users
+        'SELECT id, role, status, session_version FROM users
           WHERE remember_token = :t AND remember_expires > NOW() LIMIT 1'
     );
     $stmt->execute(['t' => hash('sha256', $raw)]);
@@ -410,6 +430,8 @@ function remember_resume(): void
     session_regenerate_id(true);
     $_SESSION['user_id'] = (int) $row['id'];
     $_SESSION['role'] = $row['role'];
+    // Without this, require_login() sees -1 and destroys the resumed session.
+    $_SESSION['session_version'] = (int) ($row['session_version'] ?? 0);
 }
 
 /** Require a login; otherwise bounce to login page. */
@@ -434,10 +456,10 @@ function require_login(): void
 }
 
 /** Require a specific role; otherwise bounce with 403. */
-function require_role(string $role): void
+function require_role(string ...$roles): void
 {
     require_login();
-    if (current_user_role() !== $role) {
+    if (!in_array(current_user_role(), $roles, true)) {
         http_response_code(403);
         exit('Forbidden.');
     }
@@ -519,9 +541,171 @@ function rate_limit_check(string $key, int $maxAttempts = 5, int $windowSeconds 
 }
 
 /**
- * Colour family for a status value, so the same status reads the same way on
- * every page: settled, in progress, waiting, stopped, or dormant.
+ * OTP helpers (email/phone verification, replaces CAPTCHA).
+ *
+ * generate_otp() returns a 6-digit code. store_otp() persists a hashed copy
+ * with an expiry. verify_otp() checks the code against the latest unused,
+ * unexpired row for that recipient+purpose and marks it used on success.
+ * All helpers fail closed on DB errors (return false) so a broken OTP store
+ * never grants access.
  */
+
+function generate_otp(int $length = 6): string
+{
+    $max = (10 ** $length) - 1;
+    return str_pad((string) random_int(0, $max), $length, '0', STR_PAD_LEFT);
+}
+
+function otp_rate_limit(string $recipient, string $purpose, int $maxPerHour = 3): bool
+{
+    // Returns true when the request should be blocked.
+    $pdo = DB::pdo();
+    $stmt = $pdo->prepare(
+        "SELECT COUNT(*) FROM otp_codes
+         WHERE recipient = :r AND purpose = :p
+           AND created_at >= (NOW() - INTERVAL 1 HOUR)"
+    );
+    $stmt->execute(['r' => $recipient, 'p' => $purpose]);
+    return (int) $stmt->fetchColumn() >= $maxPerHour;
+}
+
+function store_otp(string $recipient, string $channel, string $purpose, string $code, int $ttlSeconds = 600, ?string $ip = null): bool
+{
+    $pdo = DB::pdo();
+    // Invalidate any prior unused codes for this recipient+purpose.
+    $pdo->prepare(
+        "UPDATE otp_codes SET used_at = NOW()
+         WHERE recipient = :r AND purpose = :p AND used_at IS NULL"
+    )->execute(['r' => $recipient, 'p' => $purpose]);
+    $stmt = $pdo->prepare(
+        "INSERT INTO otp_codes (recipient, channel, purpose, code_hash, expires_at, ip_address)
+         VALUES (:r, :c, :p, :h, :e, :ip)"
+    );
+    return $stmt->execute([
+        'r'  => $recipient,
+        'c'  => $channel,
+        'p'  => $purpose,
+        'h'  => password_hash($code, PASSWORD_DEFAULT),
+        'e'  => date('Y-m-d H:i:s', time() + $ttlSeconds),
+        'ip' => $ip,
+    ]);
+}
+
+function verify_otp(string $recipient, string $purpose, string $code): bool
+{
+    $pdo = DB::pdo();
+    $stmt = $pdo->prepare(
+        "SELECT id, code_hash, attempts, max_attempts, expires_at, used_at
+         FROM otp_codes
+         WHERE recipient = :r AND purpose = :p AND used_at IS NULL
+         ORDER BY created_at DESC LIMIT 1"
+    );
+    $stmt->execute(['r' => $recipient, 'p' => $purpose]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$row) {
+        return false;
+    }
+    if (strtotime((string) $row['expires_at']) < time()) {
+        return false; // expired
+    }
+    if ((int) $row['attempts'] >= (int) $row['max_attempts']) {
+        return false; // too many attempts
+    }
+    // Increment attempts regardless of outcome.
+    $pdo->prepare("UPDATE otp_codes SET attempts = attempts + 1 WHERE id = :id")
+        ->execute(['id' => $row['id']]);
+    if (!password_verify($code, (string) $row['code_hash'])) {
+        return false;
+    }
+    // Consume the code.
+    $pdo->prepare("UPDATE otp_codes SET used_at = NOW() WHERE id = :id")
+        ->execute(['id' => $row['id']]);
+    return true;
+}
+
+function send_otp_email(string $email, string $code, string $purpose): bool
+{
+    $subject = 'Your AgriMALL verification code';
+    $body = "Your verification code is: {$code}\n\n"
+          . "It expires in 10 minutes. If you did not request this, ignore this email.\n";
+    return send_app_mail($email, $subject, $body);
+}
+/**
+ * Bot detection helpers.
+ *   1. Honeypot field: a hidden input real users never fill. Bots that
+ *      auto-fill every field trip it.
+ *   2. Time token: the form must take at least $minSeconds to submit (bots
+ *      submit instantly) and no more than $maxSeconds (stale tabs). The token
+ *      is one-shot: a replayed submission is rejected.
+ *
+ * Neither is foolproof; pair with rate limiting. Both fail open on missing
+ * session data so a legitimate user is never locked out by a cache.
+ */
+
+/** Emit a hidden honeypot input. Name it something a bot wants to fill. */
+function honeypot_field(string $name = 'website'): string
+{
+    return '<input type="text" name="' . e($name) . '" value="" '
+         . 'tabindex="-1" autocomplete="off" aria-hidden="true" '
+         . 'style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;" />';
+}
+
+/** True when the honeypot field was filled (i.e. likely a bot). */
+function honeypot_filled(array $post, string $name = 'website'): bool
+{
+    return isset($post[$name]) && trim((string) $post[$name]) !== '';
+}
+
+/** Issue a one-shot time token for a named form; returns hidden input HTML. */
+function issue_form_token(string $formName): string
+{
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        @session_start();
+    }
+    if (!isset($_SESSION['form_tokens']) || !is_array($_SESSION['form_tokens'])) {
+        $_SESSION['form_tokens'] = [];
+    }
+    $_SESSION['form_tokens'][$formName] = time();
+    return '<input type="hidden" name="_form_token" value="' . e($formName) . '" />';
+}
+
+/** Validate the time token. Returns true when the submission looks human. */
+function verify_form_token(string $formName, float $minSeconds = 0.5, int $maxSeconds = 3600): bool
+{
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        @session_start();
+    }
+    $issued = $_SESSION['form_tokens'][$formName] ?? null;
+    // Fail open if we have no record (e.g. session expired): never block a
+    // real user because of a missing token.
+    if (!is_int($issued) && !ctype_digit((string) $issued)) {
+        return true;
+    }
+    $issued = (int) $issued;
+    $elapsed = time() - $issued;
+    // Consume the token so it cannot be replayed.
+    unset($_SESSION['form_tokens'][$formName]);
+    if ($elapsed < $minSeconds) {
+        return false; // submitted too fast -> bot
+    }
+    if ($elapsed > $maxSeconds) {
+        return false; // stale tab
+    }
+    return true;
+}
+
+/** Combined bot check. Returns true when the request looks like a bot. */
+function is_bot_request(string $formName, array $post, string $honeypotName = 'website', float $minSeconds = 0.5): bool
+{
+    if (honeypot_filled($post, $honeypotName)) {
+        return true;
+    }
+    if (!verify_form_token($formName, $minSeconds, 3600)) {
+        return true;
+    }
+    return false;
+}
+
 function status_variant(string $status): string
 {
     static $families = [
@@ -539,7 +723,61 @@ function status_variant(string $status): string
     return $families[$status] ?? 'secondary';
 }
 
-/** Status chip. */
+/**
+ * Notify a farmer about listings expiring within $days days or with low stock.
+ * Called from dashboard.php for farmer role. Deduplicates by not re-notifying
+ * within 24 hours for the same listing+reason.
+ */
+function check_farmer_alerts(PDO $pdo, int $farmerId): void
+{
+    // Expiring listings (within 3 days)
+    $stmt = $pdo->prepare(
+        "SELECT id, name, expiry_date FROM produce_listings
+         WHERE farmer_id = :fid AND status = 'active' AND available_quantity > 0
+           AND expiry_date IS NOT NULL AND expiry_date <> ''
+           AND expiry_date <= DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+           AND expiry_date >= CURDATE()"
+    );
+    $stmt->execute(['fid' => $farmerId]);
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        // Check if we already notified in the last 24 hours
+        $check = $pdo->prepare(
+            "SELECT COUNT(*) FROM notifications
+             WHERE user_id = :uid AND type = 'listings'
+               AND title LIKE :t AND created_at >= (NOW() - INTERVAL 24 HOUR)"
+        );
+        $check->execute(['uid' => $farmerId, 't' => '%expiring%' . $row['name'] . '%']);
+        if ((int) $check->fetchColumn() === 0) {
+            notify_user($pdo, $farmerId, 'listings',
+                'Listing expiring soon: ' . $row['name'],
+                'Your listing "' . $row['name'] . '" expires on ' . $row['expiry_date'] . '. Consider restocking or updating.',
+                'my_listings.php');
+        }
+    }
+
+    // Low stock (available <= 5 or <= 2x minimum order qty)
+    $stmt = $pdo->prepare(
+        "SELECT id, name, available_quantity, minimum_order_qty FROM produce_listings
+         WHERE farmer_id = :fid AND status = 'active' AND available_quantity > 0
+           AND available_quantity <= GREATEST(5, minimum_order_qty * 2)"
+    );
+    $stmt->execute(['fid' => $farmerId]);
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $check = $pdo->prepare(
+            "SELECT COUNT(*) FROM notifications
+             WHERE user_id = :uid AND type = 'listings'
+               AND title LIKE :t AND created_at >= (NOW() - INTERVAL 24 HOUR)"
+        );
+        $check->execute(['uid' => $farmerId, 't' => '%Low stock%' . $row['name'] . '%']);
+        if ((int) $check->fetchColumn() === 0) {
+            notify_user($pdo, $farmerId, 'listings',
+                'Low stock: ' . $row['name'],
+                'Your listing "' . $row['name'] . '" has only ' . $row['available_quantity'] . ' units left.',
+                'my_listings.php');
+        }
+    }
+}
+
 function status_badge(string $status): string
 {
     static $labels = [
@@ -831,6 +1069,10 @@ function notify_user(PDO $pdo, int $userId, string $category, string $title, ?st
             error_log('notify in-app insert failed: ' . $e->getMessage());
         }
     }
+    // Payload-less tickle: the service worker fetches the text with the session.
+    push_send_tickle($pdo, $userId);
+    // Expo devices get the text directly; best-effort, same as web push.
+    mobile_push_send($pdo, $userId, $title, $body, $link);
 }
 
 /**

@@ -71,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             DB::pdo()->prepare('UPDATE users SET password_hash = :hash WHERE id = :id')
                 ->execute(['hash' => password_hash($newPass, PASSWORD_DEFAULT), 'id' => $userId]);
+            revoke_user_credentials($userId, true);
             $success = $l($copy['account'], 'password_updated');
             audit_log('account_password_changed', 'user', $userId);
         }
@@ -106,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 security_event_log('account_name_changed', ['fields' => ['farm_name', 'contact_phone']]);
                 audit_log('account_name_changed', 'user', $userId);
             }
-        } elseif ($role === 'buyer') {
+        } elseif (in_array($role, ['buyer', 'admin', 'manager'], true)) {
             $fullName = trim((string) ($_POST['full_name'] ?? ''));
 
             $cur = DB::pdo()->prepare('SELECT full_name FROM buyer_profiles WHERE user_id = :id');
@@ -168,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$roleLabels  = ['farmer' => 'Farmer', 'buyer' => 'Buyer', 'admin' => 'Administrator'];
+$roleLabels  = ['farmer' => 'Farmer', 'buyer' => 'Buyer', 'admin' => 'Administrator', 'manager' => 'Manager'];
 $statusLabels = [
     'active'            => $l($copy['account'], 'status_active'),
     'suspended'         => $l($copy['account'], 'status_suspended'),
@@ -190,7 +191,7 @@ if ($role === 'farmer') {
         $nameValues['farm_name'] = (string) $n['farm_name'];
         $nameValues['contact_phone'] = (string) ($n['contact_phone'] ?? '');
     }
-} elseif ($role === 'buyer') {
+} elseif (in_array($role, ['buyer', 'admin', 'manager'], true)) {
     $nStmt = DB::pdo()->prepare('SELECT full_name FROM buyer_profiles WHERE user_id = :id');
     $nStmt->execute(['id' => $userId]);
     $nameValues['full_name'] = (string) $nStmt->fetchColumn();
@@ -246,7 +247,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
             </div>
         <?php endif; ?>
 
-        <?php if ($role === 'buyer' || $role === 'farmer'): ?>
+        <?php if (in_array($role, ['buyer', 'admin', 'manager', 'farmer'], true)): ?>
             <form method="post" action="account.php" class="account-form">
                 <?= csrf_field() ?>
                 <input type="hidden" name="account_action" value="name">

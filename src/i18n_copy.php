@@ -374,6 +374,7 @@ return [
             'heading_company' => 'Company',
             'link_browse_listings' => 'Browse listings',
             'link_how_it_works' => 'How it works',
+            'link_get_app' => 'Get the app',
             'link_faq' => 'FAQ',
             'link_become_a_seller' => 'Become a seller',
             'link_seller_handbook' => 'Seller handbook',
@@ -394,6 +395,7 @@ return [
             'heading_company' => 'Kumpanya',
             'link_browse_listings' => 'Mag-browse',
             'link_how_it_works' => 'Paano ito gumagana',
+            'link_get_app' => 'Kunin ang app',
             'link_faq' => 'FAQ',
             'link_become_a_seller' => 'Magbenta',
             'link_seller_handbook' => 'Seller handbook',
@@ -580,6 +582,7 @@ return [
         'en' => [
             'home' => 'Home',
             'marketplace' => 'Marketplace',
+            'get_app' => 'Get the app',
             'how_it_works' => 'How it works',
             'our_story' => 'Our story',
             'faq' => 'FAQ',
@@ -594,6 +597,7 @@ return [
         'tl' => [
             'home' => 'Bahay',
             'marketplace' => 'Palengke',
+            'get_app' => 'Kunin ang app',
             'how_it_works' => 'Paano ito gumagana',
             'our_story' => 'Ang kwento namin',
             'faq' => 'FAQ',
@@ -1162,6 +1166,10 @@ return [
             'notify_orders' => 'Order updates',
             'notify_messages' => 'Message notifications',
             'notify_promotions' => 'Promotional offers',
+            'legend_push' => 'Device notifications',
+            'push_description' => 'Get a browser notification for order updates and messages, even when AgriMALL is not open. This applies to this browser only.',
+            'push_enable' => 'Enable on this device',
+            'push_disable' => 'Disable on this device',
             'legend_accessibility' => 'Accessibility',
             'reduce_motion' => 'Reduce motion and animations',
             'larger_text' => 'Larger text',
@@ -1188,6 +1196,10 @@ return [
             'notify_orders' => 'Mga update sa order',
             'notify_messages' => 'Mga notifications sa mga mensahe',
             'notify_promotions' => 'Mga offers na promosyon',
+            'legend_push' => 'Mga abiso sa device',
+            'push_description' => 'Tumanggap ng abiso sa browser para sa mga update ng order at mensahe, kahit hindi bukas ang AgriMALL. Para lamang ito sa browser na ito.',
+            'push_enable' => 'I-enable sa device na ito',
+            'push_disable' => 'I-disable sa device na ito',
             'legend_accessibility' => 'Accessibility',
             'reduce_motion' => 'Bawasan ang mga animasyon',
             'larger_text' => 'Lalong malaking teksto',
@@ -1276,7 +1288,7 @@ return [
     ],
 
     'dashboard_nav' => [
-        'en' => ['dashboard' => 'Dashboard', 'goods' => 'Goods', 'listings' => 'My Listings', 'create_listing' => 'New Listing', 'orders' => 'Orders', 'analytics' => 'Analytics', 'browse' => 'Goods', 'market' => 'Market', 'cart' => 'Cart', 'saved' => 'Saved', 'users' => 'Users', 'verifications' => 'Verifications', 'audit' => 'Audit Log', 'reports' => 'Reports', 'categories' => 'Categories', 'theme' => 'Theme', 'animations' => 'Animation only', 'settings' => 'Preferences', 'logout' => 'Log out', 'home' => 'Back to site', 'account' => 'Profile & Security'],
-        'tl' => ['dashboard' => 'Dashboard', 'goods' => 'Mga paninda', 'listings' => 'Aking mga listing', 'create_listing' => 'Bagong listing', 'orders' => 'Mga order', 'analytics' => 'Analytics', 'browse' => 'Mga paninda', 'market' => 'Palengke', 'cart' => 'Cart', 'saved' => 'Naka-save', 'users' => 'Mga user', 'verifications' => 'Mga beripikasyon', 'audit' => 'Audit log', 'reports' => 'Mga ulat', 'categories' => 'Mga kategorya', 'theme' => 'Hitsura', 'animations' => 'Animation only', 'settings' => 'Mga kagustuhan', 'logout' => 'Mag-log out', 'home' => 'Bumalik sa site', 'account' => 'Profile at Seguridad'],
+        'en' => ['dashboard' => 'Dashboard', 'goods' => 'Goods', 'listings' => 'My Listings', 'create_listing' => 'New Listing', 'orders' => 'Orders', 'analytics' => 'Analytics', 'browse' => 'Goods', 'market' => 'Market', 'cart' => 'Cart', 'saved' => 'Saved', 'users' => 'Users', 'verifications' => 'Verifications', 'reviews' => 'Reviews', 'audit' => 'Audit Log', 'reports' => 'Reports', 'categories' => 'Categories', 'theme' => 'Theme', 'animations' => 'Animation only', 'settings' => 'Preferences', 'logout' => 'Log out', 'home' => 'Back to site', 'account' => 'Profile & Security', 'get_app' => 'Get the app'],
+        'tl' => ['dashboard' => 'Dashboard', 'goods' => 'Mga paninda', 'listings' => 'Aking mga listing', 'create_listing' => 'Bagong listing', 'orders' => 'Mga order', 'analytics' => 'Analytics', 'browse' => 'Mga paninda', 'market' => 'Palengke', 'cart' => 'Cart', 'saved' => 'Naka-save', 'users' => 'Mga user', 'verifications' => 'Mga beripikasyon', 'reviews' => 'Mga review', 'audit' => 'Audit log', 'reports' => 'Mga ulat', 'categories' => 'Mga kategorya', 'theme' => 'Hitsura', 'animations' => 'Animation only', 'settings' => 'Mga kagustuhan', 'logout' => 'Mag-log out', 'home' => 'Bumalik sa site', 'account' => 'Profile at Seguridad', 'get_app' => 'Kunin ang app'],
     ],
 ];

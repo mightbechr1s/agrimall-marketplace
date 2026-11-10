@@ -24,7 +24,7 @@ $orders = [];
 $farmerListings = [];
 $recentActivity = [];
 
-if ($role === 'admin') {
+if (in_array($role, ['admin', 'manager'], true)) {
     $pdo = DB::pdo();
     $weekAgo = date('Y-m-d H:i:s', strtotime('-7 days'));
     // Bound rather than concatenated. The value is server-derived today, but a
@@ -158,6 +158,38 @@ if ($role === 'admin') {
     $os->execute();
     $orders = $os->fetchAll();
 
+    // Restock forecast: 30-day completed-order velocity per listing. Rule-based
+    // on purpose — no model, no forecast for a listing nobody has bought.
+    $restock = [];
+    try {
+        $rs = $pdo->prepare(
+            "SELECT pl.id, pl.name, pl.available_quantity, qu.symbol,
+                    COALESCE(SUM(o.quantity), 0) / 30 AS per_day
+               FROM produce_listings pl
+               JOIN quantity_units qu ON qu.id = pl.unit_id
+               LEFT JOIN orders o ON o.listing_id = pl.id
+                    AND o.status = 'completed'
+                    AND o.created_at >= (NOW() - INTERVAL 30 DAY)
+              WHERE pl.farmer_id = :id AND pl.status IN ('active','sold_out')
+              GROUP BY pl.id, pl.name, pl.available_quantity, qu.symbol
+             HAVING per_day > 0
+              ORDER BY (pl.available_quantity / NULLIF(COALESCE(SUM(o.quantity), 0) / 30, 0)) ASC
+              LIMIT 5"
+        );
+        $rs->execute(['id' => $userId]);
+        $restock = $rs->fetchAll();
+        foreach ($restock as &$r) {
+            $perDay = (float) $r['per_day'];
+            $r['days_left'] = $perDay > 0 ? (float) $r['available_quantity'] / $perDay : null;
+            $r['suggested'] = $perDay > 0 ? max(1, (int) ceil($perDay * 14)) : 0;
+        }
+        // Check for expiring listings and low stock alerts.
+        check_farmer_alerts($pdo, $userId);
+        unset($r);
+    } catch (Throwable $e) {
+        error_log('restock forecast failed: ' . $e->getMessage());
+    }
+
 } else {
     // Buyer
     $pdo = DB::pdo();
@@ -206,10 +238,41 @@ if ($role === 'admin') {
     ];
 }
 
+// Unread message count per order on this page, for the row badges.
+$unreadByOrder = [];
+if ($orders && in_array($role, ['buyer', 'farmer'], true)) {
+    $ids = array_map('intval', array_column($orders, 'id'));
+    $in = implode(',', array_fill(0, count($ids), '?'));
+    try {
+        $stmt = $pdo->prepare(
+            "SELECT order_id, COUNT(*) AS total
+               FROM order_messages
+              WHERE order_id IN ($in) AND sender_id <> ? AND read_at IS NULL
+              GROUP BY order_id"
+        );
+        $stmt->execute([...$ids, $userId]);
+        foreach ($stmt->fetchAll() as $row) {
+            $unreadByOrder[(int) $row['order_id']] = (int) $row['total'];
+        }
+    } catch (Throwable $e) {
+        error_log('unread message lookup failed: ' . $e->getMessage());
+    }
+}
+
 require __DIR__ . '/partials/dashboard-layout.php';
 ?>
+<div class="section-header">
+    <div>
+        <h1 class="section-title"><?= e($pageTitle) ?></h1>
+        <p class="section-subtitle">
+            <?php if (in_array($role, ['admin', 'manager'], true)): ?>Platform overview and pending actions.
+            <?php elseif ($role === 'farmer'): ?>Your farm, orders and stock at a glance.
+            <?php else: ?>Your saved goods and orders.<?php endif; ?>
+        </p>
+    </div>
+</div>
 
-<?php if ($role === 'admin'): ?>
+<?php if (in_array($role, ['admin', 'manager'], true)): ?>
     <!-- Admin Dashboard -->
     <div class="row g-4 mb-4" data-reveal="stagger">
         <?php foreach ($stats as $label => $data): ?>
@@ -258,7 +321,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                         $orderId = strtoupper(substr(md5($order['id']), 0, 8));
                         ?>
                         <tr class="order-row clickable-row"
-                           tabindex="0" role="button" aria-label="View order details for order #<?= $orderId ?>"
+                           tabindex="0"
                            data-order-id="<?= $order['id'] ?>"
                            data-buyer-name="<?= e($order['buyer_name']) ?>"
                            data-farm-name="<?= e($order['farm_name']) ?>"
@@ -279,6 +342,9 @@ require __DIR__ . '/partials/dashboard-layout.php';
                             <td class="text-end action-col">
                                 <a href="/order.php?id=<?= $order['id'] ?>" class="btn btn-sm btn-primary">
                                     <i class="bi bi-eye me-1"></i>View
+                                    <?php if (($unreadByOrder[(int) $order['id']] ?? 0) > 0): ?>
+                                        <span class="badge text-bg-danger ms-1"><?= (int) $unreadByOrder[(int) $order['id']] ?></span>
+                                    <?php endif; ?>
                                 </a>
                             </td>
                         </tr>
@@ -450,7 +516,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                         $orderId = strtoupper(substr(md5($order['id']), 0, 8));
                         ?>
                         <tr class="order-row clickable-row"
-                           tabindex="0" role="button" aria-label="View order details for order #<?= $orderId ?>"
+                           tabindex="0"
                            data-order-id="<?= $order['id'] ?>"
                            data-buyer-name="<?= e($order['buyer_name']) ?>"
                            data-farm-name="<?= e($order['farm_name']) ?>"
@@ -473,6 +539,9 @@ require __DIR__ . '/partials/dashboard-layout.php';
                             <td class="text-end action-col" data-label="Actions">
                                 <a href="/order.php?id=<?= $order['id'] ?>" class="btn btn-sm btn-primary">
                                     <i class="bi bi-eye me-1"></i>View
+                                    <?php if (($unreadByOrder[(int) $order['id']] ?? 0) > 0): ?>
+                                        <span class="badge text-bg-danger ms-1"><?= (int) $unreadByOrder[(int) $order['id']] ?></span>
+                                    <?php endif; ?>
                                 </a>
                             </td>
                         </tr>
@@ -499,6 +568,48 @@ require __DIR__ . '/partials/dashboard-layout.php';
         </div>
         <div class="dash-panel-body">
             <p class="text-muted small mb-0">Detailed listing quantities and order-by-status breakdowns are on the <a href="farmer_analytics.php">analytics page</a>.</p>
+        </div>
+    </div>
+
+    <!-- Restock forecast -->
+    <div class="dash-panel mt-4" id="restock">
+        <div class="dash-panel-header">
+            <h2><i class="bi bi-box-seam me-2"></i>Restock forecast</h2>
+            <a href="my_listings.php" class="btn btn-sm btn-outline-primary">Manage listings</a>
+        </div>
+        <div class="dash-panel-body">
+            <?php if (!$restock): ?>
+                <p class="text-muted small mb-0">No completed orders in the last 30 days yet, so there is nothing to forecast. The estimate appears once a listing starts selling.</p>
+            <?php else: ?>
+                <p class="text-muted small">Based on completed orders in the last 30 days. The suggested quantity covers two weeks at your current pace.</p>
+                <div class="table-responsive">
+                    <table class="dash-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Listing</th>
+                                <th class="text-end">In stock</th>
+                                <th class="text-end">Sells / day</th>
+                                <th class="text-end">Days left</th>
+                                <th class="text-end">Suggested restock</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($restock as $r): ?>
+                                <tr>
+                                    <td data-label="Listing"><a href="create_listing.php?edit=<?= (int) $r['id'] ?>"><?= e($r['name']) ?></a></td>
+                                    <td class="text-end" data-label="In stock"><?= $fmtQty($r['available_quantity'], $r['symbol']) ?></td>
+                                    <td class="text-end" data-label="Sells / day"><?= e(rtrim(rtrim(number_format((float) $r['per_day'], 2), '0'), '.')) ?> <?= e($r['symbol']) ?></td>
+                                    <td class="text-end" data-label="Days left">
+                                        <?php $days = (float) $r['days_left']; ?>
+                                        <span class="<?= $days <= 7 ? 'text-danger fw-semibold' : '' ?>"><?= e(rtrim(rtrim(number_format($days, 1), '0'), '.')) ?> days</span>
+                                    </td>
+                                    <td class="text-end" data-label="Suggested restock"><?= $fmtQty($r['suggested'], $r['symbol']) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 <?php else: ?>
@@ -550,7 +661,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                         $orderId = strtoupper(substr(md5($order['id']), 0, 8));
                         ?>
                         <tr class="order-row clickable-row"
-                           tabindex="0" role="button" aria-label="View order details for order #<?= $orderId ?>"
+                           tabindex="0"
                            data-order-id="<?= $order['id'] ?>"
                            data-buyer-name="<?= e($order['buyer_name']) ?>"
                            data-farm-name="<?= e($order['farm_name']) ?>"
@@ -572,6 +683,9 @@ require __DIR__ . '/partials/dashboard-layout.php';
                             <td class="text-end action-col" data-label="Actions">
                                 <a href="/order.php?id=<?= $order['id'] ?>" class="btn btn-sm btn-primary">
                                     <i class="bi bi-eye me-1"></i>View
+                                    <?php if (($unreadByOrder[(int) $order['id']] ?? 0) > 0): ?>
+                                        <span class="badge text-bg-danger ms-1"><?= (int) $unreadByOrder[(int) $order['id']] ?></span>
+                                    <?php endif; ?>
                                 </a>
                             </td>
                         </tr>
@@ -621,7 +735,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <div class="carousel-item">
                     <div class="card h-100">
                         <div class="card-body p-3">
-                            <h6 class="card-title mb-2"><?= e($d['name']) ?></h6>
+                            <h3 class="card-title h6 mb-2"><?= e($d['name']) ?></h3>
                             <p class="card-text text-muted small">
                                 <?= e($d['farm_name']) ?> &middot; <?= e($d['municipality_city']) ?>
                             </p>

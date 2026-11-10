@@ -38,19 +38,6 @@ try {
     error_log('landing data unavailable: ' . $e->getMessage());
 }
 
-$categoryIcon = static function (string $slug, string $name): string {
-    $key = strtolower($slug . ' ' . $name);
-    return match (true) {
-        str_contains($key, 'fruit') => 'bi-apple',
-        str_contains($key, 'egg'), str_contains($key, 'poultry') => 'bi-egg-fried',
-        str_contains($key, 'root') => 'bi-flower1',
-        str_contains($key, 'grain') => 'bi-basket3',
-        str_contains($key, 'herb') => 'bi-flower2',
-        str_contains($key, 'leaf') => 'bi-flower3',
-        default => 'bi-basket2',
-    };
-};
-
 require __DIR__ . '/partials/header.php';
 ?>
 
@@ -123,30 +110,6 @@ require __DIR__ . '/partials/header.php';
     </div>
 </div>
 
-<!-- Category strip -->
-<?php if ($categoryCounts): ?>
-<section class="category-strip py-4" aria-labelledby="category-strip-title" data-reveal>
-    <div class="container">
-        <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
-            <div>
-                <p class="eyebrow-pill mb-2">Shop by category</p>
-                <h2 class="section-title h3 mb-0" id="category-strip-title">What's growing today</h2>
-            </div>
-            <a href="browse.php" class="btn btn-outline-primary btn-sm">All listings</a>
-        </div>
-        <div class="category-tiles">
-            <?php foreach ($categoryCounts as $cat): ?>
-            <a class="category-tile" href="browse.php?category=<?= e($cat['category_slug']) ?>">
-                <span class="category-tile__icon"><i class="bi <?= e($categoryIcon($cat['category_slug'], $cat['category_name'])) ?>" aria-hidden="true"></i></span>
-                <span class="category-tile__name"><?= e($cat['category_name']) ?></span>
-                <span class="category-tile__count"><?= (int) $cat['total'] ?> listing<?= (int) $cat['total'] === 1 ? '' : 's' ?></span>
-            </a>
-            <?php endforeach; ?>
-        </div>
-    </div>
-</section>
-<?php endif; ?>
-
 <!-- Our Story / Meet the farmers -->
 <section id="story" class="story-section py-5" data-reveal>
     <div class="container">
@@ -163,7 +126,7 @@ require __DIR__ . '/partials/header.php';
             <div class="col-lg-6">
                 <div class="story-content">
                     <p class="eyebrow-pill"><?= t($copy['story'], 'kicker') ?></p>
-                    <h2 class="section-title mb-3"><?= t($copy['story'], 'heading') ?></p>
+                    <h2 class="section-title mb-3"><?= t($copy['story'], 'heading') ?></h2>
                     <p class="story-body"><?= t($copy['story'], 'body') ?></p>
                     <blockquote class="story-quote">
                         <p><?= t($copy['story'], 'quote') ?></p>
@@ -186,6 +149,16 @@ require __DIR__ . '/partials/header.php';
             </div>
             <a href="browse.php" class="btn btn-outline-primary">View all listings <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i></a>
         </div>
+        <?php if ($categoryCounts): ?>
+        <div class="filters" data-reveal>
+            <a class="filter-pill is-active" href="browse.php">All listings</a>
+            <?php foreach ($categoryCounts as $cat): ?>
+            <a class="filter-pill" href="browse.php?category=<?= e($cat['category_slug']) ?>">
+                <?= e($cat['category_name']) ?> (<?= (int) $cat['total'] ?>)
+            </a>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
         <div class="row g-4">
             <?php foreach ($previewListings as $listing): ?>
             <div class="col-6 col-lg-3">
@@ -275,6 +248,8 @@ require __DIR__ . '/partials/header.php';
                     <div class="rail-item cta-rail-item">
                         <a href="create_listing.php" class="btn btn-outline-primary btn-lg"><?= t($copy['cta'], 'secondary') ?></a>
                     </div>
+                    <div class="rail-item cta-rail-item">
+                        <a href="get_app.php" class="btn btn-outline-primary btn-lg"><i class="bi bi-google-play me-2" aria-hidden="true"></i><?= t($copy['nav'], 'get_app') ?></a>
                 </div>
             </div>
         </div>

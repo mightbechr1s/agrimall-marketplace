@@ -5,32 +5,31 @@
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Tokens Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 :root {
-  --canvas: #FAF7F2;
-  --canvas-deep: #F0EDE6;
-  --paper: #FDFBF7;   /* warm off-white, never pure #FFFFFF */
-  --primary: #1C4428;
-  --primary-dark: #14351F;
-  --primary-tint: rgba(28, 68, 40, 0.08);
-  --accent: #D97706;
-  --gold: #D97706;
-  --gold-deep: #B45309;
-  --gold-ink: #231F20;
-  --gold-tint: rgba(217, 119, 6, 0.14);
-  /* Gold as TEXT on light surfaces: 4.68:1 on cream vs 2.97:1 for #D97706. */
-  --gold-text: #B45309;
-  /* Gold as TEXT on the dark forest footer: 6.5:1, vs 4.26:1 for #D97706. */
-  --gold-bright: #E09F3E;
-  --text: #231F20;
-  --text-soft: #6E6355;
-  --borders: #E7DFCE;
-  /* WCAG 1.4.11 wants 3:1 on UI component boundaries so a field is locatable,
-     but card separators are decorative and stay soft. This is the lightest warm
-     tone clearing 3:1 on paper (3.59), canvas (3.36) and canvas-deep (3.07). */
-  --field-border: #98855F;
-  --danger: #B4572F;
-  --danger-fill: #B4572F;
-  --success: #2E7D32;
-  --focus-ring: #B45309;
+  /* Agrimall palette: deep forest on pure white, sage accent. */
+  --canvas: #ffffff;
+  --canvas-deep: #f8f9fa;
+  --paper: #f8f9fa;
+  --primary: #1b4332;
+  --primary-dark: #0d2818;
+  --primary-tint: rgba(27, 67, 50, 0.08);
+  --accent: #2d6a4f;
+  /* Links use forest green instead of Bootstrap blue for AA contrast. */
+  --bs-link-color: var(--primary);
+  --bs-link-hover-color: var(--accent);
+  --gold: #2d6a4f;
+  --gold-deep: #1b4332;
+  --gold-ink: #ffffff;
+  --gold-tint: rgba(45, 106, 79, 0.14);
+  --gold-text: #1b4332;
+  --gold-bright: #2d6a4f;
+  --text: #212529;
+  --text-soft: #5c636a;
+  --borders: #dee2e6;
+  --field-border: #6c757d;
+  --danger: #b02a37;
+  --danger-fill: #dc3545;
+  --success: #2d6a4f;
+  --focus-ring: #1b4332;
 
   /* Status families Ã¢â‚¬â€ one palette for status chips and dashboard tiles, so a
      status keeps its colour page to page and theme to theme. */
@@ -74,37 +73,35 @@
   --ease-decel: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-enter: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  --footer-bg: #14351F;
+  --footer-bg: #1b4332;
   --footer-text: #F1E8D3;
   --breakpoint-sm: 640px;  --breakpoint-md: 768px;  --breakpoint-lg: 1024px;  --breakpoint-xl: 1280px;
 }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Dark mode tokens Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 :root[data-theme="dark"] {
+  /* Agrimall dark palette: deep charcoal with sage accent. */
   --canvas: #121212;
-  --canvas-deep: #171717;
-  --paper: #1E1E1E;
-  --primary: #2E7D47;
-  --primary-dark: #25683A;
-  --primary-tint: rgba(46, 125, 71, 0.14);
-  --accent: #E09F3E;
-  --gold: #E09F3E;
-  --gold-deep: #F0B257;
-  --gold-ink: #10150F;
-  --gold-tint: rgba(224, 159, 62, 0.16);
+  --canvas-deep: #1e1e1e;
+  --paper: #1e1e1e;
+  --primary: #52b788;
+  --primary-dark: #40916c;
+  --primary-tint: rgba(82, 183, 136, 0.14);
+  --accent: #40916c;
+  --gold: #52b788;
+  --gold-deep: #40916c;
+  --gold-ink: #121212;
+  --gold-tint: rgba(82, 183, 136, 0.16);
   --gold-text: var(--gold);
   --gold-bright: var(--gold);
-  --text: #E8E8E6;
-  --text-soft: #A3A3A3;
+  --text: #f1f3f5;
+  --text-soft: #adb5bd;
   --borders: rgba(255, 255, 255, 0.10);
-  /* Dark field borders already measure 15.52:1, so they keep the soft token. */
   --field-border: var(--borders);
-  --danger: #E57373;
-  /* Darker red for filled danger buttons: white text needs 4.5:1, which the
-     light --danger tint cannot give on dark surfaces. */
-  --danger-fill: #C0453C;
-  --success: #6FCF97;
-  --focus-ring: #E09F3E;
+  --danger: #ff6b6b;
+  --danger-fill: #dc3545;
+  --success: #52b788;
+  --focus-ring: #52b788;
 
   /* Light inks on dark surfaces; same names as the light theme. */
   --status-ok-ink: #9BD5AE;
@@ -132,8 +129,8 @@
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 28px -8px rgba(0, 0, 0, 0.5);
   --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.45), 0 18px 44px -10px rgba(0, 0, 0, 0.6);
   --shadow-btn: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 16px -5px rgba(0, 0, 0, 0.5);
-  --footer-bg: #0D0D0D;
-  --footer-text: #D9D9D6;
+  --footer-bg: #0a0a0a;
+  --footer-text: #f1f3f5;
 }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Base Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
@@ -902,8 +899,12 @@ h1, h2, h3, h4, h5, h6,
   box-shadow: 0 8px 16px -8px rgba(31, 75, 50, 0.5);
 }
 :root[data-theme="dark"] .origin-badge {
-  background: var(--primary);
+  background: var(--canvas-deep);
   color: #FFFFFF;
+  border: 1px solid var(--borders);
+}
+:root[data-theme="dark"] .trust-bar {
+  background: var(--canvas-deep);
 }
 .hero-section .btn {
   height: 3.4rem;
@@ -1272,7 +1273,7 @@ h1, h2, h3, h4, h5, h6,
   border-color: var(--primary);
   color: var(--paper);
 }
-:root[data-theme="dark"] .filter-pill.is-active { color: #FFFFFF; }
+:root[data-theme="dark"] .filter-pill.is-active { background: var(--canvas-deep); color: #FFFFFF; border-color: var(--canvas-deep); }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Marketplace grid + cards Ã¢â‚¬â€ printed catalog Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 .grid {
@@ -1947,7 +1948,19 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   margin-left: 0.5rem;
 }
 .brand { display: flex; align-items: center; flex: 0 0 auto; margin-right: 0.25rem; justify-self: start; }
-.brand-link { display: flex; }
+.brand-link { display: flex; align-items: center; gap: 0.55rem; text-decoration: none; }
+.brand-mark { width: 1.85rem; height: 1.85rem; display: block; }
+.brand-wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.45rem;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  color: var(--primary);
+  text-decoration: none;
+}
+:root[data-theme="dark"] .brand-wordmark { color: var(--text); }
+:root[data-theme="dark"] .brand-mark { content: url("../branding/mark-reverse.svg"); }
 .brand-logo { height: 2.3rem; width: auto; }
 
 
@@ -2641,8 +2654,25 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   scrollbar-width: none;
 }
 .sidebar-nav::-webkit-scrollbar { display: none; }
-.sidebar-link {
-  display: flex;
+.sidebar-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-soft);
+  padding: 0.9rem 0.85rem 0.35rem;
+  margin-top: 0.25rem;
+}
+.sidebar-section-label:first-child { margin-top: 0; padding-top: 0.25rem; }
+.sidebar-app-label {
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--borders);
+  padding-top: 0.75rem;
+}
+.sidebar-app-link { color: var(--accent); }
+.sidebar-app-link i { color: var(--accent); }
+.sidebar-app-link:hover { color: var(--primary); border-left-color: var(--gold); }
+.sidebar-app-link:hover i { color: var(--primary); }
   align-items: center;
   gap: 0.65rem;
   padding: 0.6rem 0.85rem;
@@ -2932,19 +2962,57 @@ html[data-sidebar-collapsed] .sidebar {
   width: 4.5rem;
   transform: none;
 }
+/* Collapsed = icon rail (not hidden): narrow panel with centered icons,
+   labels clipped but kept in the a11y tree. */
+html[data-sidebar-collapsed] .sidebar {
+  width: 4.5rem;
+  transform: none;
+}
 html[data-sidebar-collapsed] .sidebar-main { margin-left: calc(4.5rem + 2rem); }
-/* Keep the hamburger on the right in both states for consistency. */
-html[data-sidebar-collapsed] .sidebar-header { justify-content: center; padding: 1rem 0.5rem; gap: 0; }
-/* Collapse the brand block so the hamburger truly centers in the rail. */
-html[data-sidebar-collapsed] .sidebar-brand { max-width: 0; min-width: 0; overflow: hidden; opacity: 0; margin: 0; flex: 0 0 0; }
-/* Labels fade (not snap) so the width transition stays smooth; overflow:hidden
-   on .sidebar clips them as the rail narrows. */
+/* Stack brand above toggle so both fit in the 4.5rem rail. */
+html[data-sidebar-collapsed] .sidebar-header {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 0.25rem;
+  gap: 0.5rem;
+}
+/* Keep the logo visible as a home link even when collapsed. */
+html[data-sidebar-collapsed] .sidebar-brand { max-width: 2.5rem; min-width: 2.5rem; overflow: visible; opacity: 1; margin: 0; flex: 0 0 auto; justify-content: center; }
 html[data-sidebar-collapsed] .sidebar-brand-text,
 html[data-sidebar-collapsed] .sidebar-link span {
   opacity: 0;
   pointer-events: none;
+  position: absolute;
+  width: 0;
+  overflow: hidden;
 }
-html[data-sidebar-collapsed] .sidebar-logo { opacity: 0; pointer-events: none; }
+/* Hide section labels entirely in the icon rail. */
+html[data-sidebar-collapsed] .sidebar-section-label {
+  opacity: 0;
+  height: 0;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+html[data-sidebar-collapsed] .sidebar-logo { opacity: 1; pointer-events: auto; }
+html[data-sidebar-collapsed] .sidebar-toggle.sidebar-toggle-brand { margin-left: 0; }
+html[data-sidebar-collapsed] .sidebar-link { position: relative; justify-content: center; padding: 0.6rem 0; width: 100%; box-sizing: border-box; }
+html[data-sidebar-collapsed] .sidebar-link i { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+html[data-sidebar-collapsed] .sidebar-nav { padding: 0.75rem 0.5rem; }
+html[data-sidebar-collapsed] .sidebar-close { display: none; }
+/* Topbar no longer carries a hamburger on desktop; mobile keeps its own. */
+html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: none; }
+html[data-sidebar-collapsed] .sidebar-brand-text,
+html[data-sidebar-collapsed] .sidebar-link span {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 0;
+  overflow: hidden;
+}
+html[data-sidebar-collapsed] .sidebar-logo { opacity: 1; pointer-events: auto; }
 html[data-sidebar-collapsed] .sidebar-toggle.sidebar-toggle-brand { margin-left: 0; }
 html[data-sidebar-collapsed] .sidebar-link { position: relative; justify-content: center; padding: 0.6rem 0; width: 100%; box-sizing: border-box; }
 html[data-sidebar-collapsed] .sidebar-link i { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
@@ -3143,7 +3211,7 @@ html[data-sidebar-collapsed] .sidebar-topbar .sidebar-toggle { display: none; }
   font-size: 2.6rem;
   font-weight: 600;
   line-height: 1;
-  color: var(--gold-text);
+  color: var(--paper);
 }
 .trust-metric-lbl {
   font-size: 0.82rem;
@@ -4759,3 +4827,152 @@ article.card:focus-within .thumb img { transform: scale(1.04); }
 
 /* Dark header needs the reverse wordmark; the green wordmark disappears. */
 :root[data-theme="dark"] .brand-link .brand-logo { content: url("../branding/logo-reverse.svg"); }
+
+/* --- Mobile bottom navigation bar --- */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1030;
+  background: var(--paper);
+  border-top: 1px solid var(--borders);
+  padding: 0.35rem 0;
+  padding-bottom: calc(0.35rem + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+}
+.mobile-bottom-nav__list {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mobile-bottom-nav__item {
+  flex: 1 1 0;
+  text-align: center;
+}
+.mobile-bottom-nav__link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.35rem 0.25rem;
+  color: var(--text-soft);
+  text-decoration: none;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  min-height: 44px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: color var(--hover-speed) ease;
+  position: relative;
+}
+.mobile-bottom-nav__link i {
+  font-size: 1.25rem;
+  line-height: 1;
+  pointer-events: none;
+}
+.mobile-bottom-nav__link.is-active {
+  color: var(--primary);
+}
+.mobile-bottom-nav__link:hover {
+  color: var(--primary);
+}
+.mobile-bottom-nav__badge {
+  position: absolute;
+  top: 0.15rem;
+  right: 50%;
+  transform: translateX(0.6rem);
+  background: var(--danger-fill);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  line-height: 1.1rem;
+  text-align: center;
+  border-radius: var(--radius-pill);
+  padding: 0 0.25rem;
+}
+@media (max-width: 767.98px) {
+  /* Hide sidebar items that are already on the bottom nav */
+  .sidebar-link.mobile-bottom-dup,
+  .sidebar-section-label.mobile-hide {
+    display: none !important;
+  }
+  /* Make drawer scrollable */
+  .sidebar {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* The bottom nav is the only way to reach the drawer on a phone: the topbar
+     hamburger is hidden below and the drawer opens from its "More" button. */
+  .mobile-bottom-nav { display: block; }
+  body { padding-bottom: 64px; }
+  .mobile-cta-bar { display: none !important; }
+  .sidebar-toggle, .sidebar-toggle-brand, .sidebar-close { display: none !important; }
+  .sidebar {
+    position: fixed;
+    bottom: 64px;
+    left: 0;
+    right: 0;
+    top: auto;
+    width: 100%;
+    height: auto;
+    max-height: 75vh;
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+    transform: translateY(100vh);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 1040;
+    overflow-y: auto;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+    -webkit-overflow-scrolling: touch;
+  }
+  html[data-mobile-drawer-open="1"] .sidebar {
+    transform: translateY(0);
+  }
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0);
+    z-index: 1035;
+    transition: background 0.3s ease, backdrop-filter 0.3s ease;
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+  }
+  html[data-mobile-drawer-open="1"] .sidebar-overlay {
+    display: block;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  html[data-mobile-drawer-open="1"] .mobile-bottom-nav__more {
+    color: var(--primary);
+  }
+  html[data-mobile-drawer-open="1"] .mobile-bottom-nav__more i {
+    transform: rotate(45deg);
+    transition: transform 0.2s ease;
+  }
+  html[data-mobile-drawer-open="1"] body {
+    overflow: hidden;
+  }
+  .sidebar::before {
+    content: "";
+    display: block;
+    width: 2.5rem;
+    height: 0.25rem;
+    background: var(--borders);
+    border-radius: var(--radius-pill);
+    margin: 0.5rem auto 0.25rem;
+  }
+}

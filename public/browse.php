@@ -24,6 +24,84 @@ $sortSql = ['newest'=>'published_at DESC','price_asc'=>'price_per_unit ASC','pri
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 15;
 
+// Query runs before the markup so the header can print the real result count.
+$listings = [];
+$total = 0;
+$totalPages = 0;
+// A DB outage and an empty marketplace are different states; do not share one flag.
+$listingsFailed = false;
+try {
+    $hasSearch = $q !== '';
+    // Search path: resolve matching ids on the base table first (one indexed
+    // scan using ft_listing_search + a substring fallback for prefixes the
+    // tokenizer misses) and let the 5-join view drive only off `id IN (...)`.
+    // LIKE '%...%' over the view full-scanned every join per keystroke.
+    if ($hasSearch) {
+        $sql = "SELECT pl.id FROM produce_listings pl";
+        if ($categoryFilter !== '') {
+            $sql .= " JOIN produce_categories pc ON pc.id = pl.category_id";
+        }
+        $sql .= " WHERE pl.status = 'active'";
+        if ($categoryFilter !== '') {
+            $sql .= " AND pc.slug = :cat";
+        }
+        if ($dealsFilter) {
+            $sql .= " AND pl.discount_percent > 0 AND (pl.expiry_date IS NULL OR pl.expiry_date = '' OR pl.expiry_date >= CURDATE())";
+        }
+        if ($trendingFilter) {
+            $sql .= " AND (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = pl.id) >= 3";
+        }
+        $sql .= " AND (MATCH(pl.name, pl.description) AGAINST(:fts IN NATURAL LANGUAGE MODE) OR pl.name LIKE :like)";
+        $idsStmt = DB::pdo()->prepare($sql);
+        $params = [':fts' => $q, ':like' => '%' . $q . '%'];
+        if ($categoryFilter !== '') $params[':cat'] = $categoryFilter;
+        $idsStmt->execute($params);
+        $matchIds = array_map('intval', $idsStmt->fetchAll(PDO::FETCH_COLUMN));
+        $where = $matchIds
+            ? 'id IN (' . implode(',', $matchIds) . ')'
+            : '1 = 0';   // no hits: count and grid both come up empty
+    } else {
+        $where = "status = 'active'";
+    }
+    // Category filter applies to the whole catalogue, not just the
+    // current page (was a client-side toggle that only hid cards).
+    $bind = [];
+    if ($categoryFilter !== '') {
+        $where .= ' AND category_slug = :cat';
+        $bind[':cat'] = $categoryFilter;
+    }
+    if ($dealsFilter) {
+        $where .= ' AND discount_percent > 0 AND is_expired = 0';
+    }
+    if ($trendingFilter) {
+        $where .= ' AND (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = v_active_listings.id) >= 3';
+    }
+    if ($priceMin > 0) { $where .= ' AND price_per_unit >= :pmin'; $bind[':pmin'] = $priceMin; }
+    if ($priceMax > 0) { $where .= ' AND price_per_unit <= :pmax'; $bind[':pmax'] = $priceMax; }
+
+    // Count first: an out-of-range ?page= (bookmark, edited URL) is pulled back
+    // onto the last page before it can become an OFFSET and show an empty grid.
+    $countStmt = DB::pdo()->prepare("SELECT COUNT(*) FROM v_active_listings WHERE $where");
+    foreach ($bind as $k => $v) $countStmt->bindValue($k, $v);
+    $countStmt->execute();
+    $total = (int) $countStmt->fetchColumn();
+    $totalPages = (int) ceil($total / $perPage);
+    if ($totalPages > 0 && $page > $totalPages) {
+        $page = $totalPages;
+    }
+
+    $offset = ($page - 1) * $perPage;
+    $stmt = DB::pdo()->prepare("SELECT v_active_listings.*, (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = v_active_listings.id) AS save_count, (SELECT COUNT(*) FROM orders o WHERE o.listing_id = v_active_listings.id AND o.status = 'completed' AND o.completed_at >= (NOW() - INTERVAL 7 DAY)) AS sold_week FROM v_active_listings WHERE $where ORDER BY CASE WHEN discount_percent > 0 THEN 0 ELSE 1 END, CASE WHEN (SELECT COUNT(*) FROM saved_listings sl2 WHERE sl2.listing_id = v_active_listings.id) >= 3 THEN 0 ELSE 1 END, is_expired ASC, {$sortSql} LIMIT $perPage OFFSET :offset");
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    foreach ($bind as $k => $v) $stmt->bindValue($k, $v);
+    $stmt->execute();
+    $listings = $stmt->fetchAll();
+} catch (Exception $e) {
+    $listingsFailed = true;
+    error_log('browse: listing query failed: ' . $e->getMessage());
+}
+$totalPages = $listingsFailed ? 0 : $totalPages;
+
 // Category label formatter
 function formatCatLabel($catName) {
     $slug = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $catName), '-'));
@@ -51,7 +129,7 @@ function formatCatLabel($catName) {
 
 // Saved listing ids for the signed-in buyer (heart buttons)
 $savedIds = [];
-if (current_user_id() && current_user_role() === 'buyer') {
+if (current_user_id() && in_array(current_user_role(), ['buyer', 'admin', 'manager'], true)) {
     try {
         $savedStmt = DB::pdo()->prepare('SELECT listing_id FROM saved_listings WHERE user_id = :id');
         $savedStmt->execute(['id' => current_user_id()]);
@@ -65,7 +143,7 @@ if (current_user_id() && current_user_role() === 'buyer') {
 $role = function_exists('current_user_role') ? current_user_role() : null;
 $sidebarShell = (bool) current_user_id();
 if ($sidebarShell) {
-    $activePage = $role === 'buyer' ? 'browse' : ($role === 'admin' ? 'goods' : 'market');
+    $activePage = $role === 'buyer' ? 'browse' : (in_array($role, ['admin', 'manager'], true) ? 'goods' : 'market');
     require __DIR__ . '/partials/dashboard-layout.php';
 } else {
     require __DIR__ . '/partials/header.php';
@@ -91,6 +169,7 @@ if ($sidebarShell) {
     </div>
     <?php endif; ?>
 
+    <div class="browse-toolbar">
     <form class="search-form" method="get" action="browse.php">
       <?php if (isset($_GET['lang'])): ?>
         <input type="hidden" name="lang" value="<?php echo htmlspecialchars($_GET['lang']); ?>">
@@ -100,7 +179,11 @@ if ($sidebarShell) {
       <datalist id="search-suggestions"></datalist>
       <button type="submit" class="search-form__submit" aria-label="<?= e($l($copy['search'], 'label')) ?>"><i class="bi bi-search" aria-hidden="true"></i></button>
     </form>
-    <div class="filters" data-reveal>
+
+    <!-- Category filters (primary) -->
+    <div class="browse-filter-group">
+      <span class="browse-filter-group__label">Category</span>
+      <div class="filters" data-reveal>
       <?php
       $categories = [];
       $useFallback = false;
@@ -111,7 +194,6 @@ if ($sidebarShell) {
         $useFallback = true;
       }
       if ($useFallback || empty($categories)) {
-        // Static fallback categories matching the fallback cards
         $categories = ['fruits', 'livestock-dairy', 'poultry', 'seafood', 'vegetables'];
         sort($categories);
       }
@@ -127,7 +209,7 @@ if ($sidebarShell) {
       } catch (Exception $e) { }
       ?>
 
-      <button class="filter-pill <?= $categoryFilter === '' && !$dealsFilter ? 'is-active' : '' ?>" type="button" data-filter="all" data-filter-url="browse.php<?= $q !== '' ? '?q=' . urlencode($q) : '' ?>">All (<?= (int) $filterCounts['all'] ?>)</button>
+      <button class="filter-pill <?= $categoryFilter === '' && !$dealsFilter && !$trendingFilter ? 'is-active' : '' ?>" type="button" data-filter="all" data-filter-url="browse.php<?= $q !== '' ? '?q=' . urlencode($q) : '' ?>">All (<?= (int) $filterCounts['all'] ?>)</button>
       <button class="filter-pill <?= $dealsFilter ? 'is-active' : '' ?>" type="button" data-filter="deals" data-filter-url="browse.php?deals=1<?= $q !== '' ? '&q=' . urlencode($q) : '' ?>">Deals (<?= (int) $filterCounts['deals'] ?>)</button>
       <button class="filter-pill <?= $trendingFilter ? 'is-active' : '' ?>" type="button" data-filter="trending" data-filter-url="browse.php?trending=1<?= $q !== '' ? '&q=' . urlencode($q) : '' ?>">Trending (<?= (int) $filterCounts['trending'] ?>)</button>
       <?php foreach ($categories as $cat): ?>
@@ -135,141 +217,89 @@ if ($sidebarShell) {
         <?php $catUrl = 'browse.php?category=' . urlencode($catSlug) . ($q !== '' ? '&q=' . urlencode($q) : ''); ?>
         <button class="filter-pill <?= $categoryFilter === $catSlug ? 'is-active' : '' ?>" type="button" data-filter="<?php echo strtolower($cat); ?>" data-filter-url="<?= e($catUrl) ?>"><?php echo htmlspecialchars(formatCatLabel($cat)); ?> (<?= (int) ($catCounts[$catSlug] ?? 0) ?>)</button>
       <?php endforeach; ?>
+      </div>
     </div>
 
-    <form method="get" action="browse.php" class="browse-filters">
-      <?php if ($q !== ''): ?><input type="hidden" name="q" value="<?= e($q) ?>"><?php endif; ?>
-      <?php if ($categoryFilter !== ''): ?><input type="hidden" name="category" value="<?= e($categoryFilter) ?>"><?php endif; ?>
-      <?php if ($dealsFilter): ?><input type="hidden" name="deals" value="1"><?php endif; ?>
-      <?php if ($trendingFilter): ?><input type="hidden" name="trending" value="1"><?php endif; ?>
-      <div class="browse-filters__field">
-        <label for="priceMin">Min price</label>
-        <input type="number" step="0.01" min="0" id="priceMin" name="price_min" value="<?= $priceMin > 0 ? e($priceMin) : '' ?>">
-      </div>
-      <div class="browse-filters__field">
-        <label for="priceMax">Max price</label>
-        <input type="number" step="0.01" min="0" id="priceMax" name="price_max" value="<?= $priceMax > 0 ? e($priceMax) : '' ?>">
-      </div>
-      <div class="browse-filters__field">
-        <label for="sort">Sort</label>
-        <select id="sort" name="sort">
-          <option value="newest" <?= $sort === 'newest' ? 'selected' : '' ?>>Newest</option>
-          <option value="price_asc" <?= $sort === 'price_asc' ? 'selected' : '' ?>>Lowest price</option>
-          <option value="price_desc" <?= $sort === 'price_desc' ? 'selected' : '' ?>>Highest price</option>
-          <option value="expiry" <?= $sort === 'expiry' ? 'selected' : '' ?>>Expiring soon</option>
-        </select>
-      </div>
-      <div class="browse-filters__actions">
-        <button type="submit" class="btn btn-sm btn-primary">Apply</button>
-        <a href="browse.php" class="btn btn-sm btn-outline-secondary">Reset</a>
-      </div>
-    </form>
+    </div>
+
+    <!-- Advanced filters (collapsible) -->
+    <?php $hasAdvanced = $priceMin > 0 || $priceMax > 0 || $sort !== 'newest'; ?>
+    <details class="browse-advanced" <?= $hasAdvanced ? 'open' : '' ?>>
+      <summary class="browse-advanced__summary">
+        <i class="bi bi-sliders me-1" aria-hidden="true"></i>Price &amp; sort
+        <?php if ($hasAdvanced): ?><span class="browse-advanced__badge">active</span><?php endif; ?>
+      </summary>
+      <form method="get" action="browse.php" class="browse-filters">
+        <?php if ($q !== ''): ?><input type="hidden" name="q" value="<?= e($q) ?>"><?php endif; ?>
+        <?php if ($categoryFilter !== ''): ?><input type="hidden" name="category" value="<?= e($categoryFilter) ?>"><?php endif; ?>
+        <?php if ($dealsFilter): ?><input type="hidden" name="deals" value="1"><?php endif; ?>
+        <?php if ($trendingFilter): ?><input type="hidden" name="trending" value="1"><?php endif; ?>
+        <div class="browse-filters__field">
+          <label for="priceMin">Min price</label>
+          <input type="number" step="0.01" min="0" id="priceMin" name="price_min" value="<?= $priceMin > 0 ? e($priceMin) : '' ?>">
+        </div>
+        <div class="browse-filters__field">
+          <label for="priceMax">Max price</label>
+          <input type="number" step="0.01" min="0" id="priceMax" name="price_max" value="<?= $priceMax > 0 ? e($priceMax) : '' ?>">
+        </div>
+        <div class="browse-filters__field">
+          <label for="sort">Sort by</label>
+          <select id="sort" name="sort">
+            <option value="newest" <?= $sort === 'newest' ? 'selected' : '' ?>>Newest</option>
+            <option value="price_asc" <?= $sort === 'price_asc' ? 'selected' : '' ?>>Lowest price</option>
+            <option value="price_desc" <?= $sort === 'price_desc' ? 'selected' : '' ?>>Highest price</option>
+            <option value="expiry" <?= $sort === 'expiry' ? 'selected' : '' ?>>Expiring soon</option>
+          </select>
+        </div>
+        <div class="browse-filters__actions">
+          <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+          <a href="browse.php<?= $q !== '' ? '?q=' . urlencode($q) : '' ?>" class="btn btn-sm btn-outline-secondary">Reset</a>
+        </div>
+      </form>
+    </details>
 
     <div id="recently-viewed" class="mb-3" style="display:none;">
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="mb-0">Recently viewed</h6>
+        <h2 class="h6 mb-0">Recently viewed</h2>
       </div>
       <div class="d-flex gap-2 overflow-auto pb-2" id="recently-viewed-list"></div>
     </div>
-    <div class="grid" id="product-grid" data-reveal="stagger">
-      <?php
-      $listings = [];
-      $total = 0;
-      $totalPages = 0;
-      // A DB outage and an empty marketplace are different states; do not share one flag.
-      $listingsFailed = false;
-      try {
-        $hasSearch = $q !== '';
-        // Search path: resolve matching ids on the base table first (one indexed
-        // scan using ft_listing_search + a substring fallback for prefixes the
-        // tokenizer misses) and let the 5-join view drive only off `id IN (...)`.
-        // LIKE '%...%' over the view full-scanned every join per keystroke.
-        if ($hasSearch) {
-          $sql = "SELECT pl.id FROM produce_listings pl";
-          if ($categoryFilter !== '') {
-            $sql .= " JOIN produce_categories pc ON pc.id = pl.category_id";
-          }
-          $sql .= " WHERE pl.status = 'active'";
-          if ($categoryFilter !== '') {
-            $sql .= " AND pc.slug = :cat";
-          }
-          if ($dealsFilter) {
-            $sql .= " AND pl.discount_percent > 0 AND (pl.expiry_date IS NULL OR pl.expiry_date = '' OR pl.expiry_date >= CURDATE())";
-          }
-          if ($trendingFilter) {
-            $sql .= " AND (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = pl.id) >= 3";
-          }
-          $sql .= " AND (MATCH(pl.name, pl.description) AGAINST(:fts IN NATURAL LANGUAGE MODE) OR pl.name LIKE :like)";
-          $idsStmt = DB::pdo()->prepare($sql);
-          $params = [':fts' => $q, ':like' => '%' . $q . '%'];
-          if ($categoryFilter !== '') $params[':cat'] = $categoryFilter;
-          $idsStmt->execute($params);
-          $matchIds = array_map('intval', $idsStmt->fetchAll(PDO::FETCH_COLUMN));
-          $where = $matchIds
-            ? 'id IN (' . implode(',', $matchIds) . ')'
-            : '1 = 0';   // no hits: count and grid both come up empty
-        } else {
-          $where = "status = 'active'";
-        }
-        if ($priceMin > 0) { $where .= ' AND price_per_unit >= :pmin'; $bind[':pmin'] = $priceMin; }
-        if ($priceMax > 0) { $where .= ' AND price_per_unit <= :pmax'; $bind[':pmax'] = $priceMax; }
-        // Category filter applies to the whole catalogue, not just the
-        // current page (was a client-side toggle that only hid cards).
-        $bind = [];
-        if ($categoryFilter !== '') {
-          $where .= ' AND category_slug = :cat';
-          $bind[':cat'] = $categoryFilter;
-        }
-        if ($dealsFilter) {
-          $where .= ' AND discount_percent > 0 AND is_expired = 0';
-        }
-        if ($trendingFilter) {
-          $where .= ' AND (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = v_active_listings.id) >= 3';
-        }
-        if ($priceMin > 0) { $where .= ' AND price_per_unit >= :pmin'; $bind[':pmin'] = $priceMin; }
-        if ($priceMax > 0) { $where .= ' AND price_per_unit <= :pmax'; $bind[':pmax'] = $priceMax; }
-
-        // Count first: an out-of-range ?page= (bookmark, edited URL) is pulled back
-        // onto the last page before it can become an OFFSET and show an empty grid.
-        $countStmt = DB::pdo()->prepare("SELECT COUNT(*) FROM v_active_listings WHERE $where");
-        foreach ($bind as $k => $v) $countStmt->bindValue($k, $v);
-        $countStmt->execute();
-        $total = (int) $countStmt->fetchColumn();
-        $totalPages = (int) ceil($total / $perPage);
-        if ($totalPages > 0 && $page > $totalPages) {
-          $page = $totalPages;
-        }
-
-        $offset = ($page - 1) * $perPage;
-        $stmt = DB::pdo()->prepare("SELECT v_active_listings.*, (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = v_active_listings.id) AS save_count, (SELECT COUNT(*) FROM orders o WHERE o.listing_id = v_active_listings.id AND o.status = 'completed' AND o.completed_at >= (NOW() - INTERVAL 7 DAY)) AS sold_week FROM v_active_listings WHERE $where ORDER BY CASE WHEN discount_percent > 0 THEN 0 ELSE 1 END, CASE WHEN (SELECT COUNT(*) FROM saved_listings sl2 WHERE sl2.listing_id = v_active_listings.id) >= 3 THEN 0 ELSE 1 END, is_expired ASC, {$sortSql} LIMIT $perPage OFFSET :offset");
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-        foreach ($bind as $k => $v) $stmt->bindValue($k, $v);
-        $stmt->execute();
-        $listings = $stmt->fetchAll();
-      } catch (Exception $e) {
-        $listingsFailed = true;
-        error_log('browse: listing query failed: ' . $e->getMessage());
-      }
-
-      $totalPages = $listingsFailed ? 0 : $totalPages; ?>
-    <div class="d-flex flex-wrap align-items-center gap-2 mb-3" style="grid-column: 1 / -1;">
-      <span class="text-muted small"><?= (int) ($total ?? 0) ?> result<?= ($total ?? 0) === 1 ? '' : 's' ?></span>
-      <?php
-        $activeFilters = [];
-        if ($q !== '') $activeFilters[] = ['label' => 'Search: ' . $q, 'href' => http_build_query(array_merge($_GET, ['q' => '']))];
-        if ($categoryFilter !== '') $activeFilters[] = ['label' => 'Category: ' . $categoryFilter, 'href' => http_build_query(array_merge($_GET, ['category' => '']))];
-        if ($dealsFilter) $activeFilters[] = ['label' => 'Deals only', 'href' => http_build_query(array_merge($_GET, ['deals' => '']))];
-        if ($trendingFilter) $activeFilters[] = ['label' => 'Trending', 'href' => http_build_query(array_merge($_GET, ['trending' => '']))];
-      ?>
+    <?php
+      $activeFilters = [];
+      if ($q !== '') $activeFilters[] = ['label' => 'Search: ' . $q, 'href' => http_build_query(array_merge($_GET, ['q' => '']))];
+      if ($categoryFilter !== '') $activeFilters[] = ['label' => 'Category: ' . formatCatLabel($categoryFilter), 'href' => http_build_query(array_merge($_GET, ['category' => '']))];
+      if ($dealsFilter) $activeFilters[] = ['label' => 'Deals only', 'href' => http_build_query(array_merge($_GET, ['deals' => '']))];
+      if ($trendingFilter) $activeFilters[] = ['label' => 'Trending', 'href' => http_build_query(array_merge($_GET, ['trending' => '']))];
+      if ($priceMin > 0 || $priceMax > 0) $activeFilters[] = ['label' => 'Price ' . ($priceMin > 0 ? money($priceMin) : 'any') . ' – ' . ($priceMax > 0 ? money($priceMax) : 'any'), 'href' => http_build_query(array_merge($_GET, ['price_min' => '', 'price_max' => '']))];
+      $sortOptions = ['newest' => 'Newest', 'price_asc' => 'Price: low to high', 'price_desc' => 'Price: high to low', 'expiry' => 'Expiring soon'];
+    ?>
+    <div class="browse-results-head" data-reveal>
+      <p class="browse-results-count" role="status">
+        <strong><?= (int) $total ?></strong> <?= (int) $total === 1 ? 'listing' : 'listings' ?><?= $q !== '' ? ' for "' . e($q) . '"' : '' ?>
+      </p>
+      <?php if (current_user_id() && in_array(current_user_role(), ['buyer', 'admin', 'manager'], true)): ?>
+      <form method="post" action="save_search.php" class="d-inline">
+        <?= csrf_field() ?>
+        <input type="hidden" name="q" value="<?= e($q) ?>">
+        <input type="hidden" name="category" value="<?= e($categoryFilter) ?>">
+        <input type="hidden" name="price_min" value="<?= $priceMin > 0 ? e($priceMin) : '' ?>">
+        <input type="hidden" name="price_max" value="<?= $priceMax > 0 ? e($priceMax) : '' ?>">
+        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-bookmark-plus me-1"></i>Save search</button>
+      </form>
+      <?php endif; ?>
+    </div>
+    <?php if ($activeFilters): ?>
+    <div class="browse-active-filters" data-reveal>
       <?php foreach ($activeFilters as $af): ?>
-        <a href="browse.php?<?= e($af['href']) ?>" class="badge rounded-pill text-bg-light border text-decoration-none">
+        <a href="browse.php?<?= e($af['href']) ?>" class="filter-chip">
           <?= e($af['label']) ?> <i class="bi bi-x" aria-hidden="true"></i>
         </a>
       <?php endforeach; ?>
-      <?php if ($activeFilters): ?>
-        <a href="browse.php" class="small text-decoration-none">Clear all</a>
-      <?php endif; ?>
+      <a href="browse.php" class="browse-active-filters__clear">Clear all</a>
     </div>
+    <?php endif; ?>
+
+    <div class="grid" id="product-grid" data-reveal="stagger">
       <?php if ($listings): ?>
         <?php foreach ($listings as $item): ?>
           <article class="card" data-reveal="stagger" data-listing-url="listing.php?id=<?php echo (int) $item['id']; ?>" data-category="<?php echo e(strtolower($item['category_name'] ?? '')); ?>">
@@ -315,11 +345,11 @@ if ($sidebarShell) {
                   }
                 ?>
                 <?php if ($freshLabel): ?>
-                  <span class="badge text-bg-light text-muted"><?= e($freshLabel) ?></span>
+                  <span class="badge text-bg-light"><?= e($freshLabel) ?></span>
                 <?php endif; ?>
               </div>
               <div class="row align-items-start">
-                <h3 class="mb-0"><a href="listing.php?id=<?php echo (int) $item['id']; ?>" class="text-decoration-none listing-name"><?php echo e($item['name']); ?></a></h3>
+                <h2 class="listing-name h3 mb-0"><a href="listing.php?id=<?php echo (int) $item['id']; ?>" class="text-decoration-none"><?php echo e($item['name']); ?></a></h2>
               </div>
               <div class="d-flex justify-content-between align-items-baseline mt-1">
                 <div class="price mb-0">
@@ -342,7 +372,7 @@ if ($sidebarShell) {
                   <a class="buy-now btn btn-primary btn-sm w-100" href="<?php echo e(login_url($guestReturn)); ?>" aria-label="Buy now"><i class="bi bi-lightning-charge-fill me-1" aria-hidden="true"></i>Buy Now</a>
                   <a class="btn btn-outline-primary btn-icon btn-sm" href="<?php echo e(login_url($guestReturn)); ?>" title="Add to cart" aria-label="Add to cart"><i class="bi bi-cart-plus" aria-hidden="true"></i></a>
                   <a class="save-btn btn btn-outline-danger" href="<?php echo e(login_url($guestReturn)); ?>" title="Save for later" aria-label="Save for later"><i class="bi bi-heart" aria-hidden="true"></i></a>
-                <?php elseif (current_user_role() === 'buyer'): ?>
+                <?php elseif (in_array(current_user_role(), ['buyer', 'admin', 'manager'], true)): ?>
                   <?php if ($item['farmer_id'] !== current_user_id()): ?>
                   <form method="post" action="cart_add.php" class="mb-0 buy-now" data-buy-now="true">
                     <?= csrf_field() ?>
@@ -451,10 +481,10 @@ if ($sidebarShell) {
     </div>
       <?php if (!$listingsFailed && $totalPages > 1): ?>
         <?php
-        $paramParts = [];
-        if (isset($_GET['lang'])) $paramParts[] = 'lang=' . urlencode($_GET['lang']);
-        if ($q !== '') $paramParts[] = 'q=' . urlencode($q);
-        $param = implode('&', $paramParts);
+        // Keep every active filter and the sort order across pages.
+        $pagerParams = $_GET;
+        unset($pagerParams['page']);
+        $param = http_build_query($pagerParams);
         $labels = [
             'prev' => $l($copy['ui'], 'pager_prev'),
             'next' => $l($copy['ui'], 'pager_next'),
@@ -478,6 +508,23 @@ if ($sidebarShell) {
 <?php /* The marketplace is a public page that a signed-in visitor happens to be
      viewing, so it keeps the public footer only for logged-out visitors; the
      logged-in shell uses dashboard-footer (no public footer). */ ?>
+<?php /* React islands (proof of concept). Loaded only on browse.php; grows
+       into the filter/grid island in a follow-up. Manifest keeps the hashed
+       filename in sync after every `npm run build`. */ ?>
+<?php
+  $viteManifestPath = __DIR__ . '/assets/dist/.vite/manifest.json';
+  $viteEntry = '';
+  if (is_file($viteManifestPath)) {
+      $viteManifest = json_decode((string) file_get_contents($viteManifestPath), true);
+      if (is_array($viteManifest) && isset($viteManifest['assets/js/islands/main.jsx']['file'])) {
+          $viteEntry = $viteManifest['assets/js/islands/main.jsx']['file'];
+      }
+  }
+?>
+<?php if ($viteEntry !== ''): ?>
+<script type="module" src="assets/dist/<?= e($viteEntry) ?>"></script>
+<?php endif; ?>
+<script src="assets/js/browse-filters.js" defer></script>
 <?php if ($sidebarShell): ?>
 <?php require __DIR__ . '/partials/dashboard-footer.php'; ?>
 <?php else: ?>

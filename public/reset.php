@@ -63,10 +63,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Invalidate all tokens for this user
                 password_resets_revoke((int) $reset['user_id']);
 
-                // Password change revokes remember-me (only enforceable part;
-                // PHP file sessions can't be enumerated across devices without
-                // a DB-backed session store).
-                remember_revoke((int) $reset['user_id']);
+                // Password change revokes remember-me, mobile API tokens, and
+                // every other PHP session via session_version.
+                revoke_user_credentials((int) $reset['user_id']);
 
                 security_event_log('password_reset_completed', [
                     'target_user_id' => (int) $reset['user_id'],

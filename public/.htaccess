@@ -1,1 +1,5 @@
 Options -Indexes
+
+RewriteEngine On
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
+RewriteRule ^sitemap-([0-9]+)\.xml$ sitemap.php [L,QSA]
