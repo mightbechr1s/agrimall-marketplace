@@ -63,4 +63,3 @@ jobs:
 
       - name: Docs/code drift
         run: php tests/docs_test.php
-PY
