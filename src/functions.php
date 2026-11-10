@@ -173,6 +173,45 @@ function optimize_uploaded_image(string $srcPath, string $relativeDir = '/upload
     return $relativeDir . '/' . basename($webpPath);
 }
 
+/**
+ * Geocode an address string to [lat, lng] using OpenStreetMap Nominatim.
+ * Returns null on failure or if GD/cURL unavailable. Rate-limited by caller.
+ * Free service: 1 req/sec, requires a User-Agent.
+ */
+function geocode_address(string $query): ?array
+{
+    $query = trim($query);
+    if ($query === '') {
+        return null;
+    }
+    if (!function_exists('curl_init')) {
+        return null;
+    }
+    $url = 'https://nominatim.openstreetmap.org/search?' . http_build_query([
+        'q' => $query,
+        'format' => 'json',
+        'limit' => 1,
+    ]);
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 8,
+        CURLOPT_USERAGENT => 'AgriMALL/1.0 (contact@agrimall.ph)',
+        CURLOPT_HTTPHEADER => ['Accept: application/json'],
+    ]);
+    $resp = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($resp === false || $code !== 200) {
+        return null;
+    }
+    $data = json_decode($resp, true);
+    if (!is_array($data) || empty($data[0]['lat']) || empty($data[0]['lon'])) {
+        return null;
+    }
+    return [(float) $data[0]['lat'], (float) $data[0]['lon']];
+}
+
 /** FR-VAL-005: a decoded image may not exceed 20 megapixels or 6,000 px a side.
  *  A file of a couple of hundred bytes can declare 40,000 x 40,000 in its header;
  *  without this, whatever decodes it later pays for the expansion rather than the

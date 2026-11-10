@@ -96,6 +96,21 @@ try {
     foreach ($bind as $k => $v) $stmt->bindValue($k, $v);
     $stmt->execute();
     $listings = $stmt->fetchAll();
+
+    // Map pins: listings whose farmer has geocoded coordinates.
+    $mapPins = [];
+    try {
+        $mapPins = DB::pdo()->query(
+            "SELECT pl.id, pl.name, pl.price_per_unit, pl.available_quantity, pl.unit_symbol,
+                    fp.farm_name, fp.latitude, fp.longitude, fp.municipality_city, fp.province
+               FROM produce_listings pl
+               JOIN farmer_profiles fp ON pl.farmer_id = fp.user_id
+              WHERE pl.status = 'active' AND fp.latitude IS NOT NULL AND fp.longitude IS NOT NULL
+              LIMIT 200"
+        )->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {
+        $mapPins = [];
+    }
 } catch (Exception $e) {
     $listingsFailed = true;
     error_log('browse: listing query failed: ' . $e->getMessage());
@@ -479,6 +494,48 @@ if ($sidebarShell) {
         </div>
       <?php endif; ?>
     </div>
+    <!-- Map view -->
+    <div class="mt-4" data-reveal>
+      <button type="button" class="btn btn-outline-primary btn-sm mb-3" id="toggle-map">
+        <i class="bi bi-map me-1" aria-hidden="true"></i>Show farm map
+      </button>
+      <div id="browse-map" style="display:none;height:420px;border-radius:var(--radius-card);overflow:hidden;border:1px solid var(--borders);"></div>
+    </div>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    (function () {
+      const pins = <?= json_encode($mapPins, JSON_UNESCAPED_UNICODE) ?>;
+      let map = null;
+      const btn = document.getElementById('toggle-map');
+      const el = document.getElementById('browse-map');
+      if (!btn || !el) return;
+      btn.addEventListener('click', function () {
+        if (el.style.display === 'none') {
+          el.style.display = 'block';
+          btn.innerHTML = '<i class="bi bi-list me-1" aria-hidden="true"></i>Show list';
+          if (!map) {
+            map = L.map('browse-map').setView([12.8797, 121.7740], 6);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '&copy; OpenStreetMap contributors',
+              maxZoom: 18,
+            }).addTo(map);
+            pins.forEach(function (p) {
+              const lat = parseFloat(p.latitude);
+              const lng = parseFloat(p.longitude);
+              if (isNaN(lat) || isNaN(lng)) return;
+              const m = L.marker([lat, lng]).addTo(map);
+              m.bindPopup('<strong>' + p.name + '</strong><br>' + (p.farm_name || '') + '<br>PHP ' + p.price_per_unit + ' / ' + (p.unit_symbol || 'kg') + '<br><a href="listing.php?id=' + p.id + '">View listing</a>');
+            });
+          }
+          setTimeout(function () { map.invalidateSize(); }, 100);
+        } else {
+          el.style.display = 'none';
+          btn.innerHTML = '<i class="bi bi-map me-1" aria-hidden="true"></i>Show farm map';
+        }
+      });
+    })();
+    </script>
       <?php if (!$listingsFailed && $totalPages > 1): ?>
         <?php
         // Keep every active filter and the sort order across pages.

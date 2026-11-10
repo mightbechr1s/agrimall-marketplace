@@ -172,6 +172,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'valid_id_number' => $farmer['valid_id_number'],
                         'verification_status' => 'pending',
                     ]);
+            // Geocode the farm address (best-effort, non-blocking).
+            $coords = geocode_address(sprintf('%s, %s, %s, Philippines', $farmer['barangay'], $farmer['municipality_city'], $farmer['province']));
+            if ($coords) {
+                DB::pdo()->prepare('UPDATE farmer_profiles SET latitude = :lat, longitude = :lng WHERE user_id = :uid')
+                    ->execute(['lat' => $coords[0], 'lng' => $coords[1], 'uid' => $userId]);
             }
 
             flash_set('success', $role === 'farmer'
