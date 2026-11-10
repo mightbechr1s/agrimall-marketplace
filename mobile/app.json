@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "AgriMALL",
+    "slug": "agrimall",
+    "version": "0.1.0",
+    "scheme": "agrimall",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#ffffff",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ph.agrimall.app"
+    },
+    "android": {
+      "package": "ph.agrimall.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#f8f9fa",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-system-ui",
+      [
+        "expo-notifications",
+        {
+          "color": "#1b4332"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "image": "./assets/splash-icon-dark.png",
+            "backgroundColor": "#121212"
+          }
+        }
+      ]
+    ]
+  }
+}
