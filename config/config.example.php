@@ -53,4 +53,14 @@ return [
         'enabled' => false,
         'from' => 'no-reply@agrimall.ph',
     ],
+
+    // Web Push (VAPID). Generate a pair with `php tools/vapid-keys.php` and paste
+    // the block below into config/config.php. Disabled until both keys exist.
+    // The subject must be a mailto: or https: URL the push service can contact.
+    'push' => [
+        'enabled'     => false,
+        'subject'     => 'mailto:admin@agrimall.ph',
+        'public_key'  => '',
+        'private_key' => '',
+    ],
 ];

@@ -232,11 +232,50 @@ try {
   $a = New-Object Microsoft.PowerShell.Commands.WebRequestSession
   login 'http-admin@x.test' $a | Out-Null
   $c = get "$base/account.php" $a
-  ok 'admin account page hides the name form' ($c -notmatch 'name="full_name"') 'name form shown to admin'
+  ok 'admin account page shows the name form' ($c -match 'name="full_name"') 'name form hidden from admin'
   $c = get "$base/account_delete.php" $a
   $t = csrf $c
   $c = post "$base/account_delete.php" $a @{ csrf_token=$t; current_password='password123'; confirm_phrase='DELETE' }
   ok 'admin cannot delete their own account' ((dbq "SELECT status FROM users WHERE id=$($ids.admin)") -eq 'active') (dbq "SELECT status FROM users WHERE id=$($ids.admin)")
+
+  "`n--- farmer verification ---"
+  # Rejecting needs a reason; a blank one must not move the application.
+  $c = get "$base/admin_verify.php?status=pending" $a
+  $t = csrf $c
+  post "$base/admin_verify.php" $a @{ csrf_token=$t; user_id=$($ids.rejectMe); action='reject'; reason='' } | Out-Null
+  ok 'a rejection without a reason is refused' ((dbq "SELECT verification_status FROM farmer_profiles WHERE user_id=$($ids.rejectMe)") -eq 'pending') (dbq "SELECT verification_status FROM farmer_profiles WHERE user_id=$($ids.rejectMe)")
+
+  $c = get "$base/admin_verify.php?status=pending" $a
+  $t = csrf $c
+  post "$base/admin_verify.php" $a @{ csrf_token=$t; user_id=$($ids.rejectMe); action='reject'; reason='ID photo is unreadable' } | Out-Null
+  ok 'a reason rejects the application' ((dbq "SELECT verification_status FROM farmer_profiles WHERE user_id=$($ids.rejectMe)") -eq 'rejected') (dbq "SELECT verification_status FROM farmer_profiles WHERE user_id=$($ids.rejectMe)")
+  ok 'the rejection reason is stored' ((dbq "SELECT rejection_reason FROM farmer_profiles WHERE user_id=$($ids.rejectMe)") -eq 'ID photo is unreadable') (dbq "SELECT rejection_reason FROM farmer_profiles WHERE user_id=$($ids.rejectMe)")
+  ok 'rejecting leaves the account unable to sign in' ((dbq "SELECT status FROM users WHERE id=$($ids.rejectMe)") -eq 'pending_verification') (dbq "SELECT status FROM users WHERE id=$($ids.rejectMe)")
+
+  $c = get "$base/admin_verify.php?status=pending" $a
+  $t = csrf $c
+  post "$base/admin_verify.php" $a @{ csrf_token=$t; user_id=$($ids.approveMe); action='approve' } | Out-Null
+  ok 'approving marks the farm verified' ((dbq "SELECT verification_status FROM farmer_profiles WHERE user_id=$($ids.approveMe)") -eq 'approved') (dbq "SELECT verification_status FROM farmer_profiles WHERE user_id=$($ids.approveMe)")
+  ok 'approving activates the account' ((dbq "SELECT status FROM users WHERE id=$($ids.approveMe)") -eq 'active') (dbq "SELECT status FROM users WHERE id=$($ids.approveMe)")
+  ok 'approving records who reviewed it' ((dbq "SELECT verified_by FROM farmer_profiles WHERE user_id=$($ids.approveMe)") -eq "$($ids.admin)") (dbq "SELECT verified_by FROM farmer_profiles WHERE user_id=$($ids.approveMe)")
+  ok 'approving is audited' ((dbq "SELECT COUNT(*) FROM admin_audit_log WHERE action='verification_approved' AND entity_id=$($ids.approveMe)") -eq '1') (dbq "SELECT COUNT(*) FROM admin_audit_log WHERE action='verification_approved' AND entity_id=$($ids.approveMe)")
+
+  # A second decision on the same application must not overwrite the first.
+  $c = get "$base/admin_verify.php?status=approved" $a
+  $t = csrf $c
+  post "$base/admin_verify.php" $a @{ csrf_token=$t; user_id=$($ids.approveMe); action='reject'; reason='changed my mind' } | Out-Null
+  ok 'an already-reviewed application cannot be re-reviewed' ((dbq "SELECT verification_status FROM farmer_profiles WHERE user_id=$($ids.approveMe)") -eq 'approved') (dbq "SELECT verification_status FROM farmer_profiles WHERE user_id=$($ids.approveMe)")
+
+  # The mobile API shares the same transition; it must refuse the same replay.
+  $login = Invoke-RestMethod -Uri "$base/api/auth/login.php" -Method Post -ContentType 'application/json' `
+    -Body (@{ email = 'http-admin@x.test'; password = 'password123'; device_name = 'http-test' } | ConvertTo-Json) -TimeoutSec 20
+  $apiHeaders = @{ Authorization = "Bearer $($login.token)"; Accept = 'application/json' }
+  $apiBody = '{"farmer_id":' + $ids.rejectMe + ',"action":"approve"}'
+  try {
+    $r = Invoke-WebRequest -Uri "$base/api/admin/verify.php" -Method Post -Headers $apiHeaders -ContentType 'application/json' -Body $apiBody -UseBasicParsing -TimeoutSec 20
+    $apiCode = $r.StatusCode
+  } catch { $apiCode = [int]$_.Exception.Response.StatusCode }
+  ok 'the API refuses to re-review an application' ($apiCode -eq 400) "status=$apiCode"
 
   "`n--- password reset round trip ---"
   $r = New-Object Microsoft.PowerShell.Commands.WebRequestSession
@@ -644,6 +683,135 @@ try {
   $goodWrite = (& $mysql -u root animal_marketplace_test -e "UPDATE produce_listings SET price_per_unit = 25.00 WHERE id = $listingId" 2>&1) | Out-String
   $priceBack = dbq "SELECT price_per_unit FROM produce_listings WHERE id = $listingId"
   ok 'the database still accepts a legal price' (($goodWrite -notmatch 'ERROR') -and ([double]$priceBack -eq 25)) "a valid price was rejected or not written: $priceBack $goodWrite"
+
+  "`n--- ratings, reviews, messaging, forecast, map, push ---"
+  $reviewFarmerId = dbq "SELECT id FROM users WHERE email = 'http-farmer@x.test';"
+  $reviewListing = [int](dbq "INSERT INTO produce_listings (farmer_id, category_id, unit_id, name, price_per_unit, available_quantity, minimum_order_qty, status) VALUES ($reviewFarmerId, $catId, $unitId, 'HTTP Review Produce', 20.00, 10.0000, 1.0000, 'active'); SELECT LAST_INSERT_ID();")
+  $reviewOrder = [int](dbq "INSERT INTO orders (order_number, buyer_id, farmer_id, listing_id, quantity, unit_price, status, completed_at) VALUES ('ORD-HTTP-REVIEW', $buyerId, $reviewFarmerId, $reviewListing, 3.0000, 20.00, 'completed', NOW()); SELECT LAST_INSERT_ID();")
+
+  $hasReviewTable = dbq "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'farmer_reviews'"
+  $hasMessageTable = dbq "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'order_messages'"
+  $hasPushTable = dbq "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'push_subscriptions'"
+  $hasPushColumn = dbq "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'notifications' AND COLUMN_NAME = 'push_sent_at'"
+  ok 'migration 021 creates farmer_reviews' ([int]$hasReviewTable -eq 1) 'farmer_reviews is missing after migrations'
+  ok 'migration 022 creates order_messages' ([int]$hasMessageTable -eq 1) 'order_messages is missing after migrations'
+  ok 'migration 023 creates push_subscriptions' ([int]$hasPushTable -eq 1) 'push_subscriptions is missing after migrations'
+  ok 'migration 024 adds notifications.push_sent_at' ([int]$hasPushColumn -eq 1) 'push_sent_at is missing after migrations'
+
+  $form = get "$base/order.php?id=$reviewOrder" $vbu
+  ok 'a completed order offers the buyer a review form' (($form -match 'action="/review_submit.php"') -and ($form -match 'name="rating"')) 'review form missing'
+  $t = csrf $form
+  post "$base/review_submit.php" $vbu @{ csrf_token = $t; order_id = $reviewOrder; rating = '5'; comment = 'Great produce and a smooth handover.' } | Out-Null
+  $reviewCount = [int](dbq "SELECT COUNT(*) FROM farmer_reviews WHERE order_id = $reviewOrder")
+  $reviewRating = dbq "SELECT rating FROM farmer_reviews WHERE order_id = $reviewOrder"
+  ok 'a completed order accepts one review' ($reviewCount -eq 1) "review rows: $reviewCount"
+  ok 'the submitted rating is stored' ([int]$reviewRating -eq 5) "rating stored as '$reviewRating'"
+
+  $t = csrf (get "$base/order.php?id=$reviewOrder" $vbu)
+  post "$base/review_submit.php" $vbu @{ csrf_token = $t; order_id = $reviewOrder; rating = '4'; comment = 'Second review' } | Out-Null
+  $reviewCount = [int](dbq "SELECT COUNT(*) FROM farmer_reviews WHERE order_id = $reviewOrder")
+  ok 'a second review for the same order is refused' ($reviewCount -eq 1) "duplicate created, rows: $reviewCount"
+
+  $profile = get "$base/profile.php?id=$reviewFarmerId" $vbu
+  ok 'the farmer profile shows the average rating' (($profile -match '>5</strong>') -and ($profile -match '1 review')) 'rating aggregate missing'
+  ok 'the farmer profile shows the review comment' ($profile -match 'Great produce and a smooth handover') 'review body missing'
+  ok 'the profile links the farm area to a map' (($profile -match 'google\.com/maps/search/\?api=1') -and ($profile -match 'San(%20|\+)Isidro')) 'map link missing or not area-scoped'
+
+  $reviewOrder2 = [int](dbq "INSERT INTO orders (order_number, buyer_id, farmer_id, listing_id, quantity, unit_price, status, completed_at) VALUES ('ORD-HTTP-REVIEW2', $buyerId, $reviewFarmerId, $reviewListing, 1.0000, 20.00, 'completed', NOW()); SELECT LAST_INSERT_ID();")
+  $t = csrf (get "$base/order.php?id=$reviewOrder2" $vbu)
+  post "$base/review_submit.php" $vbu @{ csrf_token = $t; order_id = $reviewOrder2; rating = '9'; comment = '' } | Out-Null
+  $badRating = [int](dbq "SELECT COUNT(*) FROM farmer_reviews WHERE order_id = $reviewOrder2")
+  ok 'a rating outside 1-5 is refused' ($badRating -eq 0) 'rating 9 created a row'
+
+  $pendingOrder = dbq "SELECT id FROM orders WHERE order_number = 'ORD-HTTP1';"
+  $outsider = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+  login 'http-open@x.test' $outsider
+  $t = csrf (get "$base/order.php?id=$pendingOrder" $outsider)
+  post "$base/review_submit.php" $outsider @{ csrf_token = $t; order_id = $pendingOrder; rating = '5'; comment = 'Too early' } | Out-Null
+  $earlyReview = [int](dbq "SELECT COUNT(*) FROM farmer_reviews WHERE order_id = $pendingOrder")
+  ok 'a pending order cannot be reviewed' ($earlyReview -eq 0) 'a pending order produced a review'
+
+  $t = csrf (get "$base/order.php?id=$reviewOrder" $vbu)
+  post "$base/message_send.php" $vbu @{ csrf_token = $t; order_id = $reviewOrder; body = 'Is pickup on Saturday okay?' } | Out-Null
+  $msgCount = [int](dbq "SELECT COUNT(*) FROM order_messages WHERE order_id = $reviewOrder")
+  ok 'the buyer can message the farmer on an order' ($msgCount -eq 1) "message rows: $msgCount"
+
+  $farmerSess = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+  login 'http-farmer@x.test' $farmerSess
+  $thread = get "$base/order.php?id=$reviewOrder" $farmerSess
+  ok 'the farmer sees the order thread' ($thread -match 'Is pickup on Saturday okay') 'message not rendered'
+  $readAt = dbq "SELECT read_at FROM order_messages WHERE order_id = $reviewOrder ORDER BY id LIMIT 1"
+  ok 'opening the thread marks the other side read' ($readAt -ne 'NULL' -and $readAt -ne '') "read_at is '$readAt'"
+
+  $t = csrf $thread
+  post "$base/message_send.php" $farmerSess @{ csrf_token = $t; order_id = $reviewOrder; body = 'Saturday works.' } | Out-Null
+  $msgCount = [int](dbq "SELECT COUNT(*) FROM order_messages WHERE order_id = $reviewOrder")
+  ok 'the farmer can reply' ($msgCount -eq 2) "message rows: $msgCount"
+  $buyerNotify = [int](dbq "SELECT COUNT(*) FROM notifications WHERE user_id = $buyerId AND category = 'messages'")
+  ok 'a reply notifies the buyer in-app' ($buyerNotify -ge 1) "notifications: $buyerNotify"
+
+  $t = csrf (get "$base/order.php?id=$pendingOrder" $outsider)
+  post "$base/message_send.php" $outsider @{ csrf_token = $t; order_id = $reviewOrder; body = 'I am not on this order.' } | Out-Null
+  $msgCount = [int](dbq "SELECT COUNT(*) FROM order_messages WHERE order_id = $reviewOrder")
+  ok 'an outsider cannot post to the thread' ($msgCount -eq 2) 'outsider message was stored'
+
+  $t = csrf (get "$base/order.php?id=$reviewOrder" $vbu)
+  post "$base/message_send.php" $vbu @{ csrf_token = $t; order_id = $reviewOrder; body = ('x' * 2001) } | Out-Null
+  $msgCount = [int](dbq "SELECT COUNT(*) FROM order_messages WHERE order_id = $reviewOrder")
+  ok 'a message over 2000 characters is refused' ($msgCount -eq 2) 'oversized message was stored'
+
+  $dash = get "$base/dashboard.php" $farmerSess
+  ok 'the farmer dashboard shows the restock forecast' ($dash -match 'Restock forecast') 'panel missing'
+  ok 'the forecast names a listing with recent sales' ($dash -match 'HTTP Review Produce') 'listing missing from forecast'
+  ok 'the forecast suggests a restock quantity' ($dash -match 'Suggested restock') 'suggestion column missing'
+
+  $adminSess = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+  login 'http-admin@x.test' $adminSess
+  $adminPage = get "$base/admin_reviews.php" $adminSess
+  $reviewId = dbq "SELECT id FROM farmer_reviews WHERE order_id = $reviewOrder"
+  ok 'the admin review list renders the review' (($adminPage -match 'Great produce') -and ($adminPage -match 'Hide')) 'review not listed'
+  $t = csrf $adminPage
+  post "$base/admin_reviews.php" $adminSess @{ csrf_token = $t; review_id = $reviewId; action = 'hide'; reason = 'Test hide' } | Out-Null
+  $status = dbq "SELECT status FROM farmer_reviews WHERE id = $reviewId"
+  ok 'an admin can hide a review' ($status -eq 'hidden') "status is '$status'"
+  $audit = [int](dbq "SELECT COUNT(*) FROM admin_audit_log WHERE action = 'review_hidden' AND entity_type = 'farmer_review' AND entity_id = $reviewId")
+  ok 'hiding a review is audited' ($audit -eq 1) "audit rows: $audit"
+  $profileHidden = get "$base/profile.php?id=$reviewFarmerId" $vbu
+  ok 'a hidden review leaves the public average' (-not ($profileHidden -match 'Great produce and a smooth handover')) 'hidden review is still public'
+
+  $t = csrf (get "$base/admin_reviews.php" $adminSess)
+  post "$base/admin_reviews.php" $adminSess @{ csrf_token = $t; review_id = $reviewId; action = 'restore' } | Out-Null
+  $status = dbq "SELECT status FROM farmer_reviews WHERE id = $reviewId"
+  ok 'an admin can restore a review' ($status -eq 'visible') "status is '$status'"
+
+  $settings = get "$base/settings.php" $vbu
+  ok 'settings offers the device notification toggle' (($settings -match 'id="push-toggle"') -and ($settings -match 'data-vapid="[A-Za-z0-9_-]{40,}"')) 'push toggle missing'
+  $t = csrf $settings
+  $pushEndpoint = 'https://push.example.test/send/abc123'
+  $p256dh = 'B' + ('a' * 86)
+  $pushAuth = 'a' * 22
+  post "$base/push_subscribe.php" $vbu @{ csrf_token = $t; action = 'subscribe'; endpoint = $pushEndpoint; p256dh = $p256dh; auth = $pushAuth } | Out-Null
+  $pushRows = [int](dbq "SELECT COUNT(*) FROM push_subscriptions WHERE user_id = $buyerId")
+  ok 'a valid push subscription is stored' ($pushRows -eq 1) "subscription rows: $pushRows"
+
+  $t = csrf (get "$base/settings.php" $vbu)
+  post "$base/push_subscribe.php" $vbu @{ csrf_token = $t; action = 'subscribe'; endpoint = 'http://plain.example.test/x'; p256dh = $p256dh; auth = $pushAuth } | Out-Null
+  $pushRows = [int](dbq "SELECT COUNT(*) FROM push_subscriptions WHERE user_id = $buyerId")
+  ok 'a non-https push endpoint is refused' ($pushRows -eq 1) "subscription rows: $pushRows"
+
+  dbq "UPDATE notifications SET push_sent_at = NOW() WHERE user_id = $buyerId AND push_sent_at IS NULL" | Out-Null
+  dbq "INSERT INTO notifications (user_id, category, title, body, link) VALUES ($buyerId, 'orders', 'Push test', 'Body text', 'notifications.php')" | Out-Null
+  $pending = get "$base/push_pending.php" $vbu
+  ok 'push_pending returns the newest unclaimed notification' ($pending -match 'Push test') "response: $pending"
+  $claimed = [int](dbq "SELECT COUNT(*) FROM notifications WHERE user_id = $buyerId AND title = 'Push test' AND push_sent_at IS NOT NULL")
+  ok 'push_pending claims the notification so it is not shown twice' ($claimed -eq 1) 'notification was not claimed'
+  $pending2 = get "$base/push_pending.php" $vbu
+  ok 'a second poll returns no notification' ($pending2.Trim() -eq '{}') "response: $pending2"
+
+  $t = csrf (get "$base/settings.php" $vbu)
+  post "$base/push_subscribe.php" $vbu @{ csrf_token = $t; action = 'unsubscribe'; endpoint = $pushEndpoint } | Out-Null
+  $pushRows = [int](dbq "SELECT COUNT(*) FROM push_subscriptions WHERE user_id = $buyerId")
+  ok 'unsubscribing removes the device' ($pushRows -eq 0) "subscription rows: $pushRows"
 
   "`n--- logout ---"
   $c = get "$base/logout.php" $s

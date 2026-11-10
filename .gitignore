@@ -46,6 +46,7 @@ Thumbs.db
 .hallmark/
 .impeccable/
 node_modules/
+public/assets/dist/
 
 # --- PHP specifics ---
 *.log

@@ -4,8 +4,8 @@
   "description": "Connecting verified Filipino farms directly with buyers. Farm to table, no middlemen.",
   "start_url": "/index.php",
   "display": "standalone",
-  "background_color": "#faf6ef",
-  "theme_color": "#1f4d38",
+  "background_color": "#ffffff",
+  "theme_color": "#1b4332",
   "orientation": "portrait-primary",
   "icons": [
     {

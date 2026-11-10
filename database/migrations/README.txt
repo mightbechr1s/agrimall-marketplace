@@ -1,10 +1,11 @@
 # Database migrations
 
 `database/schema.sql` holds 17 base tables. The migrations below take that to
-21 by adding `password_resets`, `user_preferences`, `notifications` and
-`rate_limits`, plus columns on `users`. `tools/db-reset.php` loads `schema.sql`
-and then replays every file in this directory in sorted filename order, so a
-fresh rebuild only needs that one command.
+24 by adding `password_resets`, `user_preferences`, `notifications`,
+`rate_limits`, `farmer_reviews`, `order_messages` and `push_subscriptions`,
+plus columns on `users` and `notifications`. `tools/db-reset.php` loads
+`schema.sql` and then replays every file in this directory in sorted filename
+order, so a fresh rebuild only needs that one command.
 
 ## The migrations
 
@@ -22,6 +23,17 @@ fresh rebuild only needs that one command.
 | `011_audit_reason.sql` | Adds `reason` column to `admin_audit_log` |
 | `012_query_indexes.sql` | 7 composite indexes on orders, listing_images, produce_listings, order_status_history (hot-path query optimization) |
 | `013_active_listings_view_expiry.sql` | Recreates `v_active_listings` view (expiry filter removed from view; handled in PHP via listing_is_expired) |
+| `014_farmer_contact_details.sql` | Farmer contact columns used by the profile and order pages |
+| `015_saved_price_tracking.sql` | Saved-listing price snapshot columns |
+| `016_deals_discount.sql` | `produce_listings.discount_percent` for deals |
+| `017_refresh_active_listings_view.sql` | Recreates `v_active_listings` after the column changes |
+| `018_expired_listings_visible.sql` | Keeps expired listings visible to their owner instead of hiding them |
+| `019_admin_hold.sql` | `orders.admin_hold` and `admin_hold_reason` |
+| `020_session_version.sql` | `users.session_version`, used to invalidate old sessions |
+| `021_farmer_reviews.sql` | `farmer_reviews` table; one visible/hidden review per completed order (`uq_review_order`) |
+| `022_order_messages.sql` | `order_messages` table for the buyer/farmer order thread |
+| `023_push_subscriptions.sql` | `push_subscriptions` table for web push devices |
+| `024_push_delivered.sql` | `notifications.push_sent_at` and `idx_notify_push_pending`, so a push is not shown twice |
 
 There is no `001`. Numbering starts at `002` because the base tables it would
 have followed are now folded into `schema.sql`.
@@ -46,6 +58,11 @@ whole set twice more:
 | `011_audit_reason.sql` | clean |
 | `012_query_indexes.sql` | clean (guarded per index via information_schema) |
 | `013_active_listings_view_expiry.sql` | clean (`CREATE OR REPLACE VIEW`) |
+| `014`–`020` | clean (column/enum changes are guarded or already present) |
+| `021_farmer_reviews.sql` | clean (`CREATE TABLE IF NOT EXISTS`) |
+| `022_order_messages.sql` | clean (`CREATE TABLE IF NOT EXISTS`) |
+| `023_push_subscriptions.sql` | clean (`CREATE TABLE IF NOT EXISTS`) |
+| `024_push_delivered.sql` | clean (guarded column and index) |
 
 Also verified by re-applying all eight to the live database, which already had
 them: every file exited 0 and the schema and row counts were unchanged.
@@ -68,9 +85,8 @@ this and failed with `ERROR 1046 No database selected` when run without one.
 
 ## Applied state
 
-The live development database has all eight applied. Last confirmed 2026-10-03:
-21 tables plus 2 views, `password_resets.expires_at` is `DATETIME`, and the
-eight `CHECK` constraints from `008` are present.
+The live development database has all 24 applied. Last confirmed 2026-10-30:
+24 tables plus 2 views, and the new review, message and push tables are present.
 
 ```sql
 SELECT COLUMN_NAME, DATA_TYPE, EXTRA
@@ -96,7 +112,7 @@ dump, carries the corrected definition too.
 
 ## Adding a new migration
 
-Number it `009_`, give it a filename that says what it changes, and add a row
+Number it with the next integer, give it a filename that says what it changes, and add a row
 to the table above. It has to be safe to run against a database that does not
 have it, and against one that does, because `db-reset.php` replays the whole
 directory every time someone rebuilds.
