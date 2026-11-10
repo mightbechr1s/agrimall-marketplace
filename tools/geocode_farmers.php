@@ -20,4 +20,3 @@ foreach ($rows as $r) {
     usleep(1100000);
 }
 echo "Done. Updated $updated of " . count($rows) . " farmers.\n";
-PY

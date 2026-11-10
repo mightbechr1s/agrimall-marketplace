@@ -178,6 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 DB::pdo()->prepare('UPDATE farmer_profiles SET latitude = :lat, longitude = :lng WHERE user_id = :uid')
                     ->execute(['lat' => $coords[0], 'lng' => $coords[1], 'uid' => $userId]);
             }
+            }
 
             flash_set('success', $role === 'farmer'
                 ? $l($copy['auth'], 'flash_farmer_reg')
