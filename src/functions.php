@@ -100,6 +100,79 @@ function listing_upload_dir(): string
     return $dir;
 }
 
+/**
+ * Convert an uploaded image to WebP (quality 80) and generate a 400px-wide
+ * thumbnail, both alongside the original. Returns the WebP path (relative
+ * '/uploads/listings/...') on success, or null if GD is unavailable or the
+ * conversion fails, so callers can fall back to the original file.
+ *
+ * Self-contained: uses only ext/gd. Safe to call when GD is missing.
+ */
+function optimize_uploaded_image(string $srcPath, string $relativeDir = '/uploads/listings'): ?string
+{
+    if (!extension_loaded('gd') || !function_exists('imagewebp')) {
+        return null;
+    }
+    if (!is_file($srcPath)) {
+        return null;
+    }
+    $info = @getimagesize($srcPath);
+    if ($info === false) {
+        return null;
+    }
+    $src = match ($info[2]) {
+        IMAGETYPE_JPEG => @imagecreatefromjpeg($srcPath),
+        IMAGETYPE_PNG => @imagecreatefrompng($srcPath),
+        IMAGETYPE_WEBP => @imagecreatefromwebp($srcPath),
+        IMAGETYPE_GIF => @imagecreatefromgif($srcPath),
+        default => false,
+    };
+    if ($src === false) {
+        return null;
+    }
+
+    $w = imagesx($src);
+    $h = imagesy($src);
+    // Cap dimensions to avoid memory blowups on huge uploads.
+    $maxSide = 2000;
+    if ($w > $maxSide || $h > $maxSide) {
+        $scale = $maxSide / max($w, $h);
+        $nw = (int) round($w * $scale);
+        $nh = (int) round($h * $scale);
+        $scaled = imagecreatetruecolor($nw, $nh);
+        imagecopyresampled($scaled, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+        imagedestroy($src);
+        $src = $scaled;
+        $w = $nw;
+        $h = $nh;
+    }
+
+    $base = pathinfo($srcPath, PATHINFO_FILENAME);
+    $dir = dirname($srcPath);
+    $webpPath = $dir . '/' . $base . '.webp';
+
+    // Preserve transparency for PNG/GIF by keeping alpha.
+    imagesavealpha($src, true);
+    if (!imagewebp($src, $webpPath, 80)) {
+        imagedestroy($src);
+        return null;
+    }
+
+    // Thumbnail (400px wide) for grid cards.
+    $thumbW = min(400, $w);
+    $thumbH = (int) round($h * ($thumbW / $w));
+    if ($thumbW > 0 && $thumbH > 0 && ($thumbW !== $w || $thumbH !== $h)) {
+        $thumb = imagecreatetruecolor($thumbW, $thumbH);
+        imagecopyresampled($thumb, $src, 0, 0, 0, 0, $thumbW, $thumbH, $w, $h);
+        $thumbPath = $dir . '/' . $base . '_thumb.webp';
+        imagewebp($thumb, $thumbPath, 75);
+        imagedestroy($thumb);
+    }
+
+    imagedestroy($src);
+    return $relativeDir . '/' . basename($webpPath);
+}
+
 /** FR-VAL-005: a decoded image may not exceed 20 megapixels or 6,000 px a side.
  *  A file of a couple of hundred bytes can declare 40,000 x 40,000 in its header;
  *  without this, whatever decodes it later pays for the expansion rather than the

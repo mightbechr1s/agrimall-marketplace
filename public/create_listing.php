@@ -149,7 +149,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $uploadPath = listing_upload_dir() . '/' . $filename;
 
             if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                $primaryImage = '/uploads/listings/' . $filename;
+                $optimized = optimize_uploaded_image($uploadPath);
+                if ($optimized) {
+                    @unlink($uploadPath);
+                    $primaryImage = $optimized;
+                } else {
+                    $primaryImage = '/uploads/listings/' . $filename;
+                }
             } else {
                 $errors[] = $l($copy['lf'], 'err_upload_primary');
             }
@@ -194,7 +200,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $uploadPath = listing_upload_dir() . '/' . $filename;
 
                     if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                        $galleryImages[] = '/uploads/listings/' . $filename;
+                        $optimized = optimize_uploaded_image($uploadPath);
+                        if ($optimized) {
+                            @unlink($uploadPath);
+                            $galleryImages[] = $optimized;
+                        } else {
+                            $galleryImages[] = '/uploads/listings/' . $filename;
+                        }
                     } else {
                         $errors[] = $l($copy['lf'], 'err_upload_gallery');
                     }
