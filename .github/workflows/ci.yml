@@ -8,18 +8,43 @@ on:
 jobs:
   checks:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ''
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_DATABASE: animal_marketplace
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, intl, fileinfo, gd
+          extensions: mbstring, intl, fileinfo, gd, pdo_mysql, mysqli
           coverage: none
 
       # Tests read config/config.php; the example is safe (no secrets).
       - name: Prepare config
         run: cp config/config.example.php config/config.php
+
+      # Wait for MySQL to be ready and ensure the database exists.
+      - name: Wait for MySQL
+        run: |
+          for i in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 --silent 2>/dev/null; then break; fi
+            sleep 2
+          done
+          mysql -h 127.0.0.1 -uroot -e "CREATE DATABASE IF NOT EXISTS animal_marketplace;"
 
       - name: Lint
         run: php tests/lint.php
@@ -38,3 +63,4 @@ jobs:
 
       - name: Docs/code drift
         run: php tests/docs_test.php
+PY
