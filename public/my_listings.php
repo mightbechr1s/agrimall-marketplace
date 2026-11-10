@@ -88,12 +88,60 @@ require __DIR__ . '/partials/dashboard-layout.php';
 </div>
 
 <?php if ($farmerListings): ?>
+<form method="post" action="bulk_listing_action.php" id="bulk-form">
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <label class="d-flex align-items-center gap-2 mb-0" style="cursor:pointer;">
+        <input type="checkbox" id="select-all-listings" class="form-check-input">
+        <span class="small text-muted">Select all</span>
+    </label>
+    <div id="bulk-actions" class="d-flex gap-2" style="display:none !important;">
+        <button type="submit" name="action" value="activate" class="btn btn-sm btn-outline-success"><i class="bi bi-check-circle me-1"></i>Activate</button>
+        <button type="submit" name="action" value="deactivate" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pause-circle me-1"></i>Deactivate</button>
+        <button type="submit" name="action" value="delete" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete selected listings? This cannot be undone.');"><i class="bi bi-trash me-1"></i>Delete</button>
+    </div>
+    <span id="bulk-count" class="small text-muted"></span>
+</div>
 <div class="grid">
     <?php foreach ($farmerListings as $listing): ?>
-        <?php $mode = 'farmer'; $showActions = true; ?>
+        <?php $mode = 'farmer'; $showActions = true; $showBulkSelect = true; ?>
         <?php include __DIR__ . '/partials/listing-card.php'; ?>
     <?php endforeach; ?>
 </div>
+    <?php
+    $page = $listingsPage;
+    $totalPages = $listingsPages;
+    $pageParam = 'listings_page';
+    $param = '';
+    $labels = [
+        'prev' => t($navCopy['ui'], 'pager_prev'),
+        'next' => t($navCopy['ui'], 'pager_next'),
+        'page' => t($navCopy['ui'], 'pager_page'),
+        'of'   => t($navCopy['ui'], 'pager_of'),
+    ];
+    include __DIR__ . '/partials/pager.php';
+    ?>
+</form>
+<script>
+(function () {
+    var selectAll = document.getElementById('select-all-listings');
+    var checks = document.querySelectorAll('.bulk-check-input');
+    var actions = document.getElementById('bulk-actions');
+    var countEl = document.getElementById('bulk-count');
+    function update() {
+        var n = 0;
+        checks.forEach(function (c) { if (c.checked) n++; });
+        if (actions) actions.style.display = n > 0 ? 'flex' : 'none';
+        if (countEl) countEl.textContent = n > 0 ? n + ' selected' : '';
+        if (selectAll) selectAll.checked = (n === checks.length && checks.length > 0);
+    }
+    if (selectAll) selectAll.addEventListener('change', function () {
+        checks.forEach(function (c) { c.checked = selectAll.checked; });
+        update();
+    });
+    checks.forEach(function (c) { c.addEventListener('change', update); });
+    update();
+})();
+</script>
     <?php
     $page = $listingsPage;
     $totalPages = $listingsPages;

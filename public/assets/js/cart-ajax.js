@@ -70,11 +70,22 @@
               swapButtonText(btn, data.message || 'Added to cart', 1400);
             }
           }
-          // Only ever show what the server said. An English fallback here would put
-          // untranslated text on a Tagalog page: getting the copy right is the
-          // server's job, not the toast's.
-          if (!btn && data.message && window.animalToast) {
-            window.animalToast(data.message, { type: 'success' });
+          // Auto-advance to the next listing on browse grids after a successful add.
+          if (document.getElementById('product-grid')) {
+            var card = form.closest ? form.closest('article.card, .card') : null;
+            if (card) {
+              var next = card.nextElementSibling;
+              while (next && !(next.classList && next.classList.contains('card'))) {
+                next = next.nextElementSibling;
+              }
+              if (next) {
+                setTimeout(function () {
+                  next.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  next.classList.add('card--just-advanced');
+                  setTimeout(function () { next.classList.remove('card--just-advanced'); }, 1400);
+                }, 250);
+              }
+            }
           }
         } else if (data && data.message) {
           swapButtonText(btn, data.message, 2600);

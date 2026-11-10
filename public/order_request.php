@@ -1,7 +1,7 @@
 <?php
 require __DIR__ . '/../src/bootstrap.php';
 require_login();
-require_role('buyer');
+require_role('buyer', 'admin', 'manager');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -9,6 +9,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
 $i18nAll = include __DIR__ . '/../src/i18n_copy.php';
+
+// Bot detection (honeypot + time token issued on listing.php)
+if (is_bot_request('order_request', $_POST, 'website', 0.0)) {
+    http_response_code(400);
+    exit('Invalid request.');
+}
 $ordersCopy = $i18nAll['orders'] ?? [];
 $listingActionsCopy = $i18nAll['listing_actions'] ?? [];
 $adminVerifyCopy = $i18nAll['admin_verify'] ?? [];
@@ -17,10 +23,10 @@ $cartCopy = $i18nAll['cart'] ?? [];
 $listingId = (int) ($_POST['listing_id'] ?? 0);
 $quantity  = number_in($_POST['quantity'] ?? null, 0.0001, MAX_QUANTITY);
 $method    = ($_POST['delivery_method'] ?? 'pickup') === 'farmer_delivery' ? 'farmer_delivery' : 'pickup';
-$address   = trim((string) ($_POST['delivery_address'] ?? ''));
+$address   = mb_substr(trim((string) ($_POST['delivery_address'] ?? '')), 0, FIELD_LIMITS['delivery_address'] ?? 500);
 $pickupDate = (string) ($_POST['preferred_pickup_date'] ?? '');
 $pickupTime = (string) ($_POST['preferred_pickup_time'] ?? '');
-$note      = trim((string) ($_POST['buyer_note'] ?? ''));
+$note      = mb_substr(trim((string) ($_POST['buyer_note'] ?? '')), 0, FIELD_LIMITS['buyer_note'] ?? 500);
 
 $pdo = DB::pdo();
 

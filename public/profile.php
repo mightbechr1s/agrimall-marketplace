@@ -84,6 +84,36 @@ $stats = $statsStmt->fetch() ?: ['total_orders' => 0, 'avg_hours' => null];
 $totalOrders = (int) $stats['total_orders'];
 $avgHours = $stats['avg_hours'] !== null ? (float) $stats['avg_hours'] : null;
 
+// Visible reviews only: an admin-hidden review stays in the table as evidence
+// but must not influence the public average.
+$ratingStmt = $pdo->prepare(
+    "SELECT COUNT(*) AS total, AVG(rating) AS average
+       FROM farmer_reviews WHERE farmer_id = :id AND status = 'visible'"
+);
+$ratingStmt->execute(['id' => $farmerId]);
+$ratingRow = $ratingStmt->fetch() ?: ['total' => 0, 'average' => null];
+$ratingCount = (int) $ratingRow['total'];
+$ratingAvg = $ratingRow['average'] !== null ? round((float) $ratingRow['average'], 1) : null;
+
+$reviewsStmt = $pdo->prepare(
+    "SELECT r.rating, r.comment, r.created_at, COALESCE(bp.full_name, 'Buyer') AS buyer_name
+       FROM farmer_reviews r
+       LEFT JOIN buyer_profiles bp ON bp.user_id = r.buyer_id
+      WHERE r.farmer_id = :id AND r.status = 'visible'
+      ORDER BY r.created_at DESC
+      LIMIT 5"
+);
+$reviewsStmt->execute(['id' => $farmerId]);
+$reviews = $reviewsStmt->fetchAll();
+
+// Public review authors are shown as "First L." — a full name plus a review is
+// more identity than a marketplace needs to publish.
+$reviewAuthor = static function (string $name): string {
+    $parts = preg_split('/\s+/', trim($name)) ?: [];
+    if (!$parts) return 'Buyer';
+    return $parts[0] . (count($parts) > 1 ? ' ' . mb_substr((string) end($parts), 0, 1) . '.' : '');
+};
+
 $pageTitle = $farmer['farm_name'];
 $activeNav = 'browse';
 $role = function_exists('current_user_role') ? current_user_role() : null;
@@ -110,7 +140,25 @@ if ($sidebarShell) {
                     <?php if ($farmer['verification_status'] === 'approved'): ?>
                         <span class="badge text-bg-success mb-2"><i class="bi bi-patch-check-fill"></i> Verified farmer</span>
                     <?php endif; ?>
+                    <?php if ($ratingCount > 0): ?>
+                        <div class="mb-2" aria-label="<?= e((string) $ratingAvg) ?> out of 5 stars from <?= $ratingCount ?> review<?= $ratingCount === 1 ? '' : 's' ?>">
+                            <span class="text-warning" aria-hidden="true"><?php for ($i = 1; $i <= 5; $i++): ?><i class="bi <?= $i <= (int) round((float) $ratingAvg) ? 'bi-star-fill' : 'bi-star' ?>"></i><?php endfor; ?></span>
+                            <strong class="ms-1"><?= e((string) $ratingAvg) ?></strong>
+                            <span class="text-muted small">(<?= $ratingCount ?> review<?= $ratingCount === 1 ? '' : 's' ?>)</span>
+                        </div>
+                    <?php endif; ?>
+                    <?php
+                    // Area, not the farm gate: the SRS keeps exact addresses private.
+                    $mapQuery = trim(implode(', ', array_filter([
+                        (string) $farmer['barangay'],
+                        (string) $farmer['municipality_city'],
+                        (string) $farmer['province'],
+                    ])));
+                    ?>
                     <p class="text-muted small mb-2"><i class="bi bi-geo-alt-fill"></i> <?= e($farmer['barangay']) ?>, <?= e($farmer['municipality_city']) ?>, <?= e($farmer['province']) ?></p>
+                    <?php if ($mapQuery !== ''): ?>
+                        <p class="small mb-2"><a href="https://www.google.com/maps/search/?api=1&amp;query=<?= rawurlencode($mapQuery) ?>" target="_blank" rel="noopener noreferrer"><i class="bi bi-map me-1"></i>View area on map</a></p>
+                    <?php endif; ?>
                     <?php if (!empty($farmer['farm_description'])): ?>
                         <p class="small mb-2"><?= e($farmer['farm_description']) ?></p>
                     <?php endif; ?>
@@ -184,6 +232,39 @@ if ($sidebarShell) {
                     ?>
                 <?php endif; ?>
             <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body p-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                        <h3 class="h5 mb-0">Reviews</h3>
+                        <?php if ($ratingCount > 0): ?>
+                            <span class="text-muted small"><?= e((string) $ratingAvg) ?> average · <?= $ratingCount ?> total</span>
+                        <?php endif; ?>
+                    </div>
+                    <?php if (!$reviews): ?>
+                        <p class="text-muted mb-0">No reviews yet. Buyers can review a farmer after a completed order.</p>
+                    <?php else: ?>
+                        <?php foreach ($reviews as $r): ?>
+                            <div class="border-top pt-3 mt-3">
+                                <div class="d-flex justify-content-between gap-3">
+                                    <strong><?= e($reviewAuthor($r['buyer_name'])) ?></strong>
+                                    <span class="text-muted small"><?= e(date('M j, Y', strtotime($r['created_at']))) ?></span>
+                                </div>
+                                <div class="text-warning small" aria-label="<?= (int) $r['rating'] ?> out of 5 stars">
+                                    <span aria-hidden="true"><?php for ($i = 1; $i <= 5; $i++): ?><i class="bi <?= $i <= (int) $r['rating'] ? 'bi-star-fill' : 'bi-star' ?>"></i><?php endfor; ?></span>
+                                </div>
+                                <?php if ($r['comment']): ?>
+                                    <p class="mb-0 mt-1"><?= nl2br(e($r['comment'])) ?></p>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
     </div>
 <?php if (!$sidebarShell): ?>

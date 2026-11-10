@@ -1,0 +1,71 @@
+React islands — scoping note (option B)
+======================================
+
+Status: proof of concept landed. A Vite + React toolchain is wired in and a
+trivial island mounts on browse.php. No existing behaviour changed.
+
+What exists today
+-----------------
+- vite.config.js builds public/assets/js/islands/main.jsx -> public/assets/dist/.
+- public/assets/js/islands/main.jsx is the island registry: containers with
+  data-island="name" + data-props='...' get a React root on DOMContentLoaded.
+- public/assets/js/islands/HelloIsland.jsx is the first (demo) island.
+- browse.php renders one island container in the section head and loads the
+  Vite bundle via the .vite/manifest.json filename (no hardcoded hash).
+- npm run build:islands rebuilds the bundle.
+- public/assets/dist/ is gitignored? Add it to .gitignore if not already.
+
+Why islands fit this codebase
+----------------------------
+The project already uses vanilla-JS islands (save-ajax.js, cart-ajax.js,
+toast.js) for reactive bits. React adds value only where state gets complex:
+- browse grid: filters + sort + pagination without a full reload
+- order form: quantity sync, delivery/pickup toggle, price calc
+- admin tables: sortable/filterable with client-side state
+Everything else (routing, auth, SEO, DB) stays in PHP.
+
+First real island: browse grid
+-----------------------------
+1. API endpoint: public/api/listings.php
+   - Accepts GET: q, category, deals, trending, price_min, price_max, sort, page
+   - Returns JSON: { total, page, totalPages, listings: [...] }
+   - Reuses the same WHERE logic as browse.php (extract into a shared helper in
+     src/listings_query.php so both pages stay in sync).
+2. Component: public/assets/js/islands/BrowseGrid.jsx
+   - Props: initialListings, initialTotal, initialPage, initialTotalPages, filters
+   - State: filters, sort, page, listings, loading
+   - On filter change: fetch api/listings.php, replace grid, update URL via
+     history.replaceState (keeps shareable links working).
+   - Renders listing cards as JSX, reusing the same markup as listing-card.php.
+   - Cart/save forms stay as plain <form> posts (no need to React-ify them).
+3. browse.php becomes a thin shell: render the toolbar (still PHP for SEO) and a
+   <div data-island="browse-grid" data-props="..."> placeholder; PHP renders
+   the first page server-side inside the placeholder for no-JS/SEO fallback.
+4. Tests: add one Playwright e2e test that filters and asserts the grid updates
+   without a navigation. Keep http_test.ps1 (it checks the PHP shell renders).
+
+Effort estimate
+---------------
+- Extract query helper + API endpoint: 1 day
+- BrowseGrid component + card markup port: 2 days
+- URL sync + pagination + empty states: 1 day
+- Tests + polish: 1 day
+Total: ~1 week for the first island.
+
+Follow-up islands (in order)
+----------------------------
+1. Order form (listing.php) - quantity sync, delivery toggle, min/max validation.
+2. Admin tables (orders, listings) - client-side sort/filter.
+3. Cart quantity stepper.
+
+What NOT to migrate
+-------------------
+- Routing, auth, CSRF, sessions, i18n strings stay in PHP.
+- SEO-critical pages (index, listing, browse first page) keep server rendering.
+- No full SPA. The service worker keeps caching the PHP shell.
+
+Open questions
+--------------
+- Add public/assets/dist/ to .gitignore and build in CI, or commit the bundle?
+- Should the API live under public/api/ or a new src/api/ fronted by router.php?
+- TypeScript or plain JSX? Recommend plain JSX first, TS later.

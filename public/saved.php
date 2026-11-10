@@ -58,6 +58,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
         </div>
         <a href="dashboard.php" class="btn btn-outline btn-sm mb-3"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i> Back to dashboard</a>
         <a href="compare.php" class="btn btn-outline btn-sm mb-3 ms-2"><i class="bi bi-columns me-1" aria-hidden="true"></i> Compare saved</a>
+        <a href="saved_searches.php" class="btn btn-outline btn-sm mb-3 ms-2"><i class="bi bi-bookmark me-1" aria-hidden="true"></i> Saved searches</a>
 
         <?php if (!$savedListings): ?>
             <div class="empty-state text-center">

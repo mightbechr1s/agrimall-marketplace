@@ -33,7 +33,7 @@ $oc->execute($params);
 $total = (int) $oc->fetchColumn();
 $pages = max(1, (int) ceil($total / $perPage));
 $page = max(1, min($pages, $page));
-$os = $pdo->prepare("SELECT id, order_number, status, created_at FROM v_order_summary $where ORDER BY created_at DESC LIMIT :lim OFFSET :off");
+$os = $pdo->prepare("SELECT id, order_number, status, created_at, listing_id, quantity, listing_name, unit_symbol, unit_price FROM v_order_summary $where ORDER BY created_at DESC LIMIT :lim OFFSET :off");
 foreach ($params as $k => $v) {
     $os->bindValue(':' . $k, $v, PDO::PARAM_STR);
 }
@@ -67,6 +67,16 @@ require __DIR__ . '/partials/dashboard-layout.php';
             <a href="orders.php" class="btn btn-sm btn-outline-primary">Reset</a>
         </form>
 
+        <?php
+        $statusBadge = static function (string $s): string {
+            return match ($s) {
+                'completed' => 'text-bg-success',
+                'cancelled', 'rejected' => 'text-bg-danger',
+                'pending', 'delivery_fee_review' => 'text-bg-warning',
+                default => 'text-bg-secondary',
+            };
+        };
+        ?>
         <?php if (!$orders): ?>
             <div class="empty-state text-center">
                 <i class="bi bi-receipt empty-state-icon" aria-hidden="true"></i>
@@ -74,19 +84,30 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <p class="empty-state-description">No orders match the selected filter.</p>
             </div>
         <?php else: ?>
-            <ul class="list-group mb-3">
-                <?php foreach ($orders as $order): ?>
-                    <li class="list-group-item d-flex justify-content-between align-items-start gap-3">
-                        <div>
-                            <span class="fw-semibold"><?= e($order['order_number'] ?? ('#' . $order['id'])) ?></span>
-                            <div class="small text-muted"><?= e($order['status'] ?? '') ?></div>
-                        </div>
-                        <div class="text-nowrap small text-muted">
-                            <?= e(date('M j, g:i A', strtotime((string) ($order['created_at'] ?? 'now')))) ?>
-                        </div>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
+            <div class="card">
+                <ul class="list-group list-group-flush">
+                    <?php foreach ($orders as $order): ?>
+                        <li class="list-group-item d-flex justify-content-between align-items-start gap-3">
+                            <div>
+                                <span class="fw-semibold"><?= e($order['order_number'] ?? ('#' . $order['id'])) ?></span>
+                                <div class="small mt-1"><span class="badge <?= $statusBadge($order['status'] ?? '') ?>"><?= e(ucfirst(str_replace('_',' ',$order['status'] ?? ''))) ?></span></div>
+                                <?php if ($role === 'buyer' && $order['status'] === 'completed' && !empty($order['listing_id'])): ?>
+                                <form method="post" action="cart_add.php" class="mt-2 mb-0" data-buy-now="true">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="listing_id" value="<?= (int) $order['listing_id'] ?>">
+                                    <input type="hidden" name="quantity" value="<?= (float) $order['quantity'] ?>">
+                                    <input type="hidden" name="buy_now" value="1">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-repeat me-1"></i>Buy again</button>
+                                </form>
+                                <?php endif; ?>
+                            </div>
+                            <div class="text-nowrap small text-muted">
+                                <?= e(date('M j, g:i A', strtotime((string) ($order['created_at'] ?? 'now')))) ?>
+                            </div>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
         <?php endif; ?>
     </div>
 </div>

@@ -39,6 +39,30 @@ $histStmt = $pdo->prepare('SELECT * FROM order_status_history WHERE order_id = :
 $histStmt->execute(['id' => $orderId]);
 $history = $histStmt->fetchAll();
 
+// A completed order may carry one review from the buyer.
+$reviewStmt = $pdo->prepare('SELECT rating, comment, status, created_at FROM farmer_reviews WHERE order_id = :id');
+$reviewStmt->execute(['id' => $orderId]);
+$review = $reviewStmt->fetch() ?: null;
+$canReview = $role === 'buyer' && $order['status'] === 'completed' && !$review;
+
+// Order thread. Reading the thread is what marks the other side's messages read;
+// an admin looking at the order does not clear anyone's unread badge.
+$msgStmt = $pdo->prepare(
+    'SELECT id, sender_id, sender_role, body, read_at, created_at
+       FROM order_messages
+      WHERE order_id = :id
+      ORDER BY created_at ASC'
+);
+$msgStmt->execute(['id' => $orderId]);
+$messages = $msgStmt->fetchAll();
+$canMessage = in_array($role, ['buyer', 'farmer'], true);
+if ($canMessage) {
+    $pdo->prepare(
+        'UPDATE order_messages SET read_at = NOW()
+          WHERE order_id = :id AND sender_id <> :me AND read_at IS NULL'
+    )->execute(['id' => $orderId, 'me' => $userId]);
+}
+
 $pageTitle = 'Order ' . $order['order_number'];
 $activePage = 'orders';
 require __DIR__ . '/partials/dashboard-layout.php';
@@ -47,6 +71,9 @@ require __DIR__ . '/partials/dashboard-layout.php';
         <div>
             <h1 class="h3 mb-1"><?= e($order['order_number']) ?></h1>
             <?= status_badge($order['status']) ?>
+            <?php if ($role === 'buyer'): ?>
+            <a href="order_track.php?id=<?= $orderId ?>" class="btn btn-outline-primary btn-sm ms-2"><i class="bi bi-geo-alt me-1"></i>Track</a>
+            <?php endif; ?>
         </div>
         <a href="/dashboard.php" class="btn btn-outline btn-sm">Back to Dashboard</a>
     </div>
@@ -86,6 +113,15 @@ require __DIR__ . '/partials/dashboard-layout.php';
                     <span class="detail-value">
                         <strong><?= e($order['listing_name']) ?></strong>
                         <br><small class="text-muted"><?= e($order['farm_name']) ?></small>
+                        <?php if ($role === 'buyer'): ?>
+                        <form method="post" action="cart_add.php" class="mt-2 mb-0" data-buy-now="true">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="listing_id" value="<?= (int) $order['listing_id'] ?>">
+                            <input type="hidden" name="quantity" value="<?= (float) $order['quantity'] ?>">
+                            <input type="hidden" name="buy_now" value="1">
+                            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Buy again</button>
+                        </form>
+                        <?php endif; ?>
                     </span>
                 </div>
                 <div class="detail-row">
@@ -171,6 +207,38 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 </div>
             </div>
 
+            <!-- Messages -->
+            <div class="dash-panel p-4 mt-4" id="messages">
+                <h5 class="mb-3">Messages</h5>
+                <div class="message-thread mb-3">
+                    <?php if (!$messages): ?>
+                        <p class="text-muted small mb-0">No messages yet. Use this thread to agree on quantity, pickup, or delivery.</p>
+                    <?php else: ?>
+                        <?php foreach ($messages as $m): ?>
+                            <?php $mine = (int) $m['sender_id'] === $userId; ?>
+                            <div class="message <?= $mine ? 'message--mine' : '' ?>">
+                                <div class="message-meta">
+                                    <?= $mine ? 'You' : e($m['sender_role'] === 'farmer' ? $order['farm_name'] : $order['buyer_name']) ?>
+                                    · <?= e(date('M j, g:i A', strtotime($m['created_at']))) ?>
+                                </div>
+                                <div><?= nl2br(e($m['body'])) ?></div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+                <?php if ($canMessage): ?>
+                    <form method="post" action="/message_send.php" class="d-flex gap-2 align-items-end">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
+                        <div class="flex-grow-1">
+                            <label class="visually-hidden" for="message-body">Message</label>
+                            <textarea id="message-body" name="body" class="form-control form-control-sm" rows="2" maxlength="2000" required placeholder="Write a message…"></textarea>
+                        </div>
+                        <button class="btn btn-primary btn-sm" type="submit">Send</button>
+                    </form>
+                <?php endif; ?>
+            </div>
+
             <!-- Status Timeline -->
             <div class="dash-panel p-4 mt-4">
                 <h5 class="mb-3">Status Timeline</h5>
@@ -199,6 +267,49 @@ require __DIR__ . '/partials/dashboard-layout.php';
                     <?php endif; ?>
                 </div>
             </div>
+
+            <!-- Review -->
+            <?php if ($review || $canReview): ?>
+            <div class="dash-panel p-4 mt-4" id="review">
+                <h5 class="mb-3"><?= $role === 'buyer' ? 'Your review' : 'Buyer review' ?></h5>
+                <?php if ($review): ?>
+                    <div class="mb-2" aria-label="<?= (int) $review['rating'] ?> out of 5 stars">
+                        <span class="text-warning" aria-hidden="true"><?php for ($i = 1; $i <= 5; $i++): ?><i class="bi <?= $i <= (int) $review['rating'] ? 'bi-star-fill' : 'bi-star' ?>"></i><?php endfor; ?></span>
+                        <span class="text-muted small ms-2"><?= date('M j, Y', strtotime($review['created_at'])) ?></span>
+                        <?php if ($review['status'] === 'hidden'): ?>
+                            <span class="badge text-bg-secondary ms-1">Hidden by admin</span>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ($review['comment']): ?>
+                        <p class="mb-0"><?= nl2br(e($review['comment'])) ?></p>
+                    <?php else: ?>
+                        <p class="text-muted mb-0">No comment.</p>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <form method="post" action="/review_submit.php" class="action-form">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
+                        <div class="mb-2">
+                            <label class="form-label small" for="rating">Rating</label>
+                            <select class="form-select form-select-sm" id="rating" name="rating" required>
+                                <option value="">Choose…</option>
+                                <option value="5">5 — Excellent</option>
+                                <option value="4">4 — Good</option>
+                                <option value="3">3 — Okay</option>
+                                <option value="2">2 — Poor</option>
+                                <option value="1">1 — Bad</option>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small" for="comment">Comment (optional)</label>
+                            <textarea class="form-control form-control-sm" id="comment" name="comment" rows="3" maxlength="1000" placeholder="How was the produce and the handover?"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Post review</button>
+                        <p class="form-text small mb-0 mt-2">Reviews cannot be edited after posting.</p>
+                    </form>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
         </div>
 
         <!-- Actions Sidebar -->
@@ -350,7 +461,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                         <!-- Delivery: farmer completes -->
                     <?php endif; ?>
 
-                <?php elseif ($role === 'admin'): ?>
+                <?php elseif (in_array($role, ['admin', 'manager'], true)): ?>
                     <?php if (!empty($order['admin_hold'])): ?>
                         <div class="alert alert-warning small mb-2">
                             <strong>Held by administrator.</strong>

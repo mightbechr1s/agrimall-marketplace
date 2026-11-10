@@ -91,7 +91,7 @@
       overlay.id = 'logout-confirm-overlay';
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;';
       var box = document.createElement('div');
-      box.style.cssText = 'background:var(--card-bg,#fff);color:var(--text,#111);border-radius:12px;padding:20px 24px;max-width:320px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.25);font-family:var(--font-body,system-ui,sans-serif);';
+      box.style.cssText = 'background:var(--paper,#1e1e1e);color:var(--text,#f1f3f5);border:1px solid var(--borders,rgba(255,255,255,.1));border-radius:12px;padding:20px 24px;max-width:320px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.35);font-family:var(--font-body,system-ui,sans-serif);';
       box.innerHTML = '<p style="margin:0 0 16px;font-size:16px;font-weight:600;">Log out?</p>' +
         '<p style="margin:0 0 16px;font-size:14px;opacity:.8;">You will need to sign in again to access your account.</p>' +
         '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
@@ -158,6 +158,125 @@
       }, 250);
     });
   })();
+</script>
+<script src="assets/js/shortcuts.js" defer></script>
+<nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+  <ul class="mobile-bottom-nav__list">
+    <?php
+    $bottomNavRole = current_user_role() ?: 'guest';
+    $bottomNavItems = [];
+    if (in_array($bottomNavRole, ['buyer', 'admin', 'manager'], true)) {
+        $bottomNavItems = [
+            ['href' => 'dashboard.php', 'icon' => 'bi-grid-1x2', 'label' => 'Home', 'page' => 'dashboard'],
+            ['href' => 'browse.php', 'icon' => 'bi-shop', 'label' => 'Browse', 'page' => 'browse'],
+            ['href' => 'cart.php', 'icon' => 'bi-cart3', 'label' => 'Cart', 'page' => 'cart', 'badge' => true],
+            ['href' => 'orders.php', 'icon' => 'bi-receipt', 'label' => 'Orders', 'page' => 'orders'],
+            ['href' => '#more', 'icon' => 'bi-grid-3x3-gap', 'label' => 'More', 'page' => 'more', 'toggle' => true],
+        ];
+    } elseif ($bottomNavRole === 'farmer') {
+        $bottomNavItems = [
+            ['href' => 'dashboard.php', 'icon' => 'bi-grid-1x2', 'label' => 'Home', 'page' => 'dashboard'],
+            ['href' => 'browse.php', 'icon' => 'bi-shop', 'label' => 'Browse', 'page' => 'browse'],
+            ['href' => 'my_listings.php', 'icon' => 'bi-basket3', 'label' => 'Listings', 'page' => 'listings'],
+            ['href' => 'orders.php', 'icon' => 'bi-receipt', 'label' => 'Orders', 'page' => 'orders'],
+            ['href' => '#more', 'icon' => 'bi-grid-3x3-gap', 'label' => 'More', 'page' => 'more', 'toggle' => true],
+        ];
+    } else {
+        $bottomNavItems = [
+            ['href' => 'index.php', 'icon' => 'bi-house', 'label' => 'Home', 'page' => 'home'],
+            ['href' => 'browse.php', 'icon' => 'bi-shop', 'label' => 'Browse', 'page' => 'browse'],
+            ['href' => 'login.php', 'icon' => 'bi-box-arrow-in-right', 'label' => 'Sign in', 'page' => 'login'],
+        ];
+    }
+    $currentPage = basename($_SERVER['PHP_SELF'] ?? '');
+    foreach ($bottomNavItems as $item):
+        $isActive = (basename($item['href']) === $currentPage);
+        $isToggle = !empty($item['toggle']);
+    ?>
+    <li class="mobile-bottom-nav__item">
+      <?php if ($isToggle): ?>
+      <button type="button" class="mobile-bottom-nav__link mobile-bottom-nav__more" aria-label="More navigation">
+        <i class="bi <?= e($item['icon']) ?>" aria-hidden="true"></i>
+        <span><?= e($item['label']) ?></span>
+      </button>
+      <?php else: ?>
+      <a href="<?= e($item['href']) ?>" class="mobile-bottom-nav__link<?= $isActive ? ' is-active' : '' ?>">
+        <i class="bi <?= e($item['icon']) ?>" aria-hidden="true"></i>
+        <span><?= e($item['label']) ?></span>
+        <?php if (!empty($item['badge'])): ?>
+        <span class="mobile-bottom-nav__badge cart-count" aria-label="Cart items">0</span>
+        <?php endif; ?>
+      </a>
+      <?php endif; ?>
+    </li>
+    <?php endforeach; ?>
+  </ul>
+</nav>
+<script>
+(function () {
+  var moreBtn = document.querySelector('.mobile-bottom-nav__more');
+  var sidebar = document.querySelector('.sidebar');
+  if (!moreBtn || !sidebar) return;
+  function setOpen(open) {
+    document.documentElement.setAttribute('data-mobile-drawer-open', open ? '1' : '0');
+    // motion.js marks the closed drawer inert (out of the tab order). This
+    // drawer is a second opener, so it has to undo that or every link in it
+    // stays unclickable.
+    sidebar.toggleAttribute('inert', !open);
+    sidebar.setAttribute('aria-hidden', open ? 'false' : 'true');
+    // Lock body scroll
+    document.body.style.overflow = open ? 'hidden' : '';
+  }
+  moreBtn.addEventListener('click', function () {
+    var open = document.documentElement.getAttribute('data-mobile-drawer-open') === '1';
+    setOpen(!open);
+  });
+  // Close drawer when a sidebar link is clicked
+  if (sidebar) {
+    sidebar.addEventListener('click', function (e) {
+      var link = e.target.closest('a');
+      if (link) setOpen(false);
+    });
+  }
+  // Hide section labels on mobile where all items in the section are bottom-nav duplicates
+  if (window.innerWidth <= 767) {
+    var labels = sidebar.querySelectorAll('.sidebar-section-label');
+    labels.forEach(function (label) {
+      var next = label.nextElementSibling;
+      var hasVisible = false;
+      while (next && !next.classList.contains('sidebar-section-label')) {
+        if (next.classList.contains('sidebar-link') && !next.classList.contains('mobile-bottom-dup')) {
+          hasVisible = true;
+          break;
+        }
+        next = next.nextElementSibling;
+      }
+      if (!hasVisible) label.style.display = 'none';
+    });
+  }
+  // Close on escape
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') setOpen(false);
+  });
+  // Swipe down to close
+  var startY = 0;
+  if (sidebar) {
+    sidebar.addEventListener('touchstart', function (e) {
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+    sidebar.addEventListener('touchmove', function (e) {
+      var dy = e.touches[0].clientY - startY;
+      if (dy > 0 && sidebar.scrollTop === 0) {
+        sidebar.style.transform = 'translateY(' + dy + 'px)';
+      }
+    }, { passive: true });
+    sidebar.addEventListener('touchend', function (e) {
+      var dy = e.changedTouches[0].clientY - startY;
+      sidebar.style.transform = '';
+      if (dy > 80) setOpen(false);
+    }, { passive: true });
+  }
+})();
 </script>
 </body>
 </html>

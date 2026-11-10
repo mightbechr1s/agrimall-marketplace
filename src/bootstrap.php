@@ -228,6 +228,10 @@ if (!headers_sent()) {
 
 // ---- Load helpers and core services  ----
 require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/order_actions.php';
+require_once __DIR__ . '/admin_actions.php';
+require_once __DIR__ . '/push.php';
+require_once __DIR__ . '/mobile_push.php';
 require_once __DIR__ . '/i18n.php';
 require_once __DIR__ . '/DB.php';
 

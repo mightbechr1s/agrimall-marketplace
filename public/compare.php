@@ -43,11 +43,11 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <a class="btn btn-primary" href="browse.php">Browse Listings</a>
             </div>
         <?php else: ?>
-            <div class="table-responsive">
-                <table class="table table-bordered align-middle">
+            <div class="table-responsive card">
+                <table class="table align-middle mb-0">
                     <thead>
                         <tr>
-                            <th>Attribute</th>
+                            <th scope="col">Attribute</th>
                             <?php foreach ($items as $it): ?>
                                 <th class="text-center">
                                     <img src="<?= e(asset($it['primary_image'] ?: fallback_produce_image())) ?>" alt="" style="height:80px;object-fit:cover;" class="mb-2"><br>

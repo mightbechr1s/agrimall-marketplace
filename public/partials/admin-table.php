@@ -47,7 +47,7 @@ function sortLink(string $col, string $label, string $currentSort, string $curre
     $sortable = isset($columns[$col]) && ($columns[$col]['sortable'] ?? false);
     if (!$sortable) return $label;
     $newDir = ($currentSort === $col && $currentDir === 'asc') ? 'desc' : 'asc';
-    $icon = $currentSort === $col ? ($currentDir === 'asc' ? '↑' : '↓') : '↕';
+    $icon = $currentSort === $col ? ($currentDir === 'asc' ? '<i class="bi bi-arrow-up" aria-hidden="true"></i>' : '<i class="bi bi-arrow-down" aria-hidden="true"></i>') : '<i class="bi bi-arrow-down-up" aria-hidden="true"></i>';
     $href = '?' . $qsPrefix . 'sort=' . urlencode($col) . '&dir=' . $newDir;
     return '<a href="' . e($href) . '" class="text-decoration-none" aria-label="Sort by ' . e($label) . ' ' . ($newDir === 'asc' ? 'ascending' : 'descending') . '">' . e($label) . ' <span class="sort-icon ms-1">' . $icon . '</span></a>';
 }

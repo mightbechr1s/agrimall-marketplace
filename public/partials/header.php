@@ -18,10 +18,10 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
 <html lang="<?= e($currentLocale) ?>">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title><?= e($pageTitle) ?> | <?= e($appName) ?></title>
     <meta name="description" content="<?= e($currentLocale === 'tl' ? 'AgriMALL — Merkadong agrikultura at alagang hayop ng Pilipinas. Mga na-verify na magsasaka at raiser, patas na presyo, sariwa mula sa sakahan.' : 'AgriMALL — Philippine agribusiness marketplace connecting verified farms and raisers directly with buyers. Farm to table, no middlemen.') ?>" />
-    <meta name="theme-color" content="#1F4B32" />
+    <meta name="theme-color" content="#1b4332" />
 
     <!-- Canonical & hreflang -->
     <link rel="canonical" href="<?= e($canonicalUrl) ?>" />
@@ -50,7 +50,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json" />
-    <meta name="theme-color" content="#1F4B32" />
+    <meta name="theme-color" content="#1b4332" />
 
     <!-- Bootstrap 5.3.3 CSS (local vendor copy — offline) -->
     <link href="assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet" />
@@ -190,7 +190,8 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
     <div class="nav-left">
       <div class="brand">
         <a href="index.php" class="brand-link" aria-label="AgriMALL home">
-          <img src="assets/branding/logo-horizontal.svg" alt="AgriMALL" class="brand-logo">
+          <img src="assets/branding/mark.svg" alt="" class="brand-mark" width="30" height="30">
+          <span class="brand-wordmark">AgriMALL</span>
         </a>
       </div>
       <nav class="nav-links" aria-label="Main navigation" id="mainNav">
@@ -229,8 +230,8 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
             <i class="bi bi-globe" aria-hidden="true"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="<?= e(locale_url('en')) ?>" data-lang="en">English <?= $currentLocale === 'en' ? '<span class="locale-tick small">✓</span>' : '' ?></a></li>
-            <li><a class="dropdown-item" href="<?= e(locale_url('tl')) ?>" data-lang="tl">Filipino <?= $currentLocale === 'tl' ? '<span class="locale-tick small">✓</span>' : '' ?></a></li>
+            <li><a class="dropdown-item" href="<?= e(locale_url('en')) ?>" data-lang="en">English <?= $currentLocale === 'en' ? '<span class="locale-tick small"><i class="bi bi-check-lg" aria-hidden="true"></i></span>' : '' ?></a></li>
+            <li><a class="dropdown-item" href="<?= e(locale_url('tl')) ?>" data-lang="tl">Filipino <?= $currentLocale === 'tl' ? '<span class="locale-tick small"><i class="bi bi-check-lg" aria-hidden="true"></i></span>' : '' ?></a></li>
           </ul>
         </div>
         <?php if (current_user_id()): ?>
@@ -345,11 +346,13 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
         <?php endif; ?>
         <a href="index.php#steps" class="mobile-nav-link"><?= t($i18nCopy['nav'], 'how_it_works') ?></a>
         <a href="index.php#faq" class="mobile-nav-link"><?= t($i18nCopy['nav'], 'faq') ?></a>
+        <a href="get_app.php" class="mobile-nav-link"><?= t($i18nCopy['nav'], 'get_app') ?></a>
       <?php else: ?>
         <a href="browse.php" class="mobile-nav-link"><?= t($i18nCopy['nav'], 'marketplace') ?></a>
         <a href="index.php#steps" class="mobile-nav-link"><?= t($i18nCopy['nav'], 'how_it_works') ?></a>
         <a href="index.php#story" class="mobile-nav-link"><?= t($i18nCopy['nav'], 'our_story') ?></a>
         <a href="index.php#faq" class="mobile-nav-link"><?= t($i18nCopy['nav'], 'faq') ?></a>
+        <a href="get_app.php" class="mobile-nav-link"><?= t($i18nCopy['nav'], 'get_app') ?></a>
       <?php endif; ?>
     </nav>
     <?php if (current_user_id()): ?>

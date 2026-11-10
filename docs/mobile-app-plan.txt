@@ -1,0 +1,237 @@
+Mobile App Plan — AgriMALL
+==========================
+
+Goal: Native mobile app (iOS + Android) that reuses the web app's
+business logic, design system, and API layer. Web app stays as the
+primary platform; mobile is a companion.
+
+Strategy: API-first extraction + React Native (or Flutter) frontend.
+The web app's PHP backend becomes the API server. Mobile app consumes
+the same endpoints as the web frontend.
+
+Status (Nov 2026)
+-----------------
+Phase 0 (API extraction) is done for the buyer flow: auth + OTP, listings,
+categories, cart, checkout, orders, messages, saved, profile. Farmer and
+admin endpoints are also live: overview, listings, order actions, farmer
+verification, staff accounts, push tokens.
+Phase 1 (Expo scaffold) is done: see docs/mobile-scaffold.txt.
+Phase 2 (core screens) is done for buyer, farmer, and admin/manager roles.
+Phase 3 is partly done: push notifications, deep links, offline cache, a
+branded icon set, and an animated splash ship. Camera upload, biometrics,
+geolocation, and the native share sheet are still open.
+A release APK can be built locally (see docs/mobile-scaffold.txt). The API
+address is a build-time default that the sign-in screen can change, so a
+Cloudflare tunnel URL works without a rebuild; nothing is hosted yet.
+Not started: store release, store metadata, crash reporting, analytics.
+Not verified: no run on a real device or emulator yet.
+
+Phase 0 — API extraction (2-3 weeks)
+------------------------------------
+Goal: Every page action becomes a JSON API endpoint. The web app
+continues to work (server-rendered) but also serves JSON for mobile.
+
+Endpoints needed (grouped):
+  Auth:
+    POST /api/auth/login          { email, password } -> { token, user }
+    POST /api/auth/register       { ... } -> { pending_otp }
+    POST /api/auth/verify-otp     { email, code } -> { token, user }
+    POST /api/auth/forgot         { email } -> { ok }
+    POST /api/auth/reset          { token, password } -> { ok }
+    POST /api/auth/logout         -> { ok }
+
+  Browse:
+    GET  /api/listings            ?q=&category=&price_min=&price_max=&sort=&page= -> { total, listings }
+    GET  /api/listings/:id        -> { listing, images, seller, related }
+    GET  /api/categories          -> { categories }
+    GET  /api/search-suggestions  ?q= -> { suggestions }
+
+  Cart:
+    GET  /api/cart                -> { items, total }
+    POST /api/cart/add            { listing_id, quantity } -> { ok, cart_count }
+    POST /api/cart/update         { item_id, quantity } -> { ok }
+    POST /api/cart/remove         { item_id } -> { ok }
+    POST /api/cart/checkout       { delivery_method, address, ... } -> { order_id }
+
+  Orders:
+    GET  /api/orders              ?status=&page= -> { orders }
+    GET  /api/orders/:id          -> { order, history, messages }
+    POST /api/orders/:id/message  { body } -> { message }
+    POST /api/orders/:id/cancel    { reason } -> { ok }
+    POST /api/orders/:id/review   { rating, comment } -> { ok }
+
+  Saved:
+    GET  /api/saved               -> { listings }
+    POST /api/saved/toggle        { listing_id } -> { saved }
+    GET  /api/saved-searches      -> { searches }
+    POST /api/saved-searches      { query, category, ... } -> { id }
+    DELETE /api/saved-searches/:id -> { ok }
+
+  Farmer:
+    GET  /api/farmer/listings     -> { listings }
+    POST /api/farmer/listings     { ... } -> { id }
+    PUT  /api/farmer/listings/:id { ... } -> { ok }
+    DELETE /api/farmer/listings/:id -> { ok }
+    POST /api/farmer/listings/:id/stock  { quantity, type } -> { ok }
+    GET  /api/farmer/orders       ?status= -> { orders }
+    POST /api/farmer/orders/:id/confirm -> { ok }
+    POST /api/farmer/orders/:id/prepare -> { ok }
+    POST /api/farmer/orders/:id/ready -> { ok }
+    POST /api/farmer/orders/:id/ship -> { ok }
+    POST /api/farmer/orders/:id/complete -> { ok }
+    POST /api/farmer/orders/:id/reject { reason } -> { ok }
+    GET  /api/farmer/analytics    -> { stats, restock }
+    GET  /api/farmer/reports      ?from=&to= -> { rows }
+
+  Admin/Manager:
+    GET  /api/admin/verifications -> { pending_farmers }
+    POST /api/admin/verify/:id    { approve, reason } -> { ok }
+    GET  /api/admin/reports       ?type=&from=&to= -> { rows }
+    GET  /api/admin/audit         -> { entries }
+    GET  /api/admin/users         -> { users }
+    POST /api/admin/users         { email, password, role } -> { id }
+
+  Profile:
+    GET  /api/profile             -> { profile }
+    PUT  /api/profile             { full_name, ... } -> { ok }
+    PUT  /api/profile/password    { current, new } -> { ok }
+    PUT  /api/profile/address     { delivery_address, ... } -> { ok }
+    GET  /api/notifications       -> { notifications, unread_count }
+    POST /api/notifications/:id/read -> { ok }
+
+  Push:
+    POST /api/push/subscribe      { endpoint, keys } -> { ok }
+    GET  /api/push/pending        -> { notifications }
+
+Auth for mobile: Bearer token (JWT) in Authorization header.
+Web app continues using session cookies. Both work simultaneously.
+
+Phase 1 — Mobile app scaffold (2-3 weeks)
+-----------------------------------------
+Framework: React Native (Expo) — reuses React knowledge from islands PoC.
+  OR Flutter — better performance, but different language (Dart).
+
+Recommendation: React Native (Expo) because:
+  - Team already knows React (islands PoC)
+  - Expo handles builds, OTA updates, push notifications
+  - Shared component logic with web islands
+  - Large ecosystem of native modules
+
+App structure:
+  /src
+    /screens
+      HomeScreen.js
+      BrowseScreen.js
+      ListingScreen.js
+      CartScreen.js
+      CheckoutScreen.js
+      OrdersScreen.js
+      OrderDetailScreen.js
+      SavedScreen.js
+      ProfileScreen.js
+      SettingsScreen.js
+      FarmerDashboardScreen.js
+      FarmerListingsScreen.js
+      FarmerOrdersScreen.js
+      AdminDashboardScreen.js
+    /components
+      ListingCard.js
+      OrderCard.js
+      StatusBadge.js
+      PriceTag.js
+      FarmerCard.js
+    /services
+      api.js          (fetch wrapper with auth token)
+      auth.js         (token storage, login/logout)
+      push.js         (push notification handler)
+    /navigation
+      AppNavigator.js (stack + tab navigator)
+    /theme
+      colors.js       (mirror design-system.css tokens)
+      typography.js
+
+Navigation:
+  - Bottom tab bar: Home, Browse, Cart, Orders, Profile (mirrors web bottom nav)
+  - Stack navigator for detail screens
+  - Drawer for farmer/admin extra pages
+
+Phase 2 — Core screens (3-4 weeks)
+----------------------------------
+Priority order:
+  1. Auth (login, register, OTP verify)
+  2. Browse (search, filters, grid)
+  3. Listing detail (gallery, buy box, seller card)
+  4. Cart + checkout
+  5. Orders (list + detail + tracking)
+  6. Profile + settings
+  7. Farmer dashboard + listings + orders
+  8. Admin dashboard (basic)
+
+Phase 3 — Native features (2-3 weeks)
+-------------------------------------
+  - Camera: take listing photos directly
+  - Push notifications: order updates, new listings, low stock
+  - Biometric auth: Face ID / fingerprint login
+  - Offline mode: cache browse grid, view orders offline
+  - Share: share listings via native share sheet
+  - Deep linking: agrimall://listing/123 opens the app
+  - Geolocation: auto-fill delivery address from GPS
+
+Phase 4 — Polish & release (2-3 weeks)
+--------------------------------------
+  - App store assets (icons, screenshots, descriptions)
+  - Performance optimization (image loading, list virtualization)
+  - Crash reporting (Sentry free tier)
+  - Analytics (Firebase free tier)
+  - Beta testing (TestFlight / Google Play internal testing)
+  - Store submission
+
+Total timeline: 10-14 weeks for a functional mobile app.
+
+What can be reused from the web app
+-----------------------------------
+  - Design tokens (colors, typography, spacing) -> colors.js
+  - Business logic (validation, formatting) -> shared JS modules
+  - API endpoints (once extracted in Phase 0)
+  - Database schema (no changes needed)
+  - i18n strings (JSON export from i18n_copy.php)
+  - Brand assets (SVG logos work in React Native)
+
+What needs to be rebuilt
+------------------------
+  - All UI components (PHP templates -> React Native components)
+  - Navigation (file-based routing -> React Navigation)
+  - Auth (session cookies -> JWT tokens)
+  - Forms (HTML forms -> React Native forms)
+  - Image handling (img tags -> React Native Image)
+
+What stays web-only
+-------------------
+  - Admin reports (complex tables, better on desktop)
+  - PDF generation (server-side)
+  - Service worker / PWA (web handles this)
+
+Cost
+----
+  - Development: $0 (open source tools)
+  - Apple Developer: $99/year
+  - Google Play: $25 one-time
+  - Expo (EAS builds): free tier (limited builds/month)
+  - Firebase (analytics + crash): free tier
+  - Sentry (error tracking): free tier
+  Total first year: ~$124
+
+Next steps
+----------
+1. Start Phase 0: extract API endpoints from existing PHP pages
+2. Begin with auth endpoints (login, register, verify-otp)
+3. Create the React Native scaffold with Expo
+4. Build the browse screen first (highest traffic)
+5. Iterate based on real usage
+
+Open questions
+--------------
+- React Native or Flutter? (RN reuses React knowledge; Flutter has better perf)
+- Should the mobile app support offline-first? (complex, adds 2-3 weeks)
+- Do we need the app in both stores, or just Android first? (Android is cheaper to test)
+- Should farmer features be in the same app or a separate "farmer app"?

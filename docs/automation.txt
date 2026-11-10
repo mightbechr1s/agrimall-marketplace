@@ -67,3 +67,21 @@ so they stay local:
 Stale pending orders are not auto-cancelled. Pending orders reserve no
 stock, and cancelling someone's order without a human decision is worse
 than a nudge. The sweep reminds the farmer instead.
+
+6. Web push
+-----------
+Push is payload-less: the browser wakes the service worker, which fetches
+/push_pending.php with the session for the text and link, so nothing
+sensitive passes through the push service. Generate a VAPID pair once:
+
+    php tools/vapid-keys.php
+
+Paste the printed block into config/config.php. Users opt in per device on
+Settings; a subscription answered with 404/410 is deleted automatically.
+No encryption library is needed because no payload is sent.
+
+7. Restock forecast
+-------------------
+The farmer dashboard estimates daily sales from completed orders in the
+last 30 days and suggests two weeks of cover. Rule-based, no model. A
+listing with no completed orders shows no forecast.

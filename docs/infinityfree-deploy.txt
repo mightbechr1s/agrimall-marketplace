@@ -1,0 +1,229 @@
+AgriMALL on InfinityFree - deployment guide
+===========================================
+
+Why this guide exists
+---------------------
+AgriMALL used to run from a PC on this desk, behind a Tailscale funnel. That
+stops working whenever the PC sleeps or shuts down. InfinityFree is a free
+shared host: 5 GB disk, unlimited bandwidth, PHP 8.4, MySQL, free SSL, no
+card, no ads, no expiry. The site is served from their machines, so it stays
+up with the PC off.
+
+What you get: a permanent address like https://agrimall.kesug.com (the live
+deployment described by this guide).
+
+
+Step 1 - Create the hosting account
+-----------------------------------
+1. Open https://dash.infinityfree.com/register and sign up (no card).
+2. Create a hosting account. Pick "Free Hosting".
+3. Choose a subdomain, e.g. "agrimall". You will be offered a domain list
+   (.great-site.net, .infinityfreeapp.com, .rf.gd, ...). Pick one and finish.
+4. Wait for the account to show Active. It usually takes a few minutes.
+
+Write down the two addresses it shows you:
+  - Website URL       (e.g. https://agrimall.great-site.net)
+  - FTP host + user   (FTP details are on the account page)
+  - Control panel URL (https://dash.infinityfree.com/accounts/... -> Control Panel)
+
+
+Step 2 - Create the database
+----------------------------
+1. Inside the control panel, open "MySQL Databases".
+2. Create a database named "agrimall". InfinityFree prefixes it, so the real
+   name becomes something like  if0_12345678_agrimall  - use the FULL name.
+3. Note the four values shown:
+       MySQL host   sqlXXX.infinityfree.com   (NOT localhost)
+       Database     if0_12345678_agrimall
+       Username     if0_12345678
+       Password     the one you typed
+4. Choose MariaDB 11.4 if you are offered a choice. The local development
+   database is MariaDB 10.4, so the dump imports cleanly there.
+
+
+Step 3 - Upload the files
+-------------------------
+There are two zips because the free plan caps a single file at about 10 MB,
+and the site's images are 7.5 MB on their own.
+
+  agrimall-part1.zip         -> the site and its PHP source (1.2 MB)
+  agrimall-part2-images.zip  -> product photographs (7.8 MB)
+  agrimall.sql               -> the database (69 KB)
+
+InfinityFree only allows writes under htdocs/. The account root is read-only,
+so src/, config/ and logs/ live INSIDE htdocs/ - not beside it:
+
+  htdocs/              <- web root, everything is here
+  |-- index.php ...
+  |-- src/             <- PHP source
+  |-- config/          <- database credentials
+  |-- logs/            <- writable, error + security logs
+  |-- api/
+  |-- partials/
+  |-- assets/
+  |-- uploads/
+
+Upload agrimall-part1.zip into htdocs/ and extract it there. Then upload and
+extract agrimall-part2-images.zip the same way; it contains only
+assets/images/ and merges into the existing folder. Delete both .zip files
+afterwards, so your source cannot be downloaded from the web root.
+
+src/, config/ and logs/ each ship with a deny-all .htaccess; keep them. If
+pages show a directory listing or 403, the files were unzipped one level too
+deep (htdocs/htdocs/) or one level too high.
+
+
+Step 4 - Edit htdocs/config/config.php
+---------------------------------------
+Open htdocs/config/config.php in the control panel's file editor (or FTP).
+Replace the four database placeholders with the values from Step 2:
+
+    'host' => 'sqlXXX.infinityfree.com',
+    'name' => 'if0_12345678_agrimall',
+    'user' => 'if0_12345678',
+    'pass' => 'your-db-password',
+
+Leave 'base_url' empty. The app works out its own address from the incoming
+request, which is correct on this host. Only set it if the "Server address"
+box on get_app.php shows http:// instead of https:// - then put the full
+https URL there.
+
+Leave 'secure_cookies' => true. The host serves HTTPS.
+
+Keep the push keys as they are. Web push probably will not work on the free
+plan (outbound connections to the push services are restricted), but nothing
+else depends on it.
+
+
+Step 5 - Import the database
+----------------------------
+1. Control panel -> phpMyAdmin.
+2. Select the database  if0_12345678_agrimall  in the left sidebar.
+3. Open the Import tab, choose agrimall.sql, and import.
+   The file is about 69 KB, so the usual upload limits are not a problem.
+
+What is in that dump:
+  - 28 tables and NO views
+  - 23 accounts, 51 listings, 29 orders - the demo marketplace
+  - sessions, API tokens, password resets, OTP codes and rate limits are
+    empty, so no old logins carry over
+
+The dump deliberately contains no CREATE VIEW statements. InfinityFree does
+not grant CREATE VIEW, so the application no longer depends on real database
+views: src/DB.php rewrites the two reporting view names (v_active_listings,
+v_order_summary) into inline derived tables supplied by src/view_sql.php.
+Keep both files when you upload or update src/. On a host that does allow
+views the same code still works, because it only ever queries tables.
+
+The 18 demo/test accounts were re-hashed with a random password before the
+dump was taken, so the old "password123" does not work on the new host.
+Accounts that are not demo accounts kept their real passwords.
+
+The one admin account is  admin@animal.local  (role: admin) and
+manager@animal.local is the manager. They are demo accounts, so they carry
+the rotated password. If you need to get in and do not have it, reset it in
+phpMyAdmin:
+
+    UPDATE users SET password_hash = '<output of password_hash()>' WHERE email='admin@animal.local';
+
+Generate the hash locally with:
+    C:\xampp\php\php.exe -r "echo password_hash('your-new-password', PASSWORD_DEFAULT);"
+
+
+Step 6 - Turn on HTTPS
+----------------------
+1. Control panel -> SSL Certificates.
+2. Issue a free certificate for your subdomain (Let's Encrypt, free).
+3. Wait for it to show as active (minutes to a few hours).
+4. Tick "Force HTTPS" if the panel offers it. If it does not, add these two
+   lines at the top of htdocs/.htaccess:
+
+       RewriteEngine On
+       RewriteCond %{HTTPS} off
+       RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+Without HTTPS, logins will not stick, because config has secure cookies on.
+
+
+Step 7 - Test it
+----------------
+Open these in a browser, on mobile data rather than Wi-Fi if you can:
+
+  /                          homepage
+  /browse.php                listings, filters, images
+  /api/listings.php?limit=2  JSON, should start {"ok":true,...
+  /get_app.php               app page
+  /login.php                 sign in
+  /listing.php?id=99         a listing with its photographs
+
+If every page is a blank white screen, PHP failed. Turn on error display
+temporarily by setting 'display_errors' => true in htdocs/config/config.php, reload,
+then turn it back off. Check logs/error.log too.
+
+If pages load but logins bounce back to the sign-in screen, the cookie is
+being rejected - usually because the site is still on http://. Redo Step 6.
+
+If images are missing, agrimall-part2-images.zip was not extracted, or was
+extracted into the wrong level.
+
+
+Step 8 - Point the Android app at the new address
+-------------------------------------------------
+The app asks for a server address on its sign-in screen. Users type:
+
+    https://agrimall.kesug.com
+
+once. Nothing is baked into the APK, so no rebuild is needed.
+
+The APK itself is not on InfinityFree. At 76.6 MB it breaks the ~10 MB
+per-file cap. It is attached to a GitHub Release on the public repository
+(2 GB per asset, permanent URL):
+
+    https://github.com/mightbechr1s/animal-marketplace/releases/download/apk-0.1.0/AgriMALL-0.1.0.apk
+
+get_app.php links there directly, so downloads do not touch this host.
+
+
+Free plan limits worth knowing
+-----------------------------
+  - 50,000 hits per day. Fine for a demo; not for a launch.
+  - No SSH, no cron. There is no shell, so debugging is by log files only.
+  - No email. Password reset cannot send mail, which is why config keeps
+    local_password_reset_links false and the reset link goes to
+    logs/security.log. An admin has to read it or reset the hash by hand.
+  - Outbound connections are partly blocked, so web push likely fails.
+  - One FTP account.
+  - File count and inode limits. Thousands of user-uploaded photos would hit
+    them; wp-content-style clutter is not an option here.
+  - Accounts with no visits for about a month can be pruned. Visit the
+    dashboard occasionally to keep it alive.
+  - No SLA, and no privacy guarantees. Treat this as a public demo. Do not
+    put real customer data or real money flows on a free shared host.
+  - AgriMALL never handles payments. Buyers and farmers settle directly.
+
+
+Updating the site later
+-----------------------
+Re-upload only what changed. Site files live under htdocs/ (including
+htdocs/src/), and are uploaded per file, not re-zipped, which is faster
+over FTP.
+
+If you change CSS or JS, bump CACHE_NAME in htdocs/sw.js (currently
+agrimall-v54) or browsers will keep serving the old service-worker cache.
+
+Never upload the repository's public/downloads/ folder - the APK lives on
+GitHub and does not belong in the web root.
+
+Release files (build of 2026-11-09)
+-----------------------------------
+These are the exact files in C:\Users\your4\Downloads\agrimall-deploy:
+
+  agrimall-part1.zip         1,170,593 bytes
+    sha256 bbe1e7e531cc7be8e26e26c10092c9b111885bffcb85e6e9310e46c63d3eba90
+  agrimall-part2-images.zip  7,834,469 bytes
+    sha256 093ed533fe5bcbedb56670f1bb9d31a295edf18aebeec69b38fe1539c0233ea6
+  agrimall.sql                  70,668 bytes
+    sha256 7f51d28d9a22c9d1b812e7f23a10d94e99a26786c316f9299db6c1f1fdb1861b
+
+agrimall-part1.zip and agrimall-part2-images.zip extract into htdocs/.
+agrimall.sql imports into the database created in Step 2.

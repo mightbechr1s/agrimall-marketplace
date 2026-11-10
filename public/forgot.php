@@ -18,6 +18,12 @@ $resetLink = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
 
+    // Bot detection: honeypot only (time token skipped — rate limited already).
+    if (is_bot_request('forgot', $_POST, 'website', 0.0)) {
+        http_response_code(400);
+        exit(e($l($copy['auth'], 'err_rate_limit')));
+    }
+
     // Rate limit: 5 attempts / 15 min per IP+email (DB-backed)
     $rlKey = 'pwreset_' . md5($_SERVER['REMOTE_ADDR'] . ':' . strtolower(trim((string) ($_POST['email'] ?? ''))));
     if (rate_limit_check($rlKey)) {
@@ -112,6 +118,8 @@ require __DIR__ . '/partials/header.php';
 
         <form method="post" action="forgot.php">
             <?= csrf_field() ?>
+            <?= honeypot_field() ?>
+            <?= issue_form_token('forgot') ?>
             <div style="margin-bottom: 18px;">
                 <label class="form-label" for="email"><?= $l($copy['auth'], 'email') ?></label>
                 <input class="form-control" type="email" id="email" name="email"

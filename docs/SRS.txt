@@ -53,21 +53,23 @@ Develop a practical web-based information management system that streamlines int
 - User management
 - Operational reports
 - Profile management
+- Public ratings and reviews for completed orders
+- Order-scoped text messaging between the buyer and the farmer
+- Opt-in web push notifications for order and message updates
+- Rule-based restock forecast on the farmer dashboard
+- A "view area on map" link based on the farm's barangay and municipality
 
 ### 4.2 Out of Scope
 
 - Native mobile application
 - Online payments or payment gateway integration
-- GPS tracking, maps, or route optimization
+- GPS tracking or route optimization (a map link to the farm's area is in scope)
 - AI or machine-learning features
 - Government API integration
-- Chat, voice calls, or video calls
-- Push notifications
-- Inventory or demand forecasting
+- Voice or video calls (order-scoped text messaging is in scope)
 - Blockchain
 - Internet of Things devices
 - Third-party courier integration
-- Public ratings and reviews for the first release
 
 ## 5. Technology and Deployment Constraints
 

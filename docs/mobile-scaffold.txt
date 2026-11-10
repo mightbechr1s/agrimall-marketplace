@@ -1,0 +1,248 @@
+AgriMALL Mobile - Expo Scaffold
+===============================
+
+Location: mobile/
+Stack: Expo SDK 58, React Native 0.88, React Navigation 7,
+       TypeScript, expo-secure-store, expo-notifications,
+       @react-native-async-storage/async-storage.
+
+What works
+----------
+Buyer flow against the existing PHP API (public/api):
+
+  Login / Register + OTP verify   auth/login.php, register.php, verify-otp.php
+  Browse + search + categories    listings.php, categories.php
+  Listing detail                  listings/detail.php
+  Save / unsave listing           saved/toggle.php
+  Saved listings                  saved/index.php
+  Cart (add, update, remove)      cart/index.php, add.php, update.php, remove.php
+  Checkout (pickup/delivery)      cart/checkout.php
+  Orders + status filter          orders.php
+  Order detail + messages         orders/detail.php, orders/message.php
+  Profile + sign out              profile/index.php
+
+Farmer flow:
+
+  Dashboard (stats, recent)       farmer/overview.php
+  Listings + stock/price edit     farmer/listings.php, farmer/listing.php
+  Order actions                   orders/action.php
+
+Admin / manager flow:
+
+  Farmer verification queue       admin/verify.php
+  Staff account search            admin/users.php
+
+Shared:
+
+  Push token register/unregister  push/register.php
+  Order state changes             orders/action.php
+
+Payments stay direct between buyer and farmer. The app never collects or
+holds funds; the checkout screen says so on every order.
+
+Screens (src/screens)
+---------------------
+  LoginScreen             login, register, OTP verify in one screen
+  BrowseScreen            2-column grid, search, category chips, infinite scroll
+  ListingScreen           gallery, seller card, quantity stepper, add to cart, save
+  CartScreen              quantity editing, remove, total
+  CheckoutScreen          pickup vs farmer delivery, address, note, place order
+  OrdersScreen            status filters, pagination
+  OrderDetailScreen       summary, status timeline, message thread,
+                          role-aware action panel
+  SavedScreen             saved listings with price-drop hints
+  ProfileScreen           account, push toggle, saved, sign out
+  FarmerDashboardScreen   stats, recent orders
+  FarmerListingsScreen    listing list, edit modal (price, stock, pause)
+  AdminVerifyScreen       pending applications, approve/reject modal
+  AdminUsersScreen        account search, role filter
+
+Navigation (src/navigation.tsx)
+-------------------------------
+Tabs depend on the signed-in role:
+
+  buyer              Browse, Cart, Orders, Profile
+  farmer             Dashboard, Orders, Listings, Profile
+  admin / manager    Browse, Cart, Verify, Users, Profile
+
+Stack: Listing, Checkout, OrderDetail, Saved.
+
+Creating listings (with photos) stays on the web. Mobile edits existing
+listings only: price, stock, pause/publish.
+
+Push notifications
+------------------
+src/push.ts registers an Expo push token after sign-in and unregisters it
+on sign-out. Tokens live in mobile_push_tokens (migration 029); the server
+sends through src/mobile_push.php from notify_user(), next to web push.
+
+Remote push needs an EAS projectId in app.json. Without one,
+registerForPush() returns false and the toggle stays off. Expo Go on
+Android SDK 53+ has no remote push either; use a development build.
+
+Tapping a notification opens its target through the deep-link handler.
+
+Deep links
+----------
+Scheme: agrimall://. Expo Linking maps the web paths to screens:
+
+  agrimall://listing/123     -> Listing
+  agrimall://order/45        -> OrderDetail
+  agrimall://orders          -> Orders tab
+  agrimall://cart            -> Cart tab
+
+https:// links are configured too, so a shared web URL opens the app when
+installed. src/navigation.tsx exports openFromLink() and navigationRef for
+use before the tree mounts.
+
+Offline
+-------
+src/cache.ts keeps the last good response per request path in AsyncStorage.
+When the network fails, requestCached() serves that copy and marks the
+screen with OfflineBanner ("showing saved data"). The cache is cleared on
+sign-in and sign-out so one account never sees another's data.
+
+Running it
+----------
+1. Start MySQL and the PHP API, bound so a phone on the same Wi-Fi can reach it:
+
+     php -S 0.0.0.0:8000 -t public public/router.php
+
+2. Install and start Expo:
+
+     cd mobile
+     npm install
+     npx expo start
+
+3. Scan the QR with a development build or press "a" for an Android
+   emulator.
+
+API URL
+-------
+src/api.ts derives the API host from the Expo dev-server host
+(http://<lan-ip>:8000/api), so a physical device usually works with no
+configuration. Override it when needed:
+
+     set EXPO_PUBLIC_API_URL=http://192.168.1.20:8000/api
+     npx expo start
+
+Android emulator special case: localhost inside the emulator is the
+emulator itself. If the derived host does not work, set
+EXPO_PUBLIC_API_URL=http://10.0.2.2:8000/api.
+
+The built-in address is only a default. The sign-in screen has a small
+server row under the form: tap it, type a host (with or without https://,
+with or without a trailing /api), and the app stores the normalised
+address in AsyncStorage and clears the offline cache. This exists because
+a tunnel URL changes and rebuilding the APK to follow it is not practical.
+Only the sign-in screen can change it, since the setting is needed before
+any account exists.
+
+Auth
+----
+The API returns a Bearer token (base64 of user_id:role:raw_token, bcrypt
+hash stored in api_tokens). The app stores the whole session in
+expo-secure-store (localStorage in the web preview) and sends
+Authorization: Bearer on every request. The web app keeps using session
+cookies; both run against the same endpoints.
+
+Icons
+-----
+App icon, adaptive icon, splash, and favicon are rendered from
+public/assets/branding/mark.svg:
+
+     node tools/build_app_icons.js
+
+It drives headless Chrome through puppeteer-core, so there is no image
+library to install. Set CHROME_PATH if Chrome is not in the default place.
+splash-icon-dark.png is the same mark recoloured for the dark theme.
+
+Splash
+------
+expo-splash-screen holds the native splash until the JS overlay mounts,
+then SplashOverlay (src/SplashOverlay.tsx) settles the mark and brings in
+the wordmark, and fades out. Light and dark pick different marks, so the
+hand-off never shows a white flash on a dark device. Users with
+reduced-motion on get a still splash that just fades.
+
+Building a release APK
+----------------------
+The phone talks to the PHP API; MySQL never leaves this machine. The API
+URL is baked into the bundle at build time as the default; the sign-in
+screen can change it afterwards without a rebuild.
+
+     cd mobile
+     npx expo prebuild --platform android --clean
+     cd android
+     $env:EXPO_PUBLIC_API_URL = 'https://example.trycloudflare.com/api'
+     .\gradlew.bat assembleRelease
+
+Windows caps paths at 260 characters and the CMake tree generated for
+react-native-safe-area-context exceeds that inside a deep project folder.
+If ninja reports "Filename longer than 260 characters", build from a short
+copy instead of the repo:
+
+     robocopy <repo>\mobile C:\am /E /XD <repo>\mobile\android <repo>\mobile\.expo
+     cd C:\am
+     npx expo prebuild --platform android --clean --no-install
+
+That alone is not enough: the default .cxx location still leaves the
+codegen object path at 267 characters. Add this to android\app\build.gradle
+inside the android { } block, then build:
+
+     externalNativeBuild {
+         cmake { buildStagingDirectory = file("C:/b") }
+     }
+
+The generated android project is not in git, so this has to be re-added
+after every prebuild --clean.
+
+The /XD paths must be absolute. A bare /XD android also drops every
+node_modules/<package>/android folder and the build then fails on
+"Cannot find module './android'".
+
+Output: android/app/build/outputs/apk/release/app-release.apk
+Install: adb install -r app-release.apk, or copy it to the phone and open it.
+
+Reaching the server from outside the house
+------------------------------------------
+No port forwarding and no public IP needed:
+
+     cloudflared tunnel --url http://localhost:8000
+
+It prints an https://<words>.trycloudflare.com URL that proxies to the
+local PHP server. Put that host in the app's server field. The URL changes
+every time cloudflared restarts, and the PC has to stay on. A named tunnel
+on a Cloudflare account with a domain fixes both, and a PHP host with
+managed MySQL removes the dependency on this machine entirely.
+
+Before the phone can reach the server on the LAN:
+  - php -S 0.0.0.0:8000 -t public public/router.php  (bind all interfaces)
+  - allow inbound TCP 8000 in Windows Firewall
+  - phone and PC on the same Wi-Fi
+
+The release build is signed with the debug keystore. That is fine for
+sideloading and LAN testing, not for Play Store upload. Cleartext HTTP is
+enabled in app.json through expo-build-properties; remove that entry once
+the API is behind HTTPS.
+
+Not built yet
+-------------
+  - Profile editing (API supports PUT /api/profile)
+  - Biometric login
+  - Creating listings with photos on mobile (web only)
+  - Admin reports and audit tables (desktop-sized, web only)
+  - A hosted backend: the app can point at a tunnel or any HTTPS host,
+    but nothing is deployed outside this machine
+  - A named Cloudflare tunnel (the quick tunnel URL changes on restart)
+  - App Store / Play Store metadata and submission
+  - A run on a real device or emulator (bundles, typecheck, and APK build only)
+
+Checks
+------
+     cd mobile
+     npm run typecheck     # tsc --noEmit
+     npx expo-doctor       # 20 checks: versions, config, native modules
+     npx expo export --platform android --output-dir %TEMP%\agrimall-export
+The export bundles the whole app through Metro; it is the cheapest way to
+prove every import resolves without a device.

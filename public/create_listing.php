@@ -328,7 +328,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
             }
 
-            // If we have a primary image, add it to listing_images
+            // Notify buyers with saved searches that match this listing.
+            try {
+                $catRow = DB::pdo()->prepare('SELECT name, slug FROM produce_categories WHERE id = :id');
+                $catRow->execute(['id' => $categoryId]);
+                $catInfo = $catRow->fetch(PDO::FETCH_ASSOC) ?: ['name' => 'Produce', 'slug' => ''];
+                $catName = $catInfo['name'];
+                $catSlug = $catInfo['slug'];
+                $searchStmt = DB::pdo()->prepare(
+                    "SELECT DISTINCT ss.user_id FROM saved_searches ss
+                     WHERE ss.notify = 1
+                       AND (ss.query = '' OR :name1 LIKE CONCAT('%', ss.query, '%'))
+                       AND (ss.category = '' OR ss.category = :cat)
+                       AND (ss.price_min IS NULL OR :price1 >= ss.price_min)
+                       AND (ss.price_max IS NULL OR :price2 <= ss.price_max)"
+                );
+                $searchStmt->execute([
+                    'name1'  => $name,
+                    'cat'    => $catSlug,
+                    'price1' => $pricePerUnit,
+                    'price2' => $pricePerUnit,
+                ]);
+                foreach ($searchStmt->fetchAll(PDO::FETCH_COLUMN) as $buyerId) {
+                    notify_user(DB::pdo(), (int) $buyerId, 'listings',
+                        'New listing matches your saved search: ' . $name,
+                        'A new ' . $catName . ' listing is available at ' . money($pricePerUnit) . '.',
+                        'listing.php?id=' . $listingId);
+                }
+            } catch (Throwable $e) {
+                error_log('saved search notify: ' . $e->getMessage());
+            }
             if ($primaryImage) {
                 // Only one row may be primary; on edit demote the previous one.
                 if ($editing) {

@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/../src/bootstrap.php';
-require_role('admin');
+require_role('admin', 'manager');
 
 $pdo = DB::pdo();
 
@@ -41,36 +41,8 @@ $cartCopy = $i18nAll['cart'] ?? [];
             if (!$row) {
                 throw new UserFacingException(t($adminVerifyCopy, 'not_found'));
             }
-            if ($row['verification_status'] !== 'pending') {
-                throw new UserFacingException(t($adminVerifyCopy, 'already_reviewed'));
-            }
-            if ($action === 'reject' && $reason === '') {
-                throw new UserFacingException(t($adminVerifyCopy, 'reason_required'));
-            }
-            if (mb_strlen($reason) > FIELD_LIMITS['reason']) {
-                throw new UserFacingException(sprintf(t($adminVerifyCopy, 'reason_too_long'), FIELD_LIMITS['reason']));
-            }
 
-            if ($action === 'approve') {
-                $pdo->prepare('UPDATE farmer_profiles
-                               SET verification_status = \'approved\', verified_at = NOW(), verified_by = :admin, rejection_reason = NULL
-                               WHERE user_id = :id')
-                    ->execute(['admin' => current_user_id(), 'id' => $uid]);
-                $pdo->prepare('UPDATE users SET status = \'active\' WHERE id = :id')->execute(['id' => $uid]);
-                audit_log('verification_approved', 'farmer', $uid,
-                    ['verification_status' => 'pending', 'user_status' => $row['user_status']],
-                    ['verification_status' => 'approved', 'user_status' => 'active']);
-                $flash = 'Farmer application approved.';
-            } else {
-                $pdo->prepare('UPDATE farmer_profiles
-                               SET verification_status = \'rejected\', verified_at = NOW(), verified_by = :admin, rejection_reason = :reason
-                               WHERE user_id = :id')
-                    ->execute(['admin' => current_user_id(), 'id' => $uid, 'reason' => $reason]);
-                audit_log('verification_rejected', 'farmer', $uid,
-                    ['verification_status' => 'pending'],
-                    ['verification_status' => 'rejected', 'reason' => $reason]);
-                $flash = 'Farmer application rejected.';
-            }
+            $flash = farmer_review_apply($pdo, $row, $uid, $action, $reason, current_user_id(), $adminVerifyCopy);
 
             $pdo->commit();
             flash_set('success', $flash);

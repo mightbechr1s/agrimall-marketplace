@@ -18,9 +18,22 @@ $passwordError = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
 
+    // Bot detection
+    if (is_bot_request('register', $_POST)) {
+        http_response_code(400);
+        $errors[] = $l($copy['auth'], 'err_rate_limit');
+    }
+
+    // Rate limit registrations: 10 per IP per hour
+    $rlKey = 'register_' . md5((string) ($_SERVER['REMOTE_ADDR'] ?? ''));
+    if (rate_limit_check($rlKey, 10, 3600)) {
+        http_response_code(429);
+        $errors[] = $l($copy['auth'], 'err_rate_limit');
+    }
+
     $old = $_POST;
-    $fullName = trim((string) ($_POST['full_name'] ?? ''));
-    $email = trim((string) ($_POST['email'] ?? ''));
+    $fullName = mb_substr(trim((string) ($_POST['full_name'] ?? '')), 0, FIELD_LIMITS['full_name'] ?? 100);
+    $email = mb_substr(trim((string) ($_POST['email'] ?? '')), 0, FIELD_LIMITS['email'] ?? 255);
     $password = (string) ($_POST['password'] ?? '');
     $passwordConfirm = (string) ($_POST['password_confirm'] ?? '');
     $role = ($_POST['role'] ?? '') === 'farmer' ? 'farmer' : 'buyer';
@@ -40,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'valid_id_number' => $l($copy['auth'], 'valid_id_number'),
         ];
         foreach ($farmerLabels as $key => $label) {
-            $farmer[$key] = trim((string) ($_POST[$key] ?? ''));
+            $farmer[$key] = mb_substr(trim((string) ($_POST[$key] ?? '')), 0, FIELD_LIMITS[$key] ?? 255);
             if ($farmer[$key] === '') {
                 $errors[] = str_replace(':label', $label, $l($copy['auth'], 'err_fill'));
             }
@@ -90,8 +103,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        try {
-            $status = $role === 'farmer' ? 'pending_verification' : 'active';
+        // Issue an OTP and defer account creation until it is verified.
+        if (otp_rate_limit($email, 'register')) {
+            $errors[] = $l($copy['auth'], 'err_rate_limit');
+        } else {
+            $code = generate_otp();
+            store_otp($email, 'email', 'register', $code, 600, $_SERVER['REMOTE_ADDR'] ?? null);
+            $sent = send_otp_email($email, $code, 'register');
+            if (!$sent) {
+                // Mail transport off (dev) — log the code so it can be used.
+                error_log("OTP for {$email} (register): {$code}");
+            }
+            $_SESSION['pending_registration'] = [
+                'full_name' => $fullName,
+                'email'     => $email,
+                'password'  => $password,
+                'role'      => $role,
+                'farmer'    => $farmer,
+            ];
+            flash_set('success', 'A verification code was sent to ' . $email . '. Enter it below to finish creating your account.');
+            redirect_to('register_verify.php');
+        }
+        // Fall through to re-render the form with errors if OTP issuance failed.
+        if (!$errors) {
+            try {
+                $status = $role === 'farmer' ? 'pending_verification' : 'active';
             $insert = DB::pdo()->prepare(
                 'INSERT INTO users (email, password_hash, role, status)
                  VALUES (:email, :hash, :role, :status)'
@@ -148,6 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+}
 
 $pageTitle = $l($copy['auth'], 'reg_title');
 require __DIR__ . '/partials/header.php';
@@ -180,6 +217,8 @@ require __DIR__ . '/partials/header.php';
 
             <form method="post" action="register.php">
                 <?= csrf_field() ?>
+                <?= honeypot_field() ?>
+                <?= issue_form_token('register') ?>
 
                 <div style="margin-bottom: 20px;">
                     <span class="form-label d-block" style="font-size:14px; font-weight:600; margin-bottom:8px;"><?= $l($copy['auth'], 'register_as') ?></span>

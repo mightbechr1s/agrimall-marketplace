@@ -3,7 +3,7 @@ require __DIR__ . '/../src/bootstrap.php';
 require_once __DIR__ . '/../src/i18n.php';
 $copy = include __DIR__ . '/../src/i18n_copy.php';
 require_login();
-require_role('buyer');
+require_role('buyer', 'admin', 'manager');
 
 $pageTitle = 'Cart';
 $activePage = 'cart';
@@ -59,8 +59,8 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <a class="btn btn-primary" href="browse.php">Browse Listings</a>
             </div>
         <?php else: ?>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle cart-table">
+            <div class="table-responsive card">
+                <table class="table table-hover align-middle cart-table mb-0">
                     <thead>
                         <tr>
                             <th>Item</th>

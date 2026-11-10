@@ -1,0 +1,77 @@
+AgriMALL brand guide (v5 — Agrimall palette)
+==================================================
+
+Positioning
+  Direct from verified Filipino farms. Farm to table, no middlemen.
+  Revolutionizing agriculture: premium products & expert support.
+
+Logo
+  Mark: a green tractor (primary base #1b4332, secondary accent #2d6a4f).
+  Wordmark: "AgriMALL" in Fraunces 700, letter-spacing -0.015em, primary ink.
+
+  Files (public/assets/branding/)
+    mark.svg             tractor only, forest + emerald. Header, sidebar, favicon, app icon.
+    mark-reverse.svg     tractor only, light gray on charcoal. Dark backgrounds.
+    logo-horizontal.svg  tractor + wordmark, forest. Auth pages, documents.
+    logo-reverse.svg     tractor + wordmark, light gray. Footer, dark panels.
+    logo-stacked.svg     tractor above wordmark + tagline. Square placements.
+    logo-one-color.svg   outline only, single ink. Print, stamps, watermarks.
+    logo-formal.svg      horizontal + tagline. Letterheads, invoices.
+
+  Clear space: at least half the mark's width on every side.
+  Minimum size: mark 16px, horizontal lockup 120px wide.
+  Never: recolor the tractor outside the palette, stretch, outline the wordmark,
+  place the forest logo on a dark background, or add shadows.
+
+Colour
+  Light theme
+    canvas        #ffffff   pure white page
+    canvas-deep   #f8f9fa   alternating band
+    paper         #f8f9fa   cards, fields
+    primary       #1b4332   deep forest — text, links, icons, filled surfaces
+    primary-dark  #0d2818   footer, hover
+    accent        #2d6a4f   emerald — secondary actions, badges, success
+    gold          #2d6a4f   (alias for accent)
+    gold-text     #1b4332   accent as text on light surfaces
+    text          #212529   charcoal
+    text-soft     #6c757d   slate gray (subtitles, timestamps)
+    borders       #dee2e6   light gray separators
+    field-border  #6c757d   inputs (>=3:1 on white)
+    danger        #dc3545
+    success       #2d6a4f
+    focus-ring    #1b4332
+
+  Dark theme
+    canvas        #121212   deep charcoal
+    canvas-deep   #1e1e1e
+    paper         #1e1e1e   dark gray surface
+    primary       #52b788   sage accent — text, links, icons
+    primary-dark  #40916c   muted emerald
+    accent        #40916c
+    gold          #52b788
+    text          #f1f3f5   light gray/white
+    text-soft     #adb5bd   soft gray
+    borders       rgba(255,255,255,0.10)
+    field-border  rgba(255,255,255,0.16)
+    danger        #ff6b6b
+    success       #52b788
+    focus-ring    #52b788
+    trust band    #2d6a4f   filled band with light labels
+
+  Rules
+    Primary is never body text on dark surfaces — use --text.
+    Filled brand surfaces use primary (light) or #2d6a4f (dark); text on them is white.
+    Borders on interactive fields must clear 3:1; card separators may stay soft.
+    No neon, no gradients as primary colour.
+
+Typography
+  Display / headlines  Fraunces (bundled, offline). 600-700, tight tracking.
+  Body / UI            Source Sans Pro. 400-600.
+  Mono / figures       JetBrains Mono.
+  Headlines are sentence case. Labels and section kickers are uppercase,
+  0.08em tracking, 0.7-0.75rem.
+
+Spacing and shape
+  8px base grid. Section padding 5rem desktop / 3.5rem mobile.
+  Cards: 18px radius, 1px border, soft warm shadow.
+  Buttons: pill radius. Pills: pill radius, 1px border.

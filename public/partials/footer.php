@@ -8,6 +8,7 @@ $footerCopy = $copy['footer'] ?? [
         'heading_company' => 'Company',
         'link_browse_listings' => 'Browse listings',
         'link_how_it_works' => 'How it works',
+        'link_get_app' => 'Get the app',
         'link_faq' => 'FAQ',
         'link_become_a_seller' => 'Become a seller',
         'link_seller_handbook' => 'Seller handbook',
@@ -24,6 +25,7 @@ $footerCopy = $copy['footer'] ?? [
         'heading_company' => 'Kumpanya',
         'link_browse_listings' => 'Mag-browse',
         'link_how_it_works' => 'Paano ito gumagana',
+        'link_get_app' => 'Kunin ang app',
         'link_faq' => 'FAQ',
         'link_become_a_seller' => 'Magbenta',
         'link_seller_handbook' => 'Seller handbook',
@@ -51,6 +53,7 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
       <div>
         <h2><?= $f('heading_market') ?></h2>
         <a href="browse.php"><?= $f('link_browse_listings') ?></a>
+        <a href="get_app.php"><?= $f('link_get_app') ?></a>
         <a href="index.php#steps"><?= $f('link_how_it_works') ?></a>
         <a href="index.php#faq"><?= $f('link_faq') ?></a>
       </div>
@@ -253,7 +256,7 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
       overlay.id = 'logout-confirm-overlay';
       overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;';
       var box = document.createElement('div');
-      box.style.cssText = 'background:var(--card-bg,#fff);color:var(--text,#111);border-radius:12px;padding:20px 24px;max-width:320px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.25);font-family:var(--font-body,system-ui,sans-serif);';
+      box.style.cssText = 'background:var(--paper,#1e1e1e);color:var(--text,#f1f3f5);border:1px solid var(--borders,rgba(255,255,255,.1));border-radius:12px;padding:20px 24px;max-width:320px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.35);font-family:var(--font-body,system-ui,sans-serif);';
       box.innerHTML = '<p style="margin:0 0 16px;font-size:16px;font-weight:600;">Log out?</p>' +
         '<p style="margin:0 0 16px;font-size:14px;opacity:.8;">You will need to sign in again to access your account.</p>' +
         '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
@@ -322,5 +325,50 @@ $ck = function ($key) use ($cookieCopy) { return t($cookieCopy, $key); };
     });
   })();
 </script>
+<script src="assets/js/shortcuts.js" defer></script>
+<nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+  <ul class="mobile-bottom-nav__list">
+    <?php
+    $bottomNavRole = current_user_role() ?: 'guest';
+    $bottomNavItems = [];
+    if (in_array($bottomNavRole, ['buyer', 'admin', 'manager'], true)) {
+        $bottomNavItems = [
+            ['href' => 'index.php', 'icon' => 'bi-house', 'label' => 'Home', 'page' => 'home'],
+            ['href' => 'browse.php', 'icon' => 'bi-shop', 'label' => 'Browse', 'page' => 'browse'],
+            ['href' => 'cart.php', 'icon' => 'bi-cart3', 'label' => 'Cart', 'page' => 'cart', 'badge' => true],
+            ['href' => 'orders.php', 'icon' => 'bi-receipt', 'label' => 'Orders', 'page' => 'orders'],
+            ['href' => 'account.php', 'icon' => 'bi-person', 'label' => 'Profile', 'page' => 'account'],
+        ];
+    } elseif ($bottomNavRole === 'farmer') {
+        $bottomNavItems = [
+            ['href' => 'dashboard.php', 'icon' => 'bi-grid-1x2', 'label' => 'Home', 'page' => 'dashboard'],
+            ['href' => 'browse.php', 'icon' => 'bi-shop', 'label' => 'Browse', 'page' => 'browse'],
+            ['href' => 'my_listings.php', 'icon' => 'bi-basket3', 'label' => 'Listings', 'page' => 'listings'],
+            ['href' => 'orders.php', 'icon' => 'bi-receipt', 'label' => 'Orders', 'page' => 'orders'],
+            ['href' => 'account.php', 'icon' => 'bi-person', 'label' => 'Profile', 'page' => 'account'],
+        ];
+    } else {
+        $bottomNavItems = [
+            ['href' => 'index.php', 'icon' => 'bi-house', 'label' => 'Home', 'page' => 'home'],
+            ['href' => 'browse.php', 'icon' => 'bi-shop', 'label' => 'Browse', 'page' => 'browse'],
+            ['href' => 'login.php', 'icon' => 'bi-box-arrow-in-right', 'label' => 'Sign in', 'page' => 'login'],
+        ];
+    }
+    $currentPage = basename($_SERVER['PHP_SELF'] ?? '');
+    foreach ($bottomNavItems as $item):
+        $isActive = (basename($item['href']) === $currentPage);
+    ?>
+    <li class="mobile-bottom-nav__item">
+      <a href="<?= e($item['href']) ?>" class="mobile-bottom-nav__link<?= $isActive ? ' is-active' : '' ?>">
+        <i class="bi <?= e($item['icon']) ?>" aria-hidden="true"></i>
+        <span><?= e($item['label']) ?></span>
+        <?php if (!empty($item['badge'])): ?>
+        <span class="mobile-bottom-nav__badge cart-count" aria-label="Cart items">0</span>
+        <?php endif; ?>
+      </a>
+    </li>
+    <?php endforeach; ?>
+  </ul>
+</nav>
 </body>
 </html>

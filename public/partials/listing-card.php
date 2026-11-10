@@ -31,7 +31,12 @@ $cardClasses = $isFarmer ? 'card' : 'card h-100';
 if ($mode === 'horizontal') $cardClasses .= ' flex-row';
 if ($mode === 'featured') $cardClasses .= ' feature-card';
 ?>
-<article class="<?= e($cardClasses) ?>" data-reveal="stagger" data-listing-url="<?= e($listingUrl) ?>" data-category="<?= e(strtolower($category)) ?>" itemscope itemtype="https://schema.org/Product">
+<article class="<?= e($cardClasses) ?><?= !empty($showBulkSelect) ? ' bulk-selectable' : '' ?>" data-reveal="stagger" data-listing-url="<?= e($listingUrl) ?>" data-category="<?= e(strtolower($category)) ?>" itemscope itemtype="https://schema.org/Product">
+<?php if (!empty($showBulkSelect) && $isFarmer): ?>
+  <label class="bulk-select-check" aria-label="Select <?= e($title) ?>">
+    <input type="checkbox" name="listing_ids[]" value="<?= (int) $listing['id'] ?>" class="bulk-check-input">
+  </label>
+<?php endif; ?>
   <div class="thumb" itemprop="image">
     <?php if (!$isFarmer): ?>
     <div class="badges-top">

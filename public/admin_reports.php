@@ -1,60 +1,8 @@
 <?php
 require __DIR__ . '/../src/bootstrap.php';
-require_role('admin');
+require_role('admin', 'manager');
 
 $pdo = DB::pdo();
-
-// Admin listing deactivation (POST handler, before any output).
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'deactivate_listing') {
-    csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
-    $listingId = (int) ($_POST['listing_id'] ?? 0);
-    $reason    = trim((string) ($_POST['reason'] ?? ''));
-    $returnTo  = 'admin_reports.php?t=listings';
-    if (!$listingId || $reason === '') {
-        flash_set('error', 'Listing ID and a reason are required.');
-        redirect_to($returnTo);
-    }
-    if (mb_strlen($reason) > FIELD_LIMITS['reason']) {
-        flash_set('error', 'Reason is too long (max ' . FIELD_LIMITS['reason'] . ' characters).');
-        redirect_to($returnTo);
-    }
-    try {
-        $pdo->beginTransaction();
-        $stmt = $pdo->prepare('SELECT * FROM produce_listings WHERE id = :id FOR UPDATE');
-        $stmt->execute(['id' => $listingId]);
-        $listing = $stmt->fetch();
-        if (!$listing) {
-            throw new UserFacingException('Listing not found.');
-        }
-        if ($listing['status'] === 'admin_deactivated') {
-            throw new UserFacingException('This listing is already deactivated.');
-        }
-        if ($listing['status'] === 'archived') {
-            throw new UserFacingException('Archived listings cannot be deactivated.');
-        }
-        $pdo->prepare("UPDATE produce_listings SET status = 'admin_deactivated' WHERE id = :id")
-            ->execute(['id' => $listingId]);
-        $pdo->prepare(
-            'INSERT INTO admin_audit_log (admin_id, action, entity_type, entity_id, reason, created_at)
-             VALUES (:admin, :action, :type, :id, :reason, NOW())'
-        )->execute([
-            'admin'  => current_user_id(),
-            'action' => 'deactivate_listing',
-            'type'   => 'listing',
-            'id'     => $listingId,
-            'reason' => $reason,
-        ]);
-        $pdo->commit();
-        flash_set('success', 'Listing deactivated.');
-    } catch (UserFacingException $e) {
-        $pdo->rollBack();
-        flash_set('error', $e->getMessage());
-    } catch (Throwable $e) {
-        $pdo->rollBack();
-        flash_set('error', generic_error_message(app_log_exception($e, 'admin_listing_action')));
-    }
-    redirect_to($returnTo);
-}
 
 /** Cap on PDF export rows. Beyond this the file (and PHP memory) grows with
  *  the dataset, so a flooded admin URL could exhaust the server. */
@@ -866,13 +814,6 @@ require __DIR__ . '/partials/dashboard-layout.php';
 </p>
 
 <?php if ($type === 'listings' && !empty($rows)): ?>
-<form method="post" action="admin_listing_action.php" id="bulk-form" class="d-flex align-items-center gap-3 mb-3" style="display:none;">
-    <?= csrf_field() ?>
-    <input type="hidden" name="action" value="deactivate_listing">
-    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="var ids=[]; document.querySelectorAll('.listing-cb:checked').forEach(function(cb){ids.push(cb.value);}); if(!ids.length){alert('Select at least one listing.');return false;} var f=document.getElementById('bulk-form'); f.querySelectorAll('input[name=\'listing_ids[]\']').forEach(function(e){e.remove();}); ids.forEach(function(id){var i=document.createElement('input');i.type='hidden';i.name='listing_ids[]';i.value=id;f.appendChild(i);}); return confirm('Mark selected listings as out of stock?');">
-        <i class="bi bi-x-circle me-1"></i>Mark selected out of stock
-    </button>
-</form>
 
 <script>
 document.addEventListener('DOMContentLoaded', function(){
@@ -980,16 +921,10 @@ document.addEventListener('DOMContentLoaded', function(){
                 <td><?= status_badge($r['status']) ?></td>
                 <td class="cell-muted text-nowrap"><?= $r['published_at'] ? e(date('Y-m-d', strtotime($r['published_at']))) : '—' ?></td>
                   <td>
-                      <?php if ($r['status'] !== 'sold_out' && $r['status'] !== 'archived'): ?>
-                      <form method="post" action="admin_listing_action.php" class="d-inline" onsubmit="return confirm('Mark this listing as out of stock?');">
-                          <?= csrf_field() ?>
-                          <input type="hidden" name="action" value="deactivate_listing">
-                          <input type="hidden" name="listing_id" value="<?= (int) $r['id'] ?>">
-                          <button type="submit" class="btn btn-sm btn-outline-danger">Out of stock</button>
-                      </form>
-                      <?php elseif ($r['status'] === 'sold_out'): ?>
-                      <span class="text-muted small">Out of stock</span>
-                      <?php endif; ?>
+                   <td>
+                       <?php if ($r['status'] === 'sold_out'): ?>
+                       <span class="text-muted small">Out of stock (auto)</span>
+                       <?php endif; ?>
                   </td>
             </tr>
             <?php endforeach; ?>
@@ -1146,4 +1081,5 @@ document.addEventListener('DOMContentLoaded', function () {
 </div>
 <?php endif; ?>
 
+<script src="assets/js/report-auto.js" defer></script>
 <?php require __DIR__ . '/partials/dashboard-footer.php'; ?>

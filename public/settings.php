@@ -155,6 +155,19 @@ require __DIR__ . '/partials/dashboard-layout.php';
                     <label class="form-check-label" for="notify_promotions"><?= $l($copy['settings'], 'notify_promotions') ?></label>
                 </div>
             </fieldset>
+            <?php if (push_enabled()): ?>
+            <fieldset>
+                <legend><?= $l($copy['settings'], 'legend_push') ?></legend>
+                <p class="form-text"><?= $l($copy['settings'], 'push_description') ?></p>
+                <button type="button" class="btn btn-outline" id="push-toggle"
+                        data-vapid="<?= e(push_public_key()) ?>"
+                        data-csrf="<?= e(csrf_token()) ?>"
+                        data-enable="<?= e($l($copy['settings'], 'push_enable')) ?>"
+                        data-disable="<?= e($l($copy['settings'], 'push_disable')) ?>"
+                        data-endpoint="/push_subscribe.php"><?= $l($copy['settings'], 'push_enable') ?></button>
+                <p class="form-text mb-0 mt-2" id="push-status" role="status" aria-live="polite"></p>
+            </fieldset>
+            <?php endif; ?>
             <fieldset>
                 <legend><?= $l($copy['settings'], 'legend_accessibility') ?></legend>
                 <div class="form-group">
@@ -199,4 +212,5 @@ require __DIR__ . '/partials/dashboard-layout.php';
   })();
 </script>
 <?php endif; ?>
+<script src="<?= e(asset('assets/js/push.js')) ?>" defer></script>
 <?php require __DIR__ . '/partials/dashboard-footer.php'; ?>

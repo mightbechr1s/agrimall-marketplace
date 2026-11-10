@@ -43,7 +43,7 @@ $requestedFile = realpath($requestedFile) ?: $requestedFile;
 if (is_file($requestedFile) && str_starts_with($requestedFile, realpath($documentRoot) . DIRECTORY_SEPARATOR)) {
     // Static assets: served with Cache-Control
     $ext = strtolower(pathinfo($requestedFile, PATHINFO_EXTENSION));
-    $staticExtensions = ['css', 'js', 'svg', 'png', 'jpg', 'jpeg', 'webp', 'ico', 'json', 'txt', 'woff', 'woff2'];
+    $staticExtensions = ['css', 'js', 'svg', 'png', 'jpg', 'jpeg', 'webp', 'ico', 'json', 'txt', 'woff', 'woff2', 'apk'];
 
     // dotfiles (.htaccess, .env, backups) must not be served
     if (str_starts_with(basename($requestedFile), '.')) {
@@ -62,9 +62,10 @@ if (is_file($requestedFile) && str_starts_with($requestedFile, realpath($documen
     }
 
     if (in_array($ext, $staticExtensions, true)) {
-        // Skip caching for robots.txt and sitemap (special routes)
+        // Skip caching for robots.txt and sitemap (special routes), and for the
+        // app download so a replaced APK is never served stale.
         $basename = basename($requestedFile);
-        if ($basename !== 'robots.txt' && $basename !== 'sitemap.xml') {
+        if ($basename !== 'robots.txt' && $basename !== 'sitemap.xml' && $ext !== 'apk') {
             header('Cache-Control: public, max-age=86400');
         }
         $mimeTypes = [
@@ -80,9 +81,11 @@ if (is_file($requestedFile) && str_starts_with($requestedFile, realpath($documen
             'txt' => 'text/plain',
             'woff' => 'font/woff',
             'woff2' => 'font/woff2',
+            'apk' => 'application/vnd.android.package-archive',
         ];
         $mime = $mimeTypes[$ext] ?? 'application/octet-stream';
         header('Content-Type: ' . $mime);
+        header('Content-Length: ' . filesize($requestedFile));
         readfile($requestedFile);
         return true;
     }

@@ -62,6 +62,41 @@ $soldWeekStmt = DB::pdo()->prepare("SELECT COUNT(*) FROM orders WHERE listing_id
 $soldWeekStmt->execute(['id' => $id]);
 $soldWeek = (int) $soldWeekStmt->fetchColumn();
 
+// Seller trust: public, visible reviews only. Decorative — a failed lookup
+// must not take the listing down, so it degrades to "no reviews yet".
+$ratingCount = 0;
+$ratingAvg = null;
+try {
+    $ratingStmt = DB::pdo()->prepare("SELECT COUNT(*) AS total, AVG(rating) AS average FROM farmer_reviews WHERE farmer_id = :id AND status = 'visible'");
+    $ratingStmt->execute(['id' => $item['farmer_id']]);
+    $ratingRow = $ratingStmt->fetch() ?: ['total' => 0, 'average' => null];
+    $ratingCount = (int) $ratingRow['total'];
+    $ratingAvg = $ratingRow['average'] !== null ? round((float) $ratingRow['average'], 1) : null;
+} catch (Exception $e) {
+    error_log('listing: rating lookup failed: ' . $e->getMessage());
+}
+
+// Related listings from the same category; same active/verified rules as browse.
+$relatedListings = [];
+try {
+    $relatedStmt = DB::pdo()->prepare("SELECT *, farm_name AS farmer_name FROM v_active_listings WHERE category_id = :cat AND id <> :id ORDER BY is_expired ASC, published_at DESC LIMIT 4");
+    $relatedStmt->execute(['cat' => $item['category_id'], 'id' => $id]);
+    $relatedListings = $relatedStmt->fetchAll();
+} catch (Exception $e) {
+    error_log('listing: related listings lookup failed: ' . $e->getMessage());
+}
+
+// Saved state for the buy box (buyers only).
+$isSaved = false;
+if (current_user_id() && in_array(current_user_role(), ['buyer', 'admin', 'manager'], true)) {
+    try {
+        $sv = DB::pdo()->prepare('SELECT 1 FROM saved_listings WHERE user_id = :u AND listing_id = :l');
+        $sv->execute(['u' => current_user_id(), 'l' => $id]);
+        $isSaved = (bool) $sv->fetchColumn();
+    } catch (Exception $e) {
+        error_log('listing: saved-state lookup failed: ' . $e->getMessage());
+    }
+}
 $pageTitle = $item['name'];
 $fmtQty = function ($value, $symbol): string {
     return rtrim(rtrim(number_format((float) $value, 4), '0'), '.') . ' ' . e($symbol);
@@ -123,21 +158,6 @@ $fmtQty = function ($value, $symbol): string {
                 </div>
 
                 <h1 class="listing-title"><?= e($item['name']) ?></h1>
-                <div class="card border-0 shadow-sm mt-3 mb-3">
-                    <div class="card-body p-3">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center" style="width:36px;height:36px;"><i class="bi bi-shop"></i></span>
-                            <div>
-                                <div class="fw-semibold small"><?= e($item['farm_name']) ?></div>
-                                <div class="text-muted small"><i class="bi bi-geo-alt-fill"></i> <?= e($item['barangay']) ?>, <?= e($item['municipality_city']) ?>, <?= e($item['province']) ?></div>
-                            </div>
-                            <?php if ($item['verification_status'] === 'approved'): ?>
-                                <span class="badge text-bg-success ms-auto"><i class="bi bi-patch-check-fill"></i> Verified</span>
-                            <?php endif; ?>
-                        </div>
-                        <a href="profile.php?id=<?= (int) $item['farmer_id'] ?>" class="btn btn-outline-primary btn-sm w-100 mt-2">View farm &amp; products</a>
-                    </div>
-                </div>
 
                 <div class="listing-price">
                     <span class="amount"><?= money($item['price_per_unit']) ?></span>
@@ -175,6 +195,76 @@ $fmtQty = function ($value, $symbol): string {
                     <p class="text-muted small mb-2 mt-1"><i class="bi bi-bag-check text-success me-1" aria-hidden="true"></i><?= $soldWeek === 1 ? '1 sold this week' : $soldWeek . ' sold this week' ?></p>
                 <?php endif; ?>
 
+                <?php if (!listing_is_expired($item) && current_user_id() && in_array(current_user_role(), ['buyer', 'admin', 'manager'], true)): ?>
+                <div class="listing-buybox" data-reveal>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <form method="post" action="cart_add.php" class="mb-0 flex-grow-1" data-buy-now="true">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="listing_id" value="<?= (int) $item['id'] ?>">
+                            <input type="hidden" name="quantity" value="<?= (float) $item['minimum_order_qty'] ?>">
+                            <input type="hidden" name="buy_now" value="1">
+                            <button type="submit" class="btn btn-primary w-100" aria-label="Buy now"><i class="bi bi-lightning-charge-fill me-1" aria-hidden="true"></i>Buy Now</button>
+                        </form>
+                        <form method="post" action="cart_add.php" class="mb-0" data-ajax="true">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="listing_id" value="<?= (int) $item['id'] ?>">
+                            <input type="hidden" name="quantity" value="<?= (float) $item['minimum_order_qty'] ?>">
+                            <button type="submit" class="btn btn-outline-primary btn-icon" title="Add to cart" aria-label="Add to cart"><i class="bi bi-cart-plus" aria-hidden="true"></i></button>
+                        </form>
+                        <form method="post" action="saved_toggle.php" class="mb-0" data-save-ajax="true">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="listing_id" value="<?= (int) $item['id'] ?>">
+                            <input type="hidden" name="return_to" value="listing.php?id=<?= (int) $item['id'] ?>">
+                            <button type="submit" class="btn <?= $isSaved ? 'btn-danger' : 'btn-outline-danger' ?>" aria-pressed="<?= $isSaved ? 'true' : 'false' ?>">
+                                <i class="bi <?= $isSaved ? 'bi-heart-fill' : 'bi-heart' ?> me-1" aria-hidden="true"></i><?= $isSaved ? 'Saved' : 'Save for Later' ?>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <div class="listing-seller" data-reveal>
+                    <div class="listing-seller__head">
+                        <span class="listing-seller__avatar"><i class="bi bi-shop" aria-hidden="true"></i></span>
+                        <div class="listing-seller__id">
+                            <a href="profile.php?id=<?= (int) $item['farmer_id'] ?>" class="listing-seller__name"><?= e($item['farm_name']) ?></a>
+                            <span class="listing-seller__place"><i class="bi bi-geo-alt" aria-hidden="true"></i><?= e($item['barangay']) ?>, <?= e($item['municipality_city']) ?>, <?= e($item['province']) ?></span>
+                        </div>
+                        <?php if ($item['verification_status'] === 'approved'): ?>
+                            <span class="pill pill--verified"><i class="bi bi-patch-check-fill" aria-hidden="true"></i><?= $l($copy['listing'], 'verified_farm') ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="listing-seller__trust">
+                        <?php if ($ratingAvg !== null): ?>
+                            <span class="listing-seller__rating">
+                                <i class="bi bi-star-fill" aria-hidden="true"></i>
+                                <strong><?= e((string) $ratingAvg) ?></strong>
+                                <span class="text-muted">(<?= $ratingCount ?> review<?= $ratingCount === 1 ? '' : 's' ?>)</span>
+                            </span>
+                        <?php else: ?>
+                            <span class="text-muted small">No reviews yet</span>
+                        <?php endif; ?>
+                        <a href="profile.php?id=<?= (int) $item['farmer_id'] ?>" class="btn btn-outline-primary btn-sm">View farm &amp; products</a>
+                    </div>
+                </div>
+
+                <div class="listing-fulfilment" data-reveal>
+                    <div class="listing-fulfilment__row">
+                        <i class="bi bi-shop" aria-hidden="true"></i>
+                        <div>
+                            <strong>Pickup from the farm</strong>
+                            <span><?= e($item['barangay']) ?>, <?= e($item['municipality_city']) ?>, <?= e($item['province']) ?></span>
+                        </div>
+                    </div>
+                    <div class="listing-fulfilment__row">
+                        <i class="bi bi-truck" aria-hidden="true"></i>
+                        <div>
+                            <strong>Farmer delivery</strong>
+                            <span>Fee and schedule are agreed directly with the farmer after your request.</span>
+                        </div>
+                    </div>
+                </div>
+
                 <p class="listing-desc"><?= nl2br(e($item['description'] ?? '')) ?></p>
 
                 <dl class="listing-facts">
@@ -195,46 +285,33 @@ $fmtQty = function ($value, $symbol): string {
                             <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i><?= $l($copy['listing'], 'expired_notice') ?>
                         </div>
                         <p class="text-muted mb-0"><?= $l($copy['listing'], 'expired_no_order') ?></p>
-                    <?php elseif (current_user_id() && current_user_role() === 'buyer'): ?>
-                        <?php
-                        $isSaved = false;
-                        try {
-                            $sv = DB::pdo()->prepare('SELECT 1 FROM saved_listings WHERE user_id = :u AND listing_id = :l');
-                            $sv->execute(['u' => current_user_id(), 'l' => $item['id']]);
-                            $isSaved = (bool) $sv->fetchColumn();
-                        } catch (Exception $e) {
-                            // Decorative query: degrade rather than break the page, but do not
-                            // swallow it silently -- a failure here is invisible otherwise.
-                            error_log('listing: saved-state lookup failed: ' . $e->getMessage());
-                        }
-                        ?>
-                        <div class="d-flex gap-2 mb-3">
-                            <form method="post" action="cart_add.php" class="mb-0" data-buy-now="true">
-                                <?= csrf_field() ?>
-                                <input type="hidden" name="listing_id" value="<?= (int) $item['id'] ?>">
-                                <input type="hidden" name="quantity" value="<?= (float) $item['minimum_order_qty'] ?>">
-                                <input type="hidden" name="buy_now" value="1">
-                                <button type="submit" class="btn btn-primary" aria-label="Buy now"><i class="bi bi-lightning-charge-fill me-1" aria-hidden="true"></i>Buy Now</button>
-                            </form>
-                            <form method="post" action="cart_add.php" class="mb-0" data-ajax="true">
-                                <?= csrf_field() ?>
-                                <input type="hidden" name="listing_id" value="<?= (int) $item['id'] ?>">
-                                <input type="hidden" name="quantity" value="<?= (float) $item['minimum_order_qty'] ?>">
-                                <button type="submit" class="btn btn-outline-primary btn-icon" title="Add to cart" aria-label="Add to cart"><i class="bi bi-cart-plus" aria-hidden="true"></i></button>
-                            </form>
-                            <form method="post" action="saved_toggle.php" class="mb-0" data-save-ajax="true">
-                                <?= csrf_field() ?>
-                                <input type="hidden" name="listing_id" value="<?= (int) $item['id'] ?>">
-                                <input type="hidden" name="return_to" value="listing.php?id=<?= (int) $item['id'] ?>">
-                                <button type="submit" class="btn <?= $isSaved ? 'btn-danger' : 'btn-outline-danger' ?>">
-                                    <i class="bi <?= $isSaved ? 'bi-heart-fill' : 'bi-heart' ?> me-1" aria-hidden="true"></i><?= $isSaved ? 'Saved' : 'Save for Later' ?>
-                                </button>
-                            </form>
-                        </div>
+                    <?php elseif (current_user_id() && in_array(current_user_role(), ['buyer', 'admin', 'manager'], true)): ?>
                         <div class="order-form">
                             <h5 class="mb-3">Place Order</h5>
+                            <?php
+                            $buyerProfile = null;
+                            if (current_user_id() && in_array(current_user_role(), ['buyer', 'admin', 'manager'], true)) {
+                                try {
+                                    $bpStmt = DB::pdo()->prepare('SELECT delivery_address, barangay, municipality_city, province, preferred_pickup FROM buyer_profiles WHERE user_id = :u');
+                                    $bpStmt->execute(['u' => current_user_id()]);
+                                    $buyerProfile = $bpStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+                                } catch (Throwable $e) { error_log('listing: buyer profile lookup failed: ' . $e->getMessage()); }
+                            }
+                            $savedAddress = '';
+                            if ($buyerProfile) {
+                                $parts = array_filter([
+                                    $buyerProfile['delivery_address'] ?? '',
+                                    $buyerProfile['barangay'] ?? '',
+                                    $buyerProfile['municipality_city'] ?? '',
+                                    $buyerProfile['province'] ?? '',
+                                ]);
+                                $savedAddress = implode(', ', $parts);
+                            }
+                            ?>
                             <form method="post" action="/order_request.php" class="row g-3">
                                 <?= csrf_field() ?>
+                                <?= honeypot_field() ?>
+                                <?= issue_form_token('order_request') ?>
                                 <input type="hidden" name="listing_id" value="<?= (int) $item['id'] ?>">
 
                                 <div class="col-md-6">
@@ -273,9 +350,10 @@ $fmtQty = function ($value, $symbol): string {
                                 </div>
                                 <div class="col-12 delivery-field" style="display: none;">
                                     <label class="form-label" for="delivery_address">Delivery Address</label>
+                                    <?php if ($savedAddress !== ''): ?><div class="form-text text-success small"><i class="bi bi-check-circle me-1"></i>Pre-filled from your profile. Edit if needed.</div><?php endif; ?>
                                     <textarea class="form-control" id="delivery_address" name="delivery_address" rows="2"
                                               maxlength="<?= FIELD_LIMITS['delivery_address'] ?>"
-                                              placeholder="Full address including barangay, city/municipality, province"></textarea>
+                                              placeholder="Full address including barangay, city/municipality, province"><?= e($savedAddress) ?></textarea>
                                 </div>
 
                                 <div class="col-12">
@@ -325,7 +403,7 @@ $fmtQty = function ($value, $symbol): string {
                     if (!qty) return;
                     const sync = function () {
                         var v = qty.value;
-                        document.querySelectorAll('.listing-cta [name="quantity"]').forEach(function (h) { h.value = v; });
+                        document.querySelectorAll('.listing-buybox [name="quantity"]').forEach(function (h) { h.value = v; });
                     };
                     qty.addEventListener('input', sync);
                 });
@@ -333,6 +411,25 @@ $fmtQty = function ($value, $symbol): string {
             </div>
         </div>
     </div>
+
+    <?php if ($relatedListings): ?>
+    <section class="listing-related" aria-labelledby="related-title" data-reveal>
+        <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-4">
+            <div>
+                <span class="kicker">More from this category</span>
+                <h2 class="section-title h3 mb-0" id="related-title">You might also like</h2>
+            </div>
+            <a href="browse.php?category=<?= e($item['category_slug']) ?>" class="btn btn-outline-primary btn-sm">See all <?= e($item['category_name']) ?></a>
+        </div>
+        <div class="row g-4">
+            <?php foreach ($relatedListings as $listing): ?>
+            <div class="col-6 col-lg-3">
+                <?php $mode = 'grid'; $showActions = true; require __DIR__ . '/partials/listing-card.php'; ?>
+            </div>
+            <?php endforeach; ?>
+        </div>
+    </section>
+    <?php endif; ?>
 <?php if (!$sidebarShell): ?>
 </main>
 <?php require __DIR__ . '/partials/footer.php'; ?>

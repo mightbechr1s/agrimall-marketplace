@@ -28,7 +28,7 @@ $respond = function (bool $ok, string $message, string $redirect) use ($isAsync)
 if (!current_user_id()) {
     $respond(false, t($cartCopy, 'login_required'), $loginUrl);
 }
-if (current_user_role() !== 'buyer') {
+if (!in_array(current_user_role(), ['buyer', 'admin', 'manager'], true)) {
     $respond(false, t($cartCopy, 'buyer_only'), $loginUrl);
 }
 
