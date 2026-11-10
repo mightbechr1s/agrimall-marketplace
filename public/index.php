@@ -47,7 +47,6 @@ require __DIR__ . '/partials/header.php';
     <div class="container">
         <div class="row align-items-center g-4">
             <div class="col-lg-7">
-                <p class="eyebrow-pill mb-3"><?= t($copy['hero'], 'eyebrow') ?></p>
                 <h1 class="hero-title editorial-serif"><?= preg_replace('/(24\s*hours|24\s*oras)/', '<span class="nowrap">$1</span>', e($heroCopy['headline'])) ?></h1>
                 <p class="hero-lead"><?= e($heroCopy['subhead']) ?></p>
                 <!-- Hero search is the primary CTA: a marketplace's conversion action -->
@@ -125,7 +124,6 @@ require __DIR__ . '/partials/header.php';
             </div>
             <div class="col-lg-6">
                 <div class="story-content">
-                    <p class="eyebrow-pill"><?= t($copy['story'], 'kicker') ?></p>
                     <h2 class="section-title mb-3"><?= t($copy['story'], 'heading') ?></h2>
                     <p class="story-body"><?= t($copy['story'], 'body') ?></p>
                     <blockquote class="story-quote">
@@ -144,7 +142,6 @@ require __DIR__ . '/partials/header.php';
     <div class="container">
         <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-4">
             <div>
-                <p class="eyebrow-pill mb-2"><?= t($copy['preview'], 'section_title') ?></p>
                 <h2 class="section-title mb-0" id="market-preview-title"><?= t($copy['preview'], 'intro') ?></h2>
             </div>
             <a href="browse.php" class="btn btn-outline-primary">View all listings <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i></a>
@@ -174,7 +171,6 @@ require __DIR__ . '/partials/header.php';
 <section id="steps" class="how-it-works" data-reveal>
     <div class="container">
         <div class="text-center mb-5">
-            <p class="eyebrow-pill"><?= t($copy['how'], 'kicker') ?></p>
             <h2 class="section-title mb-3"><?= t($copy['how'], 'section_title') ?></h2>
             <p class="section-lead col-lg-8 mx-auto"><?= t($copy['how'], 'intro') ?></p>
         </div>
@@ -207,7 +203,6 @@ require __DIR__ . '/partials/header.php';
 <section id="faq" class="faq-section py-5" data-reveal>
     <div class="container">
         <div class="text-center mb-4">
-            <p class="eyebrow-pill"><?= t($copy['faq'], 'kicker') ?></p>
             <h2 class="section-title fw-bold mb-2"><?= t($copy['faq'], 'section_title') ?></h2>
         </div>
         <div class="accordion accordion-flush" id="faqAccordion">
