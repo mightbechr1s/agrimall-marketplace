@@ -430,6 +430,29 @@ $fmtQty = function ($value, $symbol): string {
         </div>
     </section>
     <?php endif; ?>
+<script type="application/ld+json">
+<?= json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'Product',
+    'name' => $item['name'],
+    'description' => $item['description'] ?? '',
+    'image' => !empty($item['primary_image']) ? app_base_url() . '/' . ltrim($item['primary_image'], '/') : null,
+    'offers' => [
+        '@type' => 'Offer',
+        'priceCurrency' => 'PHP',
+        'price' => (float) $item['price_per_unit'],
+        'availability' => 'https://schema.org/InStock',
+        'seller' => [
+            '@type' => 'Organization',
+            'name' => $item['farm_name'] ?? '',
+        ],
+    ],
+    'additionalProperty' => [
+        ['@type' => 'PropertyValue', 'name' => 'Unit', 'value' => $item['unit_symbol'] ?? ''],
+        ['@type' => 'PropertyValue', 'name' => 'Category', 'value' => $item['category_name'] ?? ''],
+    ],
+], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>
+</script>
 <?php if (!$sidebarShell): ?>
 </main>
 <?php require __DIR__ . '/partials/footer.php'; ?>
