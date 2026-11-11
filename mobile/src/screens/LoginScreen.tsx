@@ -26,6 +26,8 @@ export function LoginScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [totpCode, setTotpCode] = useState('');
+  const [needsTotp, setNeedsTotp] = useState(false);
   const [role, setRole] = useState<Role>('buyer');
   const [code, setCode] = useState('');
   const [devCode, setDevCode] = useState<string | null>(null);
@@ -51,8 +53,21 @@ export function LoginScreen() {
     run(async () => {
       if (!emailPattern.test(email.trim())) throw new Error('Enter a valid email address.');
       if (!password) throw new Error('Enter your password.');
-      const res = await api.login(email.trim(), password);
-      await signIn(res.token, res.user);
+      if (needsTotp && !/^\d{6}$/.test(totpCode.trim())) throw new Error('Enter the 6-digit code.');
+      try {
+        const res = await api.login(email.trim(), password, needsTotp ? totpCode.trim() : undefined);
+        setNeedsTotp(false);
+        setTotpCode('');
+        await signIn(res.token, res.user);
+      } catch (e) {
+        const data = (e as { data?: { totp_required?: boolean } })?.data;
+        if (data?.totp_required) {
+          setNeedsTotp(true);
+          setError('Enter the 6-digit code from your authenticator app.');
+          return;
+        }
+        throw e;
+      }
     });
 
   const register = () =>
@@ -85,6 +100,8 @@ export function LoginScreen() {
 
   const switchMode = (next: Mode) => {
     setError('');
+    setNeedsTotp(false);
+    setTotpCode('');
     setMode(next);
   };
 
@@ -135,6 +152,16 @@ export function LoginScreen() {
               secureTextEntry
               placeholder="••••••••"
             />
+            {needsTotp ? (
+              <Field
+                label="Authenticator code"
+                value={totpCode}
+                onChangeText={setTotpCode}
+                keyboardType="number-pad"
+                maxLength={6}
+                placeholder="123456"
+              />
+            ) : null}
             {error ? <Text style={[styles.error, { color: t.danger }]}>{error}</Text> : null}
             <Button label="Sign in" onPress={login} busy={busy} />
             <View style={styles.switchRow}>

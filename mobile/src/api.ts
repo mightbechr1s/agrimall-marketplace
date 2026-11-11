@@ -78,7 +78,9 @@ async function request<T>(path: string, method: Method = 'GET', body?: unknown):
   }
   const data = await res.json().catch(() => null);
   if (!res.ok || !data?.ok) {
-    throw new Error(data?.error ?? `Request failed (${res.status}).`);
+    const err = new Error(data?.error ?? `Request failed (${res.status}).`) as Error & { data?: unknown };
+    err.data = data;
+    throw err;
   }
   return data as T;
 }
@@ -313,10 +315,11 @@ export type AdminUser = {
 };
 
 export const api = {
-  login: (email: string, password: string) =>
+  login: (email: string, password: string, totp_code?: string) =>
     request<{ token: string; user: User }>('/auth/login.php', 'POST', {
       email,
       password,
+      ...(totp_code ? { totp_code } : {}),
       device_name: 'AgriMALL Mobile',
     }),
 
