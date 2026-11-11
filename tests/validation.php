@@ -211,6 +211,152 @@ if ($slots === count($policyKeys) * 4) {
     $fail[] = sprintf('password-policy copy keys found in %d of %d deck slots', $slots, count($policyKeys) * 4);
 }
 
+// At-rest encryption for TOTP seeds and ID numbers.
+$GLOBALS['config']['security']['encryption_key'] = base64_encode(str_repeat('K', 32));
+if (sensitive_can_encrypt()) {
+    $pass++;
+} else {
+    $fail[] = 'sensitive_can_encrypt() said no despite a 32-byte key';
+}
+$sealed = sensitive_encrypt('ABC-123456');
+if (is_string($sealed) && str_starts_with($sealed, 'enc:v1:')) {
+    $pass++;
+} else {
+    $fail[] = 'sensitive_encrypt() did not tag its output as ciphertext';
+}
+if ($sealed !== null && sensitive_decrypt($sealed) === 'ABC-123456') {
+    $pass++;
+} else {
+    $fail[] = 'sensitive_encrypt/decrypt round-trip failed';
+}
+// A fixed IV would make identical inputs identical ciphertexts (and leak equality).
+if ($sealed === sensitive_encrypt('ABC-123456')) {
+    $fail[] = 'sensitive_encrypt() is deterministic -- IV is not random';
+} else {
+    $pass++;
+}
+if (sensitive_decrypt('legacy-plain-id') === 'legacy-plain-id') {
+    $pass++;
+} else {
+    $fail[] = 'legacy plaintext did not pass through sensitive_decrypt()';
+}
+// Tampering with the blob must fail closed, not return garbage or plaintext.
+$tampered = substr($sealed, 0, -3) . (substr($sealed, -3, 1) === 'A' ? 'B' : 'A') . substr($sealed, -2);
+if (sensitive_decrypt($tampered) === '') {
+    $pass++;
+} else {
+    $fail[] = 'tampered ciphertext did not fail closed';
+}
+// A wrong key must not decrypt (GCM tag check), and must not fatal.
+$GLOBALS['config']['security']['encryption_key'] = base64_encode(str_repeat('Z', 32));
+if (sensitive_decrypt($sealed) === '') {
+    $pass++;
+} else {
+    $fail[] = 'a wrong key decrypted ciphertext';
+}
+// No key: encryption refuses, and the storage helper keeps the value usable.
+$GLOBALS['config']['security']['encryption_key'] = '';
+if (sensitive_encrypt('x') === null) {
+    $pass++;
+} else {
+    $fail[] = 'sensitive_encrypt() claimed success without a key';
+}
+$prevLog = ini_set('error_log', sys_get_temp_dir() . '/agrimall-test-error.log');
+if (sensitive_store('plain-value') === 'plain-value') {
+    $pass++;
+} else {
+    $fail[] = 'sensitive_store() keyless fallback altered the value';
+}
+ini_set('error_log', (string) $prevLog);
+// Restore a valid key for the rest of the file.
+$GLOBALS['config']['security']['encryption_key'] = base64_encode(str_repeat('K', 32));
+
+// TOTP (RFC 6238) against the SHA-1 appendix-B vectors. The ASCII secret
+// "12345678901234567890" is encoded to base32 first, exactly as an account would
+// store it. 6-digit codes are the low 6 digits of the published 8-digit values.
+$totpSecret = totp_base32_encode('12345678901234567890');
+if (totp_base32_decode($totpSecret) === '12345678901234567890') {
+    $pass++;
+} else {
+    $fail[] = 'totp base32 round-trip changed the secret';
+}
+// Positive control: a decoder that always returned '' would pass nothing above,
+// but re-check a known encoding so a broken encoder cannot hide behind the round-trip.
+if ($totpSecret === 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ') {
+    $pass++;
+} else {
+    $fail[] = 'totp base32 encoding drifted from the RFC 4648 value: ' . $totpSecret;
+}
+
+$totpVectors = [
+    [59,          '287082'],
+    [1111111109,  '081804'],
+    [1111111111,  '050471'],
+    [1234567890,  '005924'],
+    [2000000000,  '279037'],
+    [20000000000, '353130'],
+];
+foreach ($totpVectors as [$epoch, $expected]) {
+    $slice = (int) floor($epoch / 30);
+    $got = totp_code($totpSecret, $slice);
+    if ($got === $expected) {
+        $pass++;
+    } else {
+        $fail[] = "totp_code at T=$epoch: got $got, expected $expected";
+    }
+    if (!totp_verify($totpSecret, $expected, $epoch)) {
+        $fail[] = "totp_verify rejected the RFC code at T=$epoch";
+    } else {
+        $pass++;
+    }
+}
+
+// One step of clock drift each way is accepted; two is not.
+if (totp_verify($totpSecret, totp_code($totpSecret, (int) floor(1111111109 / 30)), 1111111109 + 29)
+    && totp_verify($totpSecret, totp_code($totpSecret, (int) floor(1111111109 / 30)), 1111111109 - 29)) {
+    $pass++;
+} else {
+    $fail[] = 'totp_verify must tolerate +/- one 30s step of clock drift';
+}
+if (totp_verify($totpSecret, totp_code($totpSecret, (int) floor(1111111109 / 30)), 1111111109 + 90)) {
+    $fail[] = 'totp_verify accepted a code two steps out of window';
+} else {
+    $pass++;
+}
+// Shape checks: wrong digit count and no digits at all must not verify.
+foreach (['', '12345', '1234567', 'abcdef'] as $bad) {
+    if (totp_verify($totpSecret, $bad, 59)) {
+        $fail[] = "totp_verify accepted malformed code '" . $bad . "'";
+    } else {
+        $pass++;
+    }
+}
+// Pasting a grouped code from a password manager ("287 082") is a normal habit,
+// so separators are stripped rather than treated as a failed attempt.
+if (totp_verify($totpSecret, '287 082', 59) && totp_verify($totpSecret, '287-082', 59)) {
+    $pass++;
+} else {
+    $fail[] = 'totp_verify rejected a grouped but otherwise correct code';
+}
+
+// Generated secrets must be 20 bytes of entropy in base32 (32 chars, RFC alphabet).
+$gen = totp_generate_secret();
+if (strlen($gen) === 32 && preg_match('/^[A-Z2-7]+$/', $gen) === 1 && $gen !== totp_generate_secret()) {
+    $pass++;
+} else {
+    $fail[] = 'totp_generate_secret did not produce a distinct 32-char base32 secret';
+}
+
+// Provisioning URI must carry the secret and issuer for authenticator apps.
+$uri = totp_provisioning_uri('GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ', 'buyer@animal.local');
+if (str_starts_with($uri, 'otpauth://totp/')
+    && str_contains($uri, 'secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ')
+    && str_contains($uri, 'issuer=AgriMALL')) {
+    $pass++;
+} else {
+    $fail[] = 'totp_provisioning_uri is missing the secret or issuer: ' . $uri;
+}
+
 echo "assertions passed: $pass\n";
 echo "assertions failed: " . count($fail) . "\n";
 

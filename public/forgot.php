@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Rate limit: 5 attempts / 15 min per IP+email (DB-backed)
-    $rlKey = 'pwreset_' . md5($_SERVER['REMOTE_ADDR'] . ':' . strtolower(trim((string) ($_POST['email'] ?? ''))));
+    $rlKey = 'pwreset_' . hash('sha256', $_SERVER['REMOTE_ADDR'] . ':' . strtolower(trim((string) ($_POST['email'] ?? ''))));
     if (rate_limit_check($rlKey)) {
         http_response_code(429);
         exit(e($l($copy['auth'], 'err_rate_limit')));

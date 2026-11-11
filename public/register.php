@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // Rate limit registrations: 10 per IP per hour
-    $rlKey = 'register_' . md5((string) ($_SERVER['REMOTE_ADDR'] ?? ''));
+    $rlKey = 'register_' . hash('sha256', (string) ($_SERVER['REMOTE_ADDR'] ?? ''));
     if (rate_limit_check($rlKey, 10, 3600)) {
         http_response_code(429);
         $errors[] = $l($copy['auth'], 'err_rate_limit');
@@ -169,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'province' => $farmer['province'],
                         'region' => $farmer['region'],
                         'valid_id_type' => $farmer['valid_id_type'],
-                        'valid_id_number' => $farmer['valid_id_number'],
+                        'valid_id_number' => sensitive_store($farmer['valid_id_number']),
                         'verification_status' => 'pending',
                     ]);
             // Geocode the farm address (best-effort, non-blocking).

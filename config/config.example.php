@@ -34,8 +34,9 @@ return [
         'env' => 'production',      // 'development' | 'production'
         // Local-only password reset delivery. Leave false in production: with
         // no mail transport configured, a true value would print a live reset
-        // token in the browser. The reset link is always appended to
-        // logs/security.log regardless of this flag.
+        // token in the browser. When true, the link is also appended to
+        // logs/security.log for the operator. When false, no token is written
+        // to the log; configure mail above so users can still reset.
         'local_password_reset_links' => false,
         'security_log' => __DIR__ . '/../logs/security.log',
         // Error logging settings
@@ -44,6 +45,15 @@ return [
             'log_errors' => true,
             'error_log' => __DIR__ . '/../logs/error.log',
         ],
+    ],
+
+    // At-rest encryption for sensitive columns (TOTP seeds, valid ID numbers).
+    // Generate once: php -r "echo base64_encode(random_bytes(32)), PHP_EOL;"
+    // Keep the value: losing it makes already-encrypted values unreadable
+    // (a 2FA user would then need an admin-assisted reset). When empty, 2FA
+    // setup is refused and ID numbers fall back to plaintext with a warning.
+    'security' => [
+        'encryption_key' => '',
     ],
 
     // Outbound email. Off by default: PHP mail() needs a working local MTA or

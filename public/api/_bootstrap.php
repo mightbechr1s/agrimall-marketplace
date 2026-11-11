@@ -35,10 +35,10 @@ function api_ok(array $data = [], int $status = 200): void
     exit;
 }
 
-function api_error(string $message, int $status = 400): void
+function api_error(string $message, int $status = 400, array $extra = []): void
 {
     http_response_code($status);
-    echo json_encode(['ok' => false, 'error' => $message], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['ok' => false, 'error' => $message] + $extra, JSON_UNESCAPED_UNICODE);
     exit;
 }
 

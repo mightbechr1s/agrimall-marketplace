@@ -180,7 +180,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 </td>
                 <td class="cell-muted">
                     <?= e($idLabels[$app['valid_id_type']] ?? $app['valid_id_type']) ?>
-                    <div class="small"><?= e($app['valid_id_number']) ?></div>
+                    <div class="small"><?= e(sensitive_decrypt((string) $app['valid_id_number'])) ?></div>
                 </td>
                 <td class="cell-muted text-nowrap"><?= e(date('M j, Y', strtotime($app['registered_at']))) ?></td>
                 <td><?= status_badge($app['verification_status']) ?></td>

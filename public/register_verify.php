@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'province' => $farmer['province'] ?? '',
                     'region' => $farmer['region'] ?? '',
                     'valid_id_type' => $farmer['valid_id_type'] ?? '',
-                    'valid_id_number' => $farmer['valid_id_number'] ?? '',
+                    'valid_id_number' => sensitive_store($farmer['valid_id_number'] ?? ''),
                     'verification_status' => 'pending',
                 ]);
             }

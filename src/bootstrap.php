@@ -53,7 +53,7 @@ function render_fatal_page(bool $isProduction): void
         http_response_code(500);
         header('Content-Type: text/html; charset=UTF-8');
     }
-    $ref = substr(md5((string) microtime(true) . (string) random_bytes(4)), 0, 8);
+    $ref = strtoupper(bin2hex(random_bytes(4)));
     $fiveHundred = __DIR__ . '/../public/500.php';
     if (is_file($fiveHundred)) {
         // No ob_start() here: a buffer opened during shutdown is discarded, which

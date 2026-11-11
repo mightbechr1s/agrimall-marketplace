@@ -318,7 +318,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                     <?php foreach ($orders as $order): ?>
                         <?php
                         // Truncate order ID to 8-char hex tag
-                        $orderId = strtoupper(substr(md5($order['id']), 0, 8));
+                        $orderId = strtoupper(substr(hash('sha256', (string) $order['id']), 0, 8));
                         ?>
                         <tr class="order-row clickable-row"
                            tabindex="0"
@@ -513,7 +513,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                     <?php foreach ($orders as $order): ?>
                         <?php
                         // Truncate order ID to 8-char hex tag
-                        $orderId = strtoupper(substr(md5($order['id']), 0, 8));
+                        $orderId = strtoupper(substr(hash('sha256', (string) $order['id']), 0, 8));
                         ?>
                         <tr class="order-row clickable-row"
                            tabindex="0"
@@ -658,7 +658,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                     <?php foreach ($orders as $order): ?>
                         <?php
                         // Truncate order ID to 8-char hex tag
-                        $orderId = strtoupper(substr(md5($order['id']), 0, 8));
+                        $orderId = strtoupper(substr(hash('sha256', (string) $order['id']), 0, 8));
                         ?>
                         <tr class="order-row clickable-row"
                            tabindex="0"

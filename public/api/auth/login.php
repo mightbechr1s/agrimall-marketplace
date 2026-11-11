@@ -13,7 +13,7 @@ if ($email === '' || $password === '') {
     api_error('Email and password are required.');
 }
 
-$stmt = DB::pdo()->prepare('SELECT id, password_hash, role, status FROM users WHERE email = :email LIMIT 1');
+$stmt = DB::pdo()->prepare('SELECT id, password_hash, role, status, totp_secret, totp_enabled FROM users WHERE email = :email LIMIT 1');
 $stmt->execute(['email' => $email]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -22,6 +22,12 @@ if (!$user || !password_verify($password, $user['password_hash'])) {
 }
 if ($user['status'] !== 'active') {
     api_error('Account is not active.', 403);
+}
+// Same second step as the web login: an account with 2FA on cannot mint a
+// bearer token from a password alone. Clients pass totp_code in the body.
+if ((int) ($user['totp_enabled'] ?? 0) === 1
+    && !totp_verify(sensitive_decrypt((string) ($user['totp_secret'] ?? '')), (string) ($input['totp_code'] ?? ''))) {
+    api_error('Two-factor code required or invalid.', 401, ['totp_required' => true]);
 }
 
 $token = bin2hex(random_bytes(32));

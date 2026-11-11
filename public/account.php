@@ -11,12 +11,14 @@ require_login();
 $role = current_user_role();
 $userId = current_user_id();
 
-$stmt = DB::pdo()->prepare('SELECT id, email, role, status, created_at, last_login_at FROM users WHERE id = :id');
+$stmt = DB::pdo()->prepare('SELECT id, email, role, status, created_at, last_login_at, totp_secret, totp_enabled FROM users WHERE id = :id');
 $stmt->execute(['id' => $userId]);
 $user = $stmt->fetch();
 if (!$user) {
     redirect_to('logout.php');
 }
+// Keep the seed plaintext in memory only; the DB row stays encrypted.
+$user['totp_secret'] = sensitive_decrypt((string) ($user['totp_secret'] ?? ''));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
@@ -74,6 +76,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             revoke_user_credentials($userId, true);
             $success = $l($copy['account'], 'password_updated');
             audit_log('account_password_changed', 'user', $userId);
+        }
+    } elseif ($action === 'twofa_setup') {
+        // Storing a seed in plaintext would make a DB dump enough to bypass 2FA,
+        // so setup is refused until the deployment has an encryption key.
+        if (!sensitive_can_encrypt()) {
+            $error = $l($copy['account'], 'err_2fa_no_key');
+        } elseif (!empty($user['totp_enabled'])) {
+            // A live session must not be able to silently downgrade an account
+            // that already has 2FA on; turning it off goes through the password check.
+            $error = $l($copy['account'], 'err_2fa_already_on');
+        } else {
+            // Generate a fresh secret but leave 2FA disabled until a code verifies.
+            $secret = totp_generate_secret();
+            $stored = sensitive_encrypt($secret);
+            if ($stored === null) {
+                $error = $l($copy['account'], 'err_2fa_no_key');
+            } else {
+                DB::pdo()->prepare('UPDATE users SET totp_secret = :s, totp_enabled = 0 WHERE id = :id')
+                    ->execute(['s' => $stored, 'id' => $userId]);
+                $user['totp_secret'] = $secret;
+                $user['totp_enabled'] = 0;
+                audit_log('account_2fa_setup_started', 'user', $userId);
+            }
+        }
+    } elseif ($action === 'twofa_enable') {
+        $secret = (string) ($user['totp_secret'] ?? '');
+        $code = (string) ($_POST['totp_code'] ?? '');
+        if ($secret === '') {
+            $error = $l($copy['account'], 'err_2fa_setup_first');
+        } elseif (!totp_verify($secret, $code)) {
+            $error = $l($copy['account'], 'err_2fa_code');
+        } else {
+            DB::pdo()->prepare('UPDATE users SET totp_enabled = 1 WHERE id = :id')->execute(['id' => $userId]);
+            $user['totp_enabled'] = 1;
+            $success = $l($copy['account'], 'twofa_enabled_msg');
+            audit_log('account_2fa_enabled', 'user', $userId);
+        }
+    } elseif ($action === 'twofa_disable') {
+        if (!password_verify((string) ($_POST['current_password'] ?? ''), $hash)) {
+            $error = $l($copy['account'], 'invalid_current_password');
+        } else {
+            DB::pdo()->prepare('UPDATE users SET totp_secret = NULL, totp_enabled = 0 WHERE id = :id')
+                ->execute(['id' => $userId]);
+            $user['totp_secret'] = null;
+            $user['totp_enabled'] = 0;
+            $success = $l($copy['account'], 'twofa_disabled_msg');
+            audit_log('account_2fa_disabled', 'user', $userId);
         }
     } elseif ($action === 'name') {
         // Name change requires current password: hijacked session
@@ -368,6 +417,57 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 </div>
                 <button class="btn btn-primary" type="submit"><?= e($l($copy['account'], 'btn_save_password')) ?></button>
                 <a href="dashboard.php" class="btn btn-outline"><?= e($l($copy['account'], 'btn_cancel')) ?></a>
+            </fieldset>
+        </form>
+
+        <hr class="account-divider">
+
+        <form method="post" action="account.php" class="account-form">
+            <?= csrf_field() ?>
+            <fieldset>
+                <legend><?= e($l($copy['account'], 'section_2fa')) ?></legend>
+                <p class="form-text"><?= e($l($copy['account'], 'twofa_intro')) ?></p>
+
+                <?php if (!empty($user['totp_enabled'])): ?>
+                    <p class="mb-2">
+                        <i class="bi bi-shield-check me-1" aria-hidden="true"></i>
+                        <?= e($l($copy['account'], 'twofa_status_on')) ?>
+                    </p>
+                    <input type="hidden" name="account_action" value="twofa_disable">
+                    <div class="form-group">
+                        <label class="form-label" for="twofa_off_password"><?= e($l($copy['account'], 'label_current_password')) ?></label>
+                        <input class="form-control" type="password" id="twofa_off_password" name="current_password"
+                               autocomplete="current-password" required>
+                    </div>
+                    <button class="btn btn-outline-danger" type="submit"><?= e($l($copy['account'], 'twofa_disable_btn')) ?></button>
+                <?php elseif (!empty($user['totp_secret'])): ?>
+                    <p class="mb-2"><?= e($l($copy['account'], 'twofa_step1')) ?></p>
+                    <div class="form-group">
+                        <label class="form-label" for="twofa_secret"><?= e($l($copy['account'], 'twofa_manual_key')) ?></label>
+                        <input class="form-control font-monospace" type="text" id="twofa_secret" readonly
+                               value="<?= e(implode(' ', str_split((string) $user['totp_secret'], 4))) ?>">
+                    </div>
+                    <p class="mb-3">
+                        <a href="<?= e(totp_provisioning_uri((string) $user['totp_secret'], (string) $user['email'])) ?>">
+                            <?= e($l($copy['account'], 'twofa_open_app')) ?>
+                        </a>
+                    </p>
+                    <input type="hidden" name="account_action" value="twofa_enable">
+                    <p class="mb-2"><?= e($l($copy['account'], 'twofa_step2')) ?></p>
+                    <div class="form-group">
+                        <label class="form-label" for="twofa_code"><?= e($l($copy['account'], 'label_totp_code')) ?></label>
+                        <input class="form-control" type="text" id="twofa_code" name="totp_code"
+                               inputmode="numeric" maxlength="6" pattern="[0-9]*" autocomplete="one-time-code" required>
+                    </div>
+                    <button class="btn btn-primary" type="submit"><?= e($l($copy['account'], 'twofa_enable_btn')) ?></button>
+                <?php else: ?>
+                    <p class="mb-2">
+                        <i class="bi bi-shield-exclamation me-1" aria-hidden="true"></i>
+                        <?= e($l($copy['account'], 'twofa_status_off')) ?>
+                    </p>
+                    <input type="hidden" name="account_action" value="twofa_setup">
+                    <button class="btn btn-primary" type="submit"><?= e($l($copy['account'], 'twofa_setup_btn')) ?></button>
+                <?php endif; ?>
             </fieldset>
         </form>
 

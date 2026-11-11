@@ -4,7 +4,7 @@
  */
 
 // Support reference code: short hash from time
-$refCode = substr(md5((string) microtime(true) . (string) random_bytes(4)), 0, 8);
+$refCode = strtoupper(bin2hex(random_bytes(4)));
 
 // Handler may pass a reference code in the query string
 $displayMessage = '';

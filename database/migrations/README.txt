@@ -34,6 +34,8 @@ order, so a fresh rebuild only needs that one command.
 | `022_order_messages.sql` | `order_messages` table for the buyer/farmer order thread |
 | `023_push_subscriptions.sql` | `push_subscriptions` table for web push devices |
 | `024_push_delivered.sql` | `notifications.push_sent_at` and `idx_notify_push_pending`, so a push is not shown twice |
+| `030_totp_2fa.sql` | `users.totp_secret` (encrypted seed) and `users.totp_enabled` |
+| `031_sensitive_encryption.sql` | Widens `users.totp_secret` and `farmer_profiles.valid_id_number` so ciphertext fits |
 
 There is no `001`. Numbering starts at `002` because the base tables it would
 have followed are now folded into `schema.sql`.
@@ -63,6 +65,8 @@ whole set twice more:
 | `022_order_messages.sql` | clean (`CREATE TABLE IF NOT EXISTS`) |
 | `023_push_subscriptions.sql` | clean (`CREATE TABLE IF NOT EXISTS`) |
 | `024_push_delivered.sql` | clean (guarded column and index) |
+| `030_totp_2fa.sql` | clean (guarded on `information_schema`) |
+| `031_sensitive_encryption.sql` | clean (`MODIFY` reapplies the same definition) |
 
 Also verified by re-applying all eight to the live database, which already had
 them: every file exited 0 and the schema and row counts were unchanged.

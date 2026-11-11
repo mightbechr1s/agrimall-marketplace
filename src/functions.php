@@ -173,6 +173,172 @@ function optimize_uploaded_image(string $srcPath, string $relativeDir = '/upload
     return $relativeDir . '/' . basename($webpPath);
 }
 
+/** Base32 alphabet (RFC 4648) for TOTP secrets. */
+function totp_base32_encode(string $bytes): string
+{
+    $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    $out = '';
+    $bits = 0;
+    $value = 0;
+    for ($i = 0, $n = strlen($bytes); $i < $n; $i++) {
+        $value = ($value << 8) | ord($bytes[$i]);
+        $bits += 8;
+        while ($bits >= 5) {
+            $out .= $alphabet[($value >> ($bits - 5)) & 31];
+            $bits -= 5;
+        }
+    }
+    if ($bits > 0) {
+        $out .= $alphabet[($value << (5 - $bits)) & 31];
+    }
+    return $out;
+}
+
+function totp_base32_decode(string $b32): string
+{
+    $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    $b32 = strtoupper(preg_replace('/[^A-Z2-7]/i', '', $b32));
+    $out = '';
+    $bits = 0;
+    $value = 0;
+    for ($i = 0, $n = strlen($b32); $i < $n; $i++) {
+        $idx = strpos($alphabet, $b32[$i]);
+        if ($idx === false) {
+            continue;
+        }
+        $value = ($value << 5) | $idx;
+        $bits += 5;
+        if ($bits >= 8) {
+            $out .= chr(($value >> ($bits - 8)) & 0xFF);
+            $bits -= 8;
+        }
+    }
+    return $out;
+}
+
+/** Generate a fresh 20-byte TOTP secret, base32-encoded. */
+function totp_generate_secret(): string
+{
+    return totp_base32_encode(random_bytes(20));
+}
+
+/** Compute the 6-digit TOTP code for a secret at a given time step. */
+function totp_code(string $secretB32, int $timeSlice): string
+{
+    $key = totp_base32_decode($secretB32);
+    $counter = pack('N*', 0) . pack('N*', $timeSlice);
+    $hash = hash_hmac('sha1', $counter, $key, true);
+    $offset = ord($hash[19]) & 0x0F;
+    $part = ((ord($hash[$offset]) & 0x7F) << 24)
+        | ((ord($hash[$offset + 1]) & 0xFF) << 16)
+        | ((ord($hash[$offset + 2]) & 0xFF) << 8)
+        | (ord($hash[$offset + 3]) & 0xFF);
+    return str_pad((string) ($part % 1000000), 6, '0', STR_PAD_LEFT);
+}
+
+/** Verify a submitted TOTP code, allowing ±1 time step (30s each) of drift. */
+function totp_verify(string $secretB32, string $code, ?int $now = null): bool
+{
+    $code = preg_replace('/\D/', '', $code);
+    if (strlen($code) !== 6) {
+        return false;
+    }
+    $slice = (int) floor(($now ?? time()) / 30);
+    for ($drift = -1; $drift <= 1; $drift++) {
+        if (hash_equals(totp_code($secretB32, $slice + $drift), $code)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/** otpauth:// provisioning URI for authenticator apps (QR target). */
+function totp_provisioning_uri(string $secretB32, string $account, string $issuer = 'AgriMALL'): string
+{
+    return 'otpauth://totp/' . rawurlencode($issuer . ':' . $account)
+        . '?secret=' . $secretB32
+        . '&issuer=' . rawurlencode($issuer)
+        . '&algorithm=SHA1&digits=6&period=30';
+}
+
+/**
+ * At-rest encryption for low-volume secrets (TOTP seeds, ID numbers).
+ *
+ * AES-256-GCM through ext/openssl, keyed by config['security']['encryption_key']
+ * (base64, 32 bytes). Values carry an "enc:v1:" prefix so rows written before
+ * encryption still read correctly, and a wrong/missing key fails closed (empty
+ * string) instead of returning garbage. Losing the key makes encrypted values
+ * unreadable; keep a copy in the deployment secret store.
+ */
+const SENSITIVE_PREFIX = 'enc:v1:';
+
+function sensitive_key(): ?string
+{
+    global $config;
+    $raw = (string) ($config['security']['encryption_key'] ?? '');
+    $decoded = $raw === '' ? false : base64_decode($raw, true);
+    return (is_string($decoded) && strlen($decoded) === 32) ? $decoded : null;
+}
+
+function sensitive_can_encrypt(): bool
+{
+    return function_exists('openssl_encrypt') && sensitive_key() !== null;
+}
+
+/** Encrypt a value for storage. Returns null when no key is configured. */
+function sensitive_encrypt(string $plain): ?string
+{
+    $key = sensitive_key();
+    if ($key === null || !function_exists('openssl_encrypt')) {
+        return null;
+    }
+    $iv = random_bytes(12);
+    $tag = '';
+    $cipher = openssl_encrypt($plain, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag, '', 16);
+    if ($cipher === false) {
+        return null;
+    }
+    return SENSITIVE_PREFIX . base64_encode($iv . $tag . $cipher);
+}
+
+/** Encrypt for storage; on a keyless host fall back to plaintext with a warning
+ *  so registration still works. Configure the key to close that gap. */
+function sensitive_store(string $plain): string
+{
+    $enc = sensitive_encrypt($plain);
+    if ($enc === null) {
+        error_log('security: sensitive field stored unencrypted (security.encryption_key not configured)');
+        return $plain;
+    }
+    return $enc;
+}
+
+/** Decrypt a stored value; legacy plaintext passes through unchanged. */
+function sensitive_decrypt(?string $stored): string
+{
+    $stored = (string) $stored;
+    if (!str_starts_with($stored, SENSITIVE_PREFIX)) {
+        return $stored;
+    }
+    $key = sensitive_key();
+    if ($key === null || !function_exists('openssl_decrypt')) {
+        return '';
+    }
+    $blob = base64_decode(substr($stored, strlen(SENSITIVE_PREFIX)), true);
+    if (!is_string($blob) || strlen($blob) < 28) {
+        return '';
+    }
+    $plain = openssl_decrypt(
+        substr($blob, 28),
+        'aes-256-gcm',
+        $key,
+        OPENSSL_RAW_DATA,
+        substr($blob, 0, 12),
+        substr($blob, 12, 16)
+    );
+    return $plain === false ? '' : $plain;
+}
+
 /**
  * Geocode an address string to [lat, lng] using OpenStreetMap Nominatim.
  * Returns null on failure or if GD/cURL unavailable. Rate-limited by caller.
@@ -1389,15 +1555,21 @@ function password_reset_deliver_local(int $userId, string $rawToken): ?string
         error_log('password reset mail failed: ' . $e->getMessage());
     }
 
+    $localLog = local_reset_links_enabled();
     security_event_log('password_reset_link_issued', [
         'user_id'    => $userId,
-        'delivered'  => $emailed ? 'email' : 'local_log',
+        'delivered'  => $emailed ? 'email' : ($localLog ? 'local_log' : 'undelivered'),
     ]);
-    error_log(
-        sprintf('[%s] password reset link for user #%d: %s', date('c'), $userId, $link) . PHP_EOL,
-        3,
-        (string) ($config['app']['security_log'] ?? (__DIR__ . '/../logs/security.log'))
-    );
+
+    // A live token in a log file is a working reset link for anyone who can read
+    // that file, so only an operator who opted into local delivery gets one.
+    if ($localLog) {
+        error_log(
+            sprintf('[%s] password reset link for user #%d: %s', date('c'), $userId, $link) . PHP_EOL,
+            3,
+            (string) ($config['app']['security_log'] ?? (__DIR__ . '/../logs/security.log'))
+        );
+    }
 
     if ($emailed) {
         return null;
