@@ -2,10 +2,9 @@
 -- totp_secret holds the base32 shared seed, encrypted at rest by the app
 -- ("enc:v1:..." via security.encryption_key); NULL until 2FA is set up.
 -- totp_enabled flips to 1 only after a code is verified once.
-USE `animal_marketplace`;
-
+-- DATABASE(), not a literal name: the live database is if0_12345678_agrimall.
 SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = 'animal_marketplace' AND TABLE_NAME = 'users'
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'
     AND COLUMN_NAME = 'totp_secret');
 SET @ddl = IF(@col_exists = 0,
   'ALTER TABLE `users` ADD COLUMN `totp_secret` VARCHAR(255) NULL AFTER `session_version`',
@@ -15,7 +14,7 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = 'animal_marketplace' AND TABLE_NAME = 'users'
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'
     AND COLUMN_NAME = 'totp_enabled');
 SET @ddl = IF(@col_exists = 0,
   'ALTER TABLE `users` ADD COLUMN `totp_enabled` TINYINT(1) NOT NULL DEFAULT 0 AFTER `totp_secret`',

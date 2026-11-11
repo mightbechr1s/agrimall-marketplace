@@ -771,6 +771,23 @@ function asset(string $path): string
     return $relative . '?v=' . (is_file($file) ? filemtime($file) : '1');
 }
 
+/**
+ * Card-sized variant of an uploaded image. Grid cards never need the 2000px
+ * master, so prefer the "_thumb.webp" sibling optimize_uploaded_image() wrote,
+ * and fall back to the original for images uploaded before thumbnails existed.
+ */
+function listing_card_image(?string $path): string
+{
+    $path = (string) $path;
+    if ($path !== '' && preg_match('/\.webp$/i', $path)) {
+        $thumb = preg_replace('/\.webp$/i', '_thumb.webp', $path, 1);
+        if (is_file(dirname(__DIR__) . '/public/' . ltrim($thumb, '/'))) {
+            return asset($thumb);
+        }
+    }
+    return asset($path !== '' ? $path : fallback_produce_image());
+}
+
 /** Money formatting in Philippine pesos (BR-016). */
 function money($amount): string
 {

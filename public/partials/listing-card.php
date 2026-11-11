@@ -13,7 +13,10 @@ $unit = $listing['unit'] ?? $listing['unit_symbol'] ?? 'kg';
 $title = $listing['title'] ?? $listing['name'] ?? 'Untitled Listing';
 $category = $listing['category'] ?? $listing['category_name'] ?? 'Produce';
 $imagePath = $listing['image_path'] ?? $listing['primary_image'] ?? null;
-$imageUrl = asset($imagePath ?: fallback_produce_image());
+$imageFullUrl = asset($imagePath ?: fallback_produce_image());
+// Grid cards render at 400x400, so the 400px thumbnail is the right size;
+// featured cards render at 600x450 and need the full-size master.
+$imageUrl = $mode === 'featured' ? $imageFullUrl : listing_card_image($imagePath);
 $listingUrl = "listing.php?id=" . (int) $listing['id'];
 $farmerUrl = !empty($listing['farmer_id']) ? 'profile.php?id=' . (int) $listing['farmer_id'] : 'browse.php';
 // Relative path (no leading slash): is_safe_path() rejects absolute; raw REQUEST_URI would fall back to dashboard.

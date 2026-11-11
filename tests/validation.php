@@ -357,6 +357,46 @@ if (str_starts_with($uri, 'otpauth://totp/')
     $fail[] = 'totp_provisioning_uri is missing the secret or issuer: ' . $uri;
 }
 
+// listing_card_image(): grid cards should use the "_thumb.webp" sibling that
+// optimize_uploaded_image() wrote, and fall back to the original otherwise.
+$noThumb = listing_card_image('/uploads/listings/__no_such_file.webp');
+if ($noThumb === asset('/uploads/listings/__no_such_file.webp')) {
+    $pass++;
+} else {
+    $fail[] = 'listing_card_image did not fall back to the original path: ' . $noThumb;
+}
+
+$thumbDir = dirname(__DIR__) . '/public/uploads/listings';
+if (!is_dir($thumbDir)) {
+    @mkdir($thumbDir, 0777, true);
+}
+$thumbFile = $thumbDir . '/__thumb_test_thumb.webp';
+file_put_contents($thumbFile, 'webp-bytes');
+$thumbUrl = listing_card_image('/uploads/listings/__thumb_test.webp');
+@unlink($thumbFile);
+// asset() returns a relative path plus a ?v= cache-buster, so compare the path part.
+$thumbPath = ltrim(explode('?', $thumbUrl)[0], '/');
+if (str_ends_with($thumbPath, 'uploads/listings/__thumb_test_thumb.webp')) {
+    $pass++;
+} else {
+    $fail[] = 'listing_card_image did not use the _thumb.webp sibling: ' . $thumbUrl;
+}
+
+// A null path must fall back to the placeholder image without raising a warning.
+$warned = null;
+set_error_handler(function (int $no, string $msg) use (&$warned): bool {
+    $warned = $msg;
+    return true;
+});
+$nullUrl = listing_card_image(null);
+restore_error_handler();
+if (is_string($nullUrl) && $nullUrl !== '' && $warned === null) {
+    $pass++;
+} else {
+    $fail[] = 'listing_card_image(null) returned ' . var_export($nullUrl, true)
+        . ($warned === null ? '' : ' and warned: ' . $warned);
+}
+
 echo "assertions passed: $pass\n";
 echo "assertions failed: " . count($fail) . "\n";
 
