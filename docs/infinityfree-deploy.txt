@@ -130,6 +130,44 @@ Generate the hash locally with:
     C:\xampp\php\php.exe -r "echo password_hash('your-new-password', PASSWORD_DEFAULT);"
 
 
+Step 5b - Run the two encryption migrations
+-------------------------------------------
+The dump predates two migrations. Run both in phpMyAdmin (SQL tab, paste, Go)
+AFTER the import and BEFORE uploading the new code, because the code selects
+columns those migrations add:
+
+    database/migrations/030_totp_2fa.sql
+        adds users.totp_secret and users.totp_enabled
+    database/migrations/031_sensitive_encryption.sql
+        widens users.totp_secret and farmer_profiles.valid_id_number so
+        encrypted values fit
+
+Both are safe to run twice.
+
+Then generate the at-rest encryption key (run locally):
+
+    C:\xampp\php\php.exe -r "echo base64_encode(random_bytes(32)), PHP_EOL;"
+
+Add it to config/config.php and upload the file:
+
+    'security' => [
+        'encryption_key' => '<the base64 value>',
+    ],
+
+Without this key, 2FA setup is refused and ID numbers are stored as plaintext
+with a warning in logs/security.log. With it, new TOTP seeds and ID numbers are
+AES-256-GCM encrypted. Keep a copy of the key: losing it makes encrypted values
+unreadable, and a 2FA user would then need an admin-assisted reset.
+
+Rows written before the key are still plaintext. Encrypt them once where PHP
+CLI can reach the database (InfinityFree blocks external MySQL by default):
+
+    php tools/encrypt_sensitive_values.php          # dry run
+    php tools/encrypt_sensitive_values.php --apply
+
+Anonymized rows ("ANON-...") are skipped - they are placeholders, not PII.
+
+
 Step 6 - Turn on HTTPS
 ----------------------
 1. Control panel -> SSL Certificates.
