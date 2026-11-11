@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: agrimall-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /login.php
+    envVars:
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "4000"
+      - key: DB_NAME
+        value: agrimall
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: APP_ENV
+        value: production
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: TZ
+        value: Asia/Manila

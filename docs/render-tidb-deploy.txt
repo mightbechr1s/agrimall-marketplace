@@ -1,0 +1,39 @@
+Render + TiDB Cloud deploy (free, no credit card)
+================================================
+
+1. Database (TiDB Cloud free tier)
+----------------------------------
+- Sign up at tidbcloud.com (no card required).
+- Create a "Serverless" cluster (free tier, 5 GB).
+- Note the connection details: host, port (4000), user, password, database name.
+- TiDB is MySQL-compatible, so database/schema.sql and the migrations run as-is.
+- Import schema + migrations via the TiDB SQL editor or a MySQL client:
+    mysql -h <host> -P 4000 -u <user> -p <dbname> < database/schema.sql
+    for f in database/migrations/*.sql; do mysql ... < $f; done
+- Run tools/encrypt_sensitive_values.php --apply once PHP can reach the DB.
+
+2. API (Render free tier)
+-------------------------
+- Push this repo to GitHub (or use Render's "Deploy from Git" with any Git host).
+- Render dashboard -> New -> Web Service -> connect the repo.
+- Render auto-detects render.yaml and builds the Dockerfile.
+- Set the secret env vars in the Render dashboard (marked sync:false in render.yaml):
+    DB_HOST, DB_USER, DB_PASS, ENCRYPTION_KEY
+  (DB_PORT=4000, DB_NAME=agrimall already have defaults.)
+- Use the SAME encryption key as the InfinityFree deployment so encrypted
+  values stay readable if you ever sync databases.
+
+3. Mobile app
+-------------
+- Set EXPO_PUBLIC_API_URL to https://<your-render-service>.onrender.com/api
+  (or change it on the sign-in screen at runtime).
+- Cold starts: free Render services sleep after 15 min idle; first request
+  after sleep takes ~30-60s. Upgrade to a paid plan ($7/mo) to remove this.
+
+4. Notes
+-------
+- File uploads (listing images) are stored on Render's ephemeral disk and
+  WILL be lost on redeploy. For production, move uploads to object storage
+  (Cloudinary free tier, or an S3-compatible bucket) and store only URLs.
+- Sessions are file-backed; Render's ephemeral disk means users may be logged
+  out on redeploy. Acceptable for now.

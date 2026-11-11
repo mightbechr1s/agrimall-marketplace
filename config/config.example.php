@@ -4,11 +4,14 @@
 
 return [
     'db' => [
-        'host' => '127.0.0.1',
-        'port' => 3306,
-        'name' => 'animal_marketplace',
-        'user' => 'root',
-        'pass' => '',
+        // Env vars (DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS) take
+        // precedence so the same image runs on Render/TiDB without editing
+        // this file. Falls back to the literals below for local dev.
+        'host'    => getenv('DB_HOST') ?: '127.0.0.1',
+        'port'    => (int) (getenv('DB_PORT') ?: 3306),
+        'name'    => getenv('DB_NAME') ?: 'animal_marketplace',
+        'user'    => getenv('DB_USER') ?: 'root',
+        'pass'    => getenv('DB_PASS') ?: '',
         'charset' => 'utf8mb4',
     ],
     'app' => [
@@ -53,7 +56,7 @@ return [
     // (a 2FA user would then need an admin-assisted reset). When empty, 2FA
     // setup is refused and ID numbers fall back to plaintext with a warning.
     'security' => [
-        'encryption_key' => '',
+        'encryption_key' => getenv('ENCRYPTION_KEY') ?: '',
     ],
 
     // Outbound email. Off by default: PHP mail() needs a working local MTA or
