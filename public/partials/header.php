@@ -101,6 +101,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
     <!-- Self-hosted harvest typography (offline) -->
     <link href="<?= e(asset('assets/fonts/fonts.css')) ?>" rel="stylesheet" />
     <link href="<?= e(asset('assets/css/design-system.css')) ?>" rel="stylesheet" />
+<script src="<?= e(asset('assets/js/cold-start.js')) ?>" defer></script>
     <link rel="preload" as="font" type="font/woff2" href="<?= e(asset('assets/fonts/Fraunces-400-normal-5.woff2')) ?>" crossorigin>
     <link rel="preload" as="font" type="font/woff2" href="<?= e(asset('assets/fonts/Source Sans Pro-400-normal-13.woff2')) ?>" crossorigin>
 

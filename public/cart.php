@@ -82,7 +82,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
-                                        <img src="<?= e($img) ?>" alt="" width="48" height="48" class="rounded cart-thumb" onerror="this.onerror=null;this.src='assets/images/products/market.jpg'">
+                                        <img src="<?= e($img) ?>" alt="<?= e($item['title'] ?? 'Cart item') ?>" width="48" height="48" class="rounded cart-thumb" onerror="this.onerror=null;this.src='assets/images/products/market.jpg'">
                                         <a href="listing.php?id=<?= (int) $item['listing_id'] ?>"><?= e($item['name']) ?></a>
                                     </div>
                                 </td>

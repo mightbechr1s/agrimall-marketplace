@@ -92,7 +92,7 @@ require __DIR__ . '/partials/dashboard-layout.php';
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="listing_id" value="<?= (int) $saved['listing_id'] ?>">
                                     <input type="hidden" name="return_to" value="saved.php">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Remove" onclick="return confirm('Remove this saved listing?');"><i class="bi bi-trash"></i></button>
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Remove" aria-label="Remove saved listing" onclick="return confirm('Remove this saved listing?');"><i class="bi bi-trash" aria-hidden="true"></i></button>
                                 </form>
                             </div>
                         </div>

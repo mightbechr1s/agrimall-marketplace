@@ -48,7 +48,7 @@ if ($mode === 'featured') $cardClasses .= ' feature-card';
     </div>
     <?php endif; ?>
     <?php if ($mode === 'featured'): ?>
-      <img src="<?= e($imageUrl) ?>" alt="" loading="eager" width="600" height="450" class="img-shimmer w-100 h-100 object-fit-cover" onerror="this.onerror=null;this.src='assets/images/products/market.jpg'">
+      <img src="<?= e($imageUrl) ?>" alt="<?= e($title) ?>" loading="eager" width="600" height="450" class="img-shimmer w-100 h-100 object-fit-cover" onerror="this.onerror=null;this.src='assets/images/products/market.jpg'">
     <?php else: ?>
       <img src="<?= e($imageUrl) ?>" alt="<?= e($title) ?>" loading="lazy" width="400" height="400" class="img-shimmer w-100 h-100 object-fit-cover" onerror="this.onerror=null;this.src='assets/images/products/market.jpg'">
 

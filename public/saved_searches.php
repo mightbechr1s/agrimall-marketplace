@@ -89,7 +89,7 @@ $searches = $searches->fetchAll(PDO::FETCH_ASSOC);
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="id" value="<?= (int) $s['id'] ?>">
                                     <input type="hidden" name="action" value="delete">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete" aria-label="Delete saved search"><i class="bi bi-trash" aria-hidden="true"></i></button>
                                 </form>
                             </td>
                         </tr>

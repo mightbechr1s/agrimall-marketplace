@@ -130,6 +130,7 @@ $avatarBg = ['farmer' => 'var(--primary)', 'buyer' => 'var(--accent)', 'admin' =
     <link href="<?= e(asset('assets/css/motion.min.css')) ?>" rel="stylesheet" />
     <link href="<?= e(asset('assets/fonts/fonts.css')) ?>" rel="stylesheet" />
     <link href="<?= e(asset('assets/css/design-system.css')) ?>" rel="stylesheet" />
+<script src="<?= e(asset('assets/js/cold-start.js')) ?>"></script>
 </head>
 <body class="has-sidebar">
 
