@@ -397,6 +397,116 @@ if (is_string($nullUrl) && $nullUrl !== '' && $warned === null) {
         . ($warned === null ? '' : ' and warned: ' . $warned);
 }
 
+// 2FA recovery codes (migration 032). DB-backed, so this section needs a live
+// database; the table is created if the migration has not been applied yet.
+require_once dirname(__DIR__) . '/src/DB.php';
+$appConfig = require dirname(__DIR__) . '/config/config.php';
+$GLOBALS['config'] = $appConfig;
+$recoveryReady = true;
+try {
+    DB::init($appConfig['db']);
+    DB::pdo()->exec('CREATE TABLE IF NOT EXISTS user_recovery_codes (
+        id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id    BIGINT UNSIGNED NOT NULL,
+        code_hash  VARCHAR(255)    NOT NULL,
+        used_at    TIMESTAMP       NULL,
+        created_at TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (id),
+        KEY idx_recovery_user (user_id),
+        CONSTRAINT fk_recovery_user FOREIGN KEY (user_id)
+            REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+} catch (Throwable $e) {
+    $recoveryReady = false;
+}
+
+$recoveryUserId = 0;
+if ($recoveryReady) {
+    try {
+        // Throwaway account so a real user's codes are never touched.
+        $testEmail = '__recovery_test_' . bin2hex(random_bytes(4)) . '@animal.local';
+        DB::pdo()->prepare(
+            "INSERT INTO users (email, password_hash, role, status) VALUES (:e, :p, 'buyer', 'active')"
+        )->execute(['e' => $testEmail, 'p' => password_hash('TestPass1', PASSWORD_DEFAULT)]);
+        $recoveryUserId = (int) DB::pdo()->lastInsertId();
+    } catch (Throwable $e) {
+        $recoveryReady = false;
+    }
+}
+
+if (!$recoveryReady || $recoveryUserId <= 0) {
+    $fail[] = 'recovery-code tests need a database with a writable users table';
+} else {
+    try {
+        $codes = recovery_codes_generate($recoveryUserId);
+
+        if (count($codes) === 8) {
+            $pass++;
+        } else {
+            $fail[] = 'recovery_codes_generate returned ' . count($codes) . ' codes, expected 8';
+        }
+
+        $wellFormed = 0;
+        foreach ($codes as $code) {
+            if (preg_match('/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{2}$/', $code) === 1) {
+                $wellFormed++;
+            }
+        }
+        if ($wellFormed === 8 && count(array_unique($codes)) === 8) {
+            $pass++;
+        } else {
+            $fail[] = "recovery codes are not 8 distinct XXXX-XXXX-XX values ($wellFormed of 8 well-formed)";
+        }
+
+        if (recovery_codes_count($recoveryUserId) === 8) {
+            $pass++;
+        } else {
+            $fail[] = 'recovery_codes_count did not report the 8 fresh codes';
+        }
+
+        if (recovery_code_verify($recoveryUserId, $codes[0]) === true) {
+            $pass++;
+        } else {
+            $fail[] = 'recovery_code_verify rejected a freshly generated code';
+        }
+
+        if (recovery_codes_count($recoveryUserId) === 7) {
+            $pass++;
+        } else {
+            $fail[] = 'using a recovery code did not decrement the remaining count';
+        }
+
+        if (recovery_code_verify($recoveryUserId, $codes[0]) === false) {
+            $pass++;
+        } else {
+            $fail[] = 'recovery_code_verify accepted a code that was already used';
+        }
+
+        if (recovery_code_verify($recoveryUserId, 'ZZZZ-ZZZZ-ZZ') === false) {
+            $pass++;
+        } else {
+            $fail[] = 'recovery_code_verify accepted an unknown code';
+        }
+
+        // Dashes are cosmetic; a pasted or typed code must still verify.
+        if (recovery_code_verify($recoveryUserId, strtolower(str_replace('-', '', $codes[1]))) === true) {
+            $pass++;
+        } else {
+            $fail[] = 'recovery_code_verify is case- or dash-sensitive';
+        }
+
+        recovery_codes_delete($recoveryUserId);
+        if (recovery_codes_count($recoveryUserId) === 0) {
+            $pass++;
+        } else {
+            $fail[] = 'recovery_codes_delete left codes behind';
+        }
+    } finally {
+        recovery_codes_delete($recoveryUserId);
+        DB::pdo()->prepare('DELETE FROM users WHERE id = :id')->execute(['id' => $recoveryUserId]);
+    }
+}
+
 echo "assertions passed: $pass\n";
 echo "assertions failed: " . count($fail) . "\n";
 

@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = (string) ($_POST['password'] ?? '');
 
     // Open a full session for a user who passed every required step.
-    $establishSession = function (array $u) use ($safeReturn, $copy, $l) {
+    $establishSession = function (array $u, ?string $message = null) use ($safeReturn, $copy, $l) {
         session_regenerate_id(true);
         $_SESSION['user_id'] = (int) $u['id'];
         $_SESSION['role'] = $u['role'];
@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ->prepare('UPDATE users SET last_login_at = NOW() WHERE id = :id')
             ->execute(['id' => $u['id']]);
 
-        flash_set('success', $l($copy['auth'], 'welcome_back'));
+        flash_set('success', $message ?? $l($copy['auth'], 'welcome_back'));
         redirect_to($safeReturn);
     };
 
@@ -83,9 +83,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch();
 
         if ($user && $user['status'] === 'active'
-            && (int) ($user['totp_enabled'] ?? 0) === 1
-            && totp_verify(sensitive_decrypt((string) ($user['totp_secret'] ?? '')), $totpCode)) {
-            $establishSession($user);
+            && (int) ($user['totp_enabled'] ?? 0) === 1) {
+            // The same field takes either an authenticator code or a one-time
+            // recovery code; both establish the session, the second is announced.
+            if (totp_verify(sensitive_decrypt((string) ($user['totp_secret'] ?? '')), $totpCode)) {
+                $establishSession($user);
+            }
+            // Raw input, not $totpCode: recovery codes contain letters.
+            $uid = (int) $user['id'];
+            if (recovery_code_verify($uid, trim((string) $_POST['totp_code']))) {
+                $establishSession($user, sprintf(
+                    $l($copy['account'], 'recovery_code_used'),
+                    recovery_codes_count($uid)
+                ));
+            }
         }
 
         // Wrong or expired: keep them on the code step, not back at the password.
@@ -165,10 +176,11 @@ require __DIR__ . '/partials/header.php';
                 $name = 'totp_code';
                 $type = 'text';
                 $value = '';
-                $placeholder = '123456';
+                $placeholder = '123456 or XXXX-XXXX-XX';
                 $required = true;
                 $autofocus = true;
-                $attrs = ['inputmode' => 'numeric', 'maxlength' => 6, 'pattern' => '[0-9]*', 'autocomplete' => 'one-time-code'];
+                // Accepts an authenticator code or a recovery code in the same field.
+                $attrs = ['maxlength' => 14, 'pattern' => '[A-Za-z0-9\- ]*', 'autocomplete' => 'one-time-code'];
                 $error = '';
                 include __DIR__ . '/partials/form-field.php';
                 ?>

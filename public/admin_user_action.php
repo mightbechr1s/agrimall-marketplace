@@ -29,7 +29,7 @@ if ($reason === 'Other') {
     $reason = trim((string) ($_POST['reason_other'] ?? ''));
 }
 
-if (!$ids || !in_array($action, ['activate', 'suspend'], true)) {
+if (!$ids || !in_array($action, ['activate', 'suspend', 'reset_2fa'], true)) {
     flash_set('error', 'Invalid request.');
     redirect_to('admin_reports.php?t=registration');
 }
@@ -54,6 +54,22 @@ foreach ($ids as $targetId) {
     $stmt->execute(['id' => $targetId]);
     $target = $stmt->fetch();
     if (!$target) { $errors[] = "User #$targetId not found."; continue; }
+
+    if ($action === 'reset_2fa') {
+        try {
+            $pdo->beginTransaction();
+            $pdo->prepare('UPDATE users SET totp_secret = NULL, totp_enabled = 0 WHERE id = :id')
+                ->execute(['id' => $targetId]);
+            recovery_codes_delete($targetId);
+            $pdo->commit();
+            audit_log('admin_2fa_reset', 'user', $targetId);
+            $done++;
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            $errors[] = 'Failed for ' . $target['email'] . ': ' . generic_error_message(app_log_exception($e, 'admin_user_action'));
+        }
+        continue;
+    }
 
     if ($target['role'] === 'admin' && $action === 'suspend') {
         $activeAdmins = (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'admin' AND status = 'active'")->fetchColumn();
@@ -95,7 +111,9 @@ foreach ($ids as $targetId) {
 }
 
 if ($done > 0) {
-    flash_set('success', ucfirst($action) . 'd ' . $done . ' account(s).');
+    flash_set('success', $action === 'reset_2fa'
+        ? 'Two-factor reset for ' . $done . ' account(s).'
+        : ucfirst($action) . 'd ' . $done . ' account(s).');
 }
 if ($errors) {
     flash_set('error', implode(' ', $errors));

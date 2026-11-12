@@ -252,6 +252,87 @@ function totp_verify(string $secretB32, string $code, ?int $now = null): bool
     return false;
 }
 
+/**
+ * One-time 2FA recovery codes: eight codes per set, each usable once.
+ *
+ * Only bcrypt hashes are stored, so a database leak cannot be replayed as a
+ * sign-in. Used rows are marked rather than deleted, which keeps the remaining
+ * count honest and makes a second use of the same code fail.
+ */
+
+/** Generate, store and return eight plaintext codes (shown to the user once). */
+function recovery_codes_generate(int $userId): array
+{
+    $pdo = DB::pdo();
+    $pdo->prepare('DELETE FROM user_recovery_codes WHERE user_id = :id AND used_at IS NULL')
+        ->execute(['id' => $userId]);
+
+    // Ambiguous characters (0/O, 1/I) left out: these get copied by hand.
+    $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    $insert = $pdo->prepare(
+        'INSERT INTO user_recovery_codes (user_id, code_hash) VALUES (:id, :hash)'
+    );
+    $codes = [];
+    for ($i = 0; $i < 8; $i++) {
+        $raw = '';
+        for ($c = 0; $c < 10; $c++) {
+            $raw .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
+        $code = substr($raw, 0, 4) . '-' . substr($raw, 4, 4) . '-' . substr($raw, 8, 2);
+        // verify() strips dashes and lowercases, so hash that same canonical form.
+        $insert->execute([
+            'id' => $userId,
+            'hash' => password_hash(strtolower(str_replace('-', '', $code)), PASSWORD_DEFAULT),
+        ]);
+        $codes[] = $code;
+    }
+    return $codes;
+}
+
+/** Accept a recovery code exactly once. Case, dashes and spaces are ignored. */
+function recovery_code_verify(int $userId, string $code): bool
+{
+    $normalized = strtolower((string) preg_replace('/[\s\-]+/', '', $code));
+    if ($normalized === '') {
+        return false;
+    }
+
+    $pdo = DB::pdo();
+    $stmt = $pdo->prepare(
+        'SELECT id, code_hash FROM user_recovery_codes WHERE user_id = :id AND used_at IS NULL'
+    );
+    $stmt->execute(['id' => $userId]);
+    foreach ($stmt->fetchAll() as $row) {
+        if (!password_verify($normalized, (string) $row['code_hash'])) {
+            continue;
+        }
+        // Conditional update: two simultaneous submissions cannot both win.
+        $used = $pdo->prepare(
+            'UPDATE user_recovery_codes SET used_at = NOW() WHERE id = :id AND used_at IS NULL'
+        );
+        $used->execute(['id' => $row['id']]);
+        return $used->rowCount() === 1;
+    }
+    return false;
+}
+
+/** How many unused codes a user has left. */
+function recovery_codes_count(int $userId): int
+{
+    $stmt = DB::pdo()->prepare(
+        'SELECT COUNT(*) FROM user_recovery_codes WHERE user_id = :id AND used_at IS NULL'
+    );
+    $stmt->execute(['id' => $userId]);
+    return (int) $stmt->fetchColumn();
+}
+
+/** Drop every recovery code for a user (2FA turned off, admin reset). */
+function recovery_codes_delete(int $userId): void
+{
+    DB::pdo()->prepare('DELETE FROM user_recovery_codes WHERE user_id = :id')
+        ->execute(['id' => $userId]);
+}
+
 /** otpauth:// provisioning URI for authenticator apps (QR target). */
 function totp_provisioning_uri(string $secretB32, string $account, string $issuer = 'AgriMALL'): string
 {

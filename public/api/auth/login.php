@@ -24,10 +24,14 @@ if ($user['status'] !== 'active') {
     api_error('Account is not active.', 403);
 }
 // Same second step as the web login: an account with 2FA on cannot mint a
-// bearer token from a password alone. Clients pass totp_code in the body.
-if ((int) ($user['totp_enabled'] ?? 0) === 1
-    && !totp_verify(sensitive_decrypt((string) ($user['totp_secret'] ?? '')), (string) ($input['totp_code'] ?? ''))) {
-    api_error('Two-factor code required or invalid.', 401, ['totp_required' => true]);
+// bearer token from a password alone. Clients pass totp_code in the body; a
+// one-time recovery code is accepted in the same field.
+if ((int) ($user['totp_enabled'] ?? 0) === 1) {
+    $code = (string) ($input['totp_code'] ?? '');
+    if (!totp_verify(sensitive_decrypt((string) ($user['totp_secret'] ?? '')), $code)
+        && !recovery_code_verify((int) $user['id'], $code)) {
+        api_error('Two-factor code required or invalid.', 401, ['totp_required' => true]);
+    }
 }
 
 $token = bin2hex(random_bytes(32));

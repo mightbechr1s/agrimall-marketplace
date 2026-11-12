@@ -19,6 +19,8 @@ if (!$user) {
 }
 // Keep the seed plaintext in memory only; the DB row stays encrypted.
 $user['totp_secret'] = sensitive_decrypt((string) ($user['totp_secret'] ?? ''));
+// Shown once in the same response that generated them; never persisted to the session.
+$recoveryCodes = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_abort_if_invalid($_POST['csrf_token'] ?? null);
@@ -111,7 +113,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             DB::pdo()->prepare('UPDATE users SET totp_enabled = 1 WHERE id = :id')->execute(['id' => $userId]);
             $user['totp_enabled'] = 1;
             $success = $l($copy['account'], 'twofa_enabled_msg');
+            // No recovery codes existed before 2FA was on, so issue the first set.
+            $recoveryCodes = recovery_codes_generate($userId);
             audit_log('account_2fa_enabled', 'user', $userId);
+        }
+    } elseif ($action === 'regenerate_recovery_codes') {
+        if (empty($user['totp_enabled'])) {
+            $error = $l($copy['account'], 'err_2fa_setup_first');
+        } elseif (!password_verify((string) ($_POST['current_password'] ?? ''), $hash)) {
+            $error = $l($copy['account'], 'invalid_current_password');
+        } else {
+            $recoveryCodes = recovery_codes_generate($userId);
+            audit_log('account_recovery_codes_regenerated', 'user', $userId);
         }
     } elseif ($action === 'twofa_disable') {
         if (!password_verify((string) ($_POST['current_password'] ?? ''), $hash)) {
@@ -119,6 +132,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             DB::pdo()->prepare('UPDATE users SET totp_secret = NULL, totp_enabled = 0 WHERE id = :id')
                 ->execute(['id' => $userId]);
+            // Codes are useless without 2FA, and a stale set must not outlive it.
+            recovery_codes_delete($userId);
             $user['totp_secret'] = null;
             $user['totp_enabled'] = 0;
             $success = $l($copy['account'], 'twofa_disabled_msg');
@@ -296,6 +311,23 @@ require __DIR__ . '/partials/dashboard-layout.php';
             </div>
         <?php endif; ?>
 
+        <?php if ($recoveryCodes): ?>
+            <div class="alert alert-warning" role="alert" id="recovery-codes-panel">
+                <h2 class="h5 mb-2"><?= e($l($copy['account'], 'recovery_codes_title')) ?></h2>
+                <p class="mb-2"><?= e($l($copy['account'], 'recovery_codes_desc')) ?></p>
+                <p class="mb-2"><?= e($l($copy['account'], 'recovery_codes_copy')) ?></p>
+                <ul class="font-monospace mb-3">
+                    <?php foreach ($recoveryCodes as $code): ?>
+                        <li><?= e($code) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+                <button type="button" class="btn btn-sm btn-outline-dark"
+                        onclick="var p=document.getElementById('recovery-codes-panel'); if(p){p.remove();}">
+                    <?= e($l($copy['account'], 'recovery_codes_dismiss')) ?>
+                </button>
+            </div>
+        <?php endif; ?>
+
         <?php if (in_array($role, ['buyer', 'admin', 'manager', 'farmer'], true)): ?>
             <form method="post" action="account.php" class="account-form">
                 <?= csrf_field() ?>
@@ -470,6 +502,25 @@ require __DIR__ . '/partials/dashboard-layout.php';
                 <?php endif; ?>
             </fieldset>
         </form>
+
+        <?php if (!empty($user['totp_enabled'])): ?>
+        <form method="post" action="account.php" class="account-form">
+            <?= csrf_field() ?>
+            <input type="hidden" name="account_action" value="regenerate_recovery_codes">
+            <fieldset>
+                <legend><?= e($l($copy['account'], 'recovery_codes_title')) ?></legend>
+                <p class="account-hint">
+                    <?= e(sprintf($l($copy['account'], 'recovery_codes_remaining'), recovery_codes_count($userId))) ?>
+                </p>
+                <div class="form-group">
+                    <label class="form-label" for="recovery_current_password"><?= e($l($copy['account'], 'label_current_password')) ?></label>
+                    <input class="form-control" type="password" id="recovery_current_password" name="current_password"
+                           autocomplete="current-password" required>
+                </div>
+                <button class="btn btn-outline" type="submit"><?= e($l($copy['account'], 'recovery_codes_regenerate')) ?></button>
+            </fieldset>
+        </form>
+        <?php endif; ?>
 
         <hr class="account-divider">
 
