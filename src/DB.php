@@ -43,11 +43,21 @@ final class DB
             $dbConfig['name'],
             $dbConfig['charset']
         );
-        self::$pdo = new AppPDO($dsn, $dbConfig['user'], $dbConfig['pass'], [
+        $options = [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,
-        ]);
+        ];
+        // TiDB Cloud (and most managed MySQL) requires TLS. Enable it when
+        // the host looks like a managed service or DB_SSL is set, without
+        // requiring a CA cert (encryption only, no verification).
+        $ssl = !empty($dbConfig['ssl'])
+            || getenv('DB_SSL') === '1' || getenv('DB_SSL') === 'true'
+            || (isset($dbConfig['host']) && strpos((string) $dbConfig['host'], 'tidbcloud.com') !== false);
+        if ($ssl && defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
+            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+        }
+        self::$pdo = new AppPDO($dsn, $dbConfig['user'], $dbConfig['pass'], $options);
     }
 
     public static function pdo(): PDO

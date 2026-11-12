@@ -13,6 +13,8 @@ return [
         'user'    => getenv('DB_USER') ?: 'root',
         'pass'    => getenv('DB_PASS') ?: '',
         'charset' => 'utf8mb4',
+        'ssl'     => getenv('DB_SSL') === '1' || getenv('DB_SSL') === 'true'
+            || (getenv('DB_HOST') && strpos(getenv('DB_HOST'), 'tidbcloud.com') !== false),
     ],
     'app' => [
         'name' => 'AgriMALL',
