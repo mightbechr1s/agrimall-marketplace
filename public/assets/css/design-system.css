@@ -2679,6 +2679,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .sidebar-app-link i { color: var(--accent); }
 .sidebar-app-link:hover { color: var(--primary); border-left-color: var(--gold); }
 .sidebar-app-link:hover i { color: var(--primary); }
+
+.sidebar-link {
+  display: flex;
   align-items: center;
   gap: 0.65rem;
   padding: 0.6rem 0.85rem;
