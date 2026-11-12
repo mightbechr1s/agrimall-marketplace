@@ -894,6 +894,12 @@ document.addEventListener('DOMContentLoaded', function(){
                             <button type="submit" class="btn btn-sm btn-outline-success">Activate</button>
                         </form>
                       <?php endif; ?>
+                      <form method="post" action="admin_user_action.php" class="d-inline">
+                          <?= csrf_field() ?>
+                          <input type="hidden" name="user_id" value="<?= (int) $r['id'] ?>">
+                          <input type="hidden" name="action" value="reset_2fa">
+                          <button type="submit" class="btn btn-sm btn-outline-warning" onclick="return confirm('Reset two-factor authentication for this account?');">Reset 2FA</button>
+                      </form>
                     <?php else: ?>
                         <span class="text-muted small">You</span>
                     <?php endif; ?>
