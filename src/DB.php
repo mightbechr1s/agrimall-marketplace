@@ -56,6 +56,15 @@ final class DB
             || (isset($dbConfig['host']) && strpos((string) $dbConfig['host'], 'tidbcloud.com') !== false);
         if ($ssl && defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
             $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+            // PDO only enables TLS when an SSL attribute is set. An empty CA
+            // file is enough to trigger TLS without server-cert verification.
+            if (defined('PDO::MYSQL_ATTR_SSL_CA')) {
+                $caFile = sys_get_temp_dir() . '/agrimall-tidb-ca.pem';
+                if (!is_file($caFile)) {
+                    @file_put_contents($caFile, '');
+                }
+                $options[PDO::MYSQL_ATTR_SSL_CA] = $caFile;
+            }
         }
         self::$pdo = new AppPDO($dsn, $dbConfig['user'], $dbConfig['pass'], $options);
     }
