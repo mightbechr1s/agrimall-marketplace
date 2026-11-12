@@ -111,8 +111,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             store_otp($email, 'email', 'register', $code, 600, $_SERVER['REMOTE_ADDR'] ?? null);
             $sent = send_otp_email($email, $code, 'register');
             if (!$sent) {
-                // Mail transport off (dev) — log the code so it can be used.
+                // Mail transport off (dev) — log the code and surface it on-screen
+                // so registration can be completed without an email provider.
                 error_log("OTP for {$email} (register): {$code}");
+                flash_set('success', 'Mail is not configured. Your verification code is: ' . $code);
+            } else {
+                flash_set('success', 'A verification code was sent to ' . $email . '. Enter it below to finish creating your account.');
             }
             $_SESSION['pending_registration'] = [
                 'full_name' => $fullName,
@@ -121,7 +125,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'role'      => $role,
                 'farmer'    => $farmer,
             ];
-            flash_set('success', 'A verification code was sent to ' . $email . '. Enter it below to finish creating your account.');
             redirect_to('register_verify.php');
         }
         // Fall through to re-render the form with errors if OTP issuance failed.

@@ -92,8 +92,12 @@ if (isset($_POST['resend_otp'])) {
         $code = generate_otp();
         store_otp((string) $pending['email'], 'email', 'register', $code, 600, $_SERVER['REMOTE_ADDR'] ?? null);
         $sent = send_otp_email((string) $pending['email'], $code, 'register');
-        if (!$sent) error_log("OTP for {$pending['email']} (register): {$code}");
-        flash_set('success', 'A new code was sent.');
+        if (!$sent) {
+            error_log("OTP for {$pending['email']} (register): {$code}");
+            flash_set('success', 'Mail is not configured. Your new verification code is: ' . $code);
+        } else {
+            flash_set('success', 'A new code was sent.');
+        }
         redirect_to('register_verify.php');
     }
 }

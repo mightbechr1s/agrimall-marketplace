@@ -21,5 +21,13 @@ services:
         value: production
       - key: ENCRYPTION_KEY
         sync: false
+      - key: MAIL_ENABLED
+        value: "false"
+      - key: MAIL_PROVIDER
+        value: mail
+      - key: MAIL_FROM
+        value: no-reply@agrimall.ph
+      - key: RESEND_API_KEY
+        sync: false
       - key: TZ
         value: Asia/Manila

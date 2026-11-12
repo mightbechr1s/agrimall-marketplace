@@ -68,10 +68,13 @@ return [
     // free tier 3000 emails/mo; set resend_api_key). Resend is recommended on
     // free hosts like InfinityFree where outbound SMTP is blocked.
     'mail' => [
-        'enabled' => false,
-        'provider' => 'mail',
-        'from' => 'no-reply@agrimall.ph',
-        'resend_api_key' => '',
+        // Env vars (MAIL_ENABLED, MAIL_PROVIDER, MAIL_FROM, RESEND_API_KEY)
+        // take precedence so the same image runs on Render without editing
+        // this file. Falls back to the literals below for local dev.
+        'enabled'        => getenv('MAIL_ENABLED') === '1' || getenv('MAIL_ENABLED') === 'true',
+        'provider'       => getenv('MAIL_PROVIDER') ?: 'mail',
+        'from'           => getenv('MAIL_FROM') ?: 'no-reply@agrimall.ph',
+        'resend_api_key' => getenv('RESEND_API_KEY') ?: '',
     ],
 
     // Web Push (VAPID). Generate a pair with `php tools/vapid-keys.php` and paste
