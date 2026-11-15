@@ -4,7 +4,7 @@ return [
     'hero' => [
         'en' => [
             'eyebrow' => 'Direct from verified Filipino farms and raisers',
-            'headline' => 'Farm to your door in 24 hours. No middlemen.',
+            'headline' => 'Straight from the farm. No middlemen.',
             'subhead' => 'Verified farms and livestock raisers list today\'s harvest and stock. You order direct. Fair prices, fresher food.',
             'cta_primary' => 'Browse market',
             'cta_secondary' => 'Become a seller',
@@ -16,7 +16,7 @@ return [
         ],
         'tl' => [
             'eyebrow' => 'Direkta mula sa mga na-verify na sakahan at raiser sa Pilipinas',
-            'headline' => 'Sariwa mula sa sakahan, sa pintuan mo sa 24 oras. Walang gitna.',
+            'headline' => 'Direkta mula sa sakahan. Walang gitna.',
             'subhead' => 'Ang mga na-verify na magsasaka at nag-aalaga ng hayop ay naglilista ng kanilang ani at produkto ngayon. Direkta kang bumibili. Patas na presyo, mas sariwa.',
             'cta_primary' => 'Mag-browse',
             'cta_secondary' => 'Magbenta',
@@ -48,14 +48,14 @@ return [
             'items' => [
                 ['num' => '2', 'suffix' => '', 'label' => 'verified farms'],
                 ['num' => '6', 'suffix' => '', 'label' => 'active listings'],
-                ['num' => '24', 'suffix' => 'h', 'label' => 'farm-to-door'],
+                ['num' => '100', 'suffix' => '%', 'label' => 'direct orders, farmer to buyer'],
             ],
         ],
         'tl' => [
             'items' => [
                 ['num' => '2', 'suffix' => '', 'label' => 'na-verify na sakahan'],
                 ['num' => '6', 'suffix' => '', 'label' => 'aktibong listing'],
-                ['num' => '24', 'suffix' => 'h', 'label' => 'mula sa sakahan patungo sa pintuan'],
+                ['num' => '100', 'suffix' => '%', 'label' => 'direktang order, magsasaka hanggang buyer'],
             ],
         ],
     ],
@@ -96,8 +96,8 @@ return [
             ],
             'step_3' => [
                 'number' => '3',
-                'title' => 'Delivered in 24 hours',
-                'description' => 'Fresher than any palengke run. Farm-to-door delivery, or pickup if you\'re nearby.',
+                'title' => 'Arrange pickup or delivery together',
+                'description' => 'You and the farmer agree on the details — many farms offer pickup, some deliver locally. Fresher than any palengke run.',
             ],
         ],
         'tl' => [
@@ -116,8 +116,8 @@ return [
             ],
             'step_3' => [
                 'number' => '3',
-                'title' => 'Na-deliver sa 24 oras',
-                'description' => 'Mas sariwa kaysa sa anumang palengke. Farm-to-door na delivery, o pickup kung malapit ka.',
+                'title' => 'Mag-usap para sa pickup o delivery',
+                'description' => 'Kayong dalawa ng magsasaka ang magkaayunan — maraming sakahan ang may pickup, at may ilang nagde-deliver sa malapit. Mas sariwa kaysa sa anumang palengke.',
             ],
         ],
     ],
@@ -291,7 +291,7 @@ return [
                 ],
                 [
                     'question' => 'How does delivery work?',
-                    'answer' => 'It varies by farm. Most metro areas get farm-to-door in 24 hours. Provinces use approved couriers. Some farms offer pickup. You see the options on each listing and coordinate with the farmer.',
+                    'answer' => 'Delivery is arranged directly with the farmer. Each listing shows pickup or delivery options — you agree on the details with the farmer when you order.',
                 ],
                 [
                     'question' => 'How do payments work?',
@@ -303,7 +303,7 @@ return [
                 ],
                 [
                     'question' => 'How long does it take to get a response?',
-                    'answer' => 'We aim to reply to all inquiries within 24 hours.',
+                    'answer' => 'Send us a message through the contact page — we read every inquiry and will get back to you.',
                 ],
             ],
         ],
@@ -329,7 +329,7 @@ return [
                 ],
                 [
                     'question' => 'Paano ang delivery?',
-                    'answer' => 'Nagkakalayo-ayo per sakahan. Karamihan sa Metro Manila ay 24 oras farm-to-door. Sa probinsya, ginagamit ang approved couriers. May pickup option din. Nakikita mo sa listing at kausap mo ang magsasaka.',
+                    'answer' => 'Ang delivery ay inaayos nang direkta sa magsasaka. May pickup o delivery options sa bawat listing — kayo na ang magkaayunan ng detalye pag-order.',
                 ],
                 [
                     'question' => 'Paano ang payment?',
@@ -341,7 +341,7 @@ return [
                 ],
                 [
                     'question' => 'Gaano katagal ang sagot mula sa suporta?',
-                    'answer' => 'Na-target namin na sagutin ang lahat ng mga tanong sa loob ng 24 oras.',
+                    'answer' => 'Magpadala ng mensahe sa contact page — binabasa namin bawat tanong at sasagutin ka namin.',
                 ],
             ],
         ],

@@ -1,0 +1,45 @@
+AgriMALL Phase 1 Audit (per Master Design & Expansion Specification)
+Date: 2026-11-15 | Auditor session: design/QA pass, no code changes made in this phase.
+
+1. REPOSITORY MAP
+   - 58 public PHP pages, 12 partials, 8 admin pages, 11 API endpoints (public/api/), src/ shared logic, 33 migrations (000-032), mobile Expo app scaffold.
+   - Stack: PHP 8.4 + MySQL (TiDB in prod) via PDO, Bootstrap 5.3.3 + custom design-system.css, session auth, RBAC (buyer/farmer/admin).
+
+2. PAGE INVENTORY / ROLES (summary)
+   - Public: index, browse, listing, compare, get_app, about-type pages (privacy/terms/cookies), auth (login/register/register_verify/forgot/reset), 404/500.
+   - Buyer: cart, cart_checkout, orders, order, order_track, saved, saved_searches, review_submit, profile, account, settings, notifications.
+   - Farmer: dashboard, create_listing, my_listings, farmer_analytics, farmer_reports, order_request/order_action, bulk_listing_action, upload_image.
+   - Admin: admin_verify, admin_reports, admin_reviews, admin_audit, admin_create_user, admin_user_action, admin_listing_action.
+
+3. DESIGN SYSTEM STATE
+   - design-system.css = 4,987 lines / 151 KB, single token source, loaded LAST after bootstrap, styles.min.css, motion.min.css, fonts (correct order, both header.php and dashboard-layout.php).
+   - Debt: 255 !important declarations (legacy; do not add more). styles.css + styles.min.css duplicate ~130 class names already covered by design-system (render-blocking no-ops per header comment, but still ~22 KB combined weight).
+   - Known-fixed this cycle: orphaned .sidebar-link selector; focus-visible rings, skip link, prefers-reduced-motion (7 blocks), ARIA on sidebar toggle verified present.
+
+4. UX / ACCESSIBILITY AUDIT (rendered checks: home + browse at 360px and 1440px)
+   - No horizontal overflow at 360px or 1440px on home or browse. Good.
+   - No href="#" fake links found; no decorative dead buttons found.
+   - FINDING (P0, trust): Homepage hero headline, trust band, how-it-works step ("Delivered in 24 hours"), and FAQ all hardcode a guaranteed "24 hours farm-to-door" promise and "approved couriers". Spec section 11 forbids guaranteed delivery-time and courier-partnership claims without operational evidence. Deals are direct farmer-buyer; the platform does not arrange couriers.
+   - FINDING (P1): Trust stat band renders "0 VERIFIED FARMS / 0 ACTIVE LISTINGS" on the live site (real counts, but a 0/0 band reads as broken). Spec: do not show empty sections; hide or contextualize zero states.
+   - FINDING (P1): Browse page at 360px shows large dead vertical whitespace between header/search/category/price sections and shows no visible empty-state with 0 results (empty-state.php partial exists and is used on 7 pages, but not rendered here).
+   - FINDING (P2): Hero image chip reads "Fresh produce / kg" over a rice-harvest photo; unit chip is generic and not tied to the photo.
+
+5. SECURITY / DATA-INTEGRITY STATE (already hardened this cycle)
+   - CSRF on state-changing posts, PDO prepared statements, RBAC enforced server-side, bcrypt passwords, TOTP 2FA + recovery codes (migration 032), AES-256-GCM at-rest encryption for TOTP seeds + valid ID numbers, md5 fully removed, TLS to TiDB.
+   - Admin actions audited to admin_audit_log; Reset 2FA button wired into admin_reports user table.
+
+6. FUNCTIONAL GAPS / RISKS CARRIED FORWARD
+   - Mail: OTP emails only send when Resend configured; dev fallback shows code on-screen. Password-reset links gated behind local_password_reset_links; on production with mail off, reset silently fails (P1).
+   - Remaining roadmap items (P2): API rate limiting on api/_bootstrap.php, CSP allowance for Leaflet (unpkg), image persistence for Render ephemeral disk, map pins respecting filters, geocoding async/cache.
+   - reset_2fa self-reset wording: "Cannot change your own account status" (pre-existing; slightly off-message).
+
+7. EXPANSION OPPORTUNITIES (from spec section 8, classified)
+   - P0: remove/replace unsupported 24h + courier claims; handle 0/0 trust band; browse empty/whitespace state.
+   - P1: mail wiring for production (Resend env vars already supported; needs owner account).
+   - P2: verified-purchase reviews exist? (review_submit exists; confirm only completed orders can review - to verify in Phase 2); reorder; saved-search notifications; bulk listing tools.
+   - P3: payment gateway (explicitly out: no fake payment UI), GPS tracking (out: no live courier data).
+
+8. NOT BROKEN / MUST NOT REGRESS
+   - Full-text search with LIKE fallback, filter chips, sorting, pagination; transactional stock adjustments; order state machine; upload validation; i18n en/tl parity (316 refs OK); 100/100 validation assertions; sw.js cache busting on CSS/JS changes.
+
+NEXT (Phase 2): propose prioritized fixes. No P2/P3 work until P0/P1 done.

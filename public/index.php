@@ -47,7 +47,7 @@ require __DIR__ . '/partials/header.php';
     <div class="container">
         <div class="row align-items-center g-4">
             <div class="col-lg-7">
-                <h1 class="hero-title editorial-serif"><?= preg_replace('/(24\s*hours|24\s*oras)/', '<span class="nowrap">$1</span>', e($heroCopy['headline'])) ?></h1>
+                <h1 class="hero-title editorial-serif"><?= e($heroCopy['headline']) ?></h1>
                 <p class="hero-lead"><?= e($heroCopy['subhead']) ?></p>
                 <!-- Hero search is the primary CTA: a marketplace's conversion action -->
                 <form class="hero-search mt-4 mb-4" method="get" action="browse.php" role="search">
@@ -89,7 +89,8 @@ require __DIR__ . '/partials/header.php';
     </div>
 </section>
 
-<!-- Trust / USP metric bar -->
+<!-- Trust / USP metric bar (hidden until real data supports it) -->
+<?php if ($verifiedFarmCount > 0 || $activeListingCount > 0): ?>
 <div class="trust-bar">
     <div class="container">
         <div class="row g-3">
@@ -108,6 +109,7 @@ require __DIR__ . '/partials/header.php';
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <!-- Our Story / Meet the farmers -->
 <section id="story" class="story-section py-5" data-reveal>
