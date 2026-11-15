@@ -3962,6 +3962,12 @@ td .empty-state {
 @media (max-width: 991.98px) {
   .listing-wrap { --bs-gutter-x: 0; row-gap: 2.5rem; }
 }
+/* Message thread on order detail (was entirely unstyled) */
+.message-thread { display: flex; flex-direction: column; gap: 0.6rem; }
+.message { padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); background: var(--surface, transparent); border: 1px solid var(--borders); max-width: 85%; }
+.message--mine { align-self: flex-end; background: var(--primary-tint); border-color: transparent; }
+.message-meta { font-size: 0.75rem; color: var(--text-soft); margin-bottom: 0.25rem; }
+.checkbox-group, .radio-group { display: flex; flex-direction: column; gap: 0.25rem; }
 .listing-facts {
   display: grid;
   grid-auto-flow: column;

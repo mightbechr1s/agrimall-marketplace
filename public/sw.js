@@ -4,7 +4,7 @@
  * Authenticated pages are never cached (Cache Storage survives logout).
  */
 
-const CACHE_NAME = 'agrimall-v57';
+const CACHE_NAME = 'agrimall-v58';
 const STATIC_ASSETS = [
   '/manifest.json'
 ];
