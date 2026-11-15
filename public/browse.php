@@ -225,8 +225,12 @@ if ($sidebarShell) {
       ?>
 
       <button class="filter-pill <?= $categoryFilter === '' && !$dealsFilter && !$trendingFilter ? 'is-active' : '' ?>" type="button" data-filter="all" data-filter-url="browse.php<?= $q !== '' ? '?q=' . urlencode($q) : '' ?>">All (<?= (int) $filterCounts['all'] ?>)</button>
+      <?php if ((int) ($filterCounts['deals'] ?? 0) > 0): ?>
       <button class="filter-pill <?= $dealsFilter ? 'is-active' : '' ?>" type="button" data-filter="deals" data-filter-url="browse.php?deals=1<?= $q !== '' ? '&q=' . urlencode($q) : '' ?>">Deals (<?= (int) $filterCounts['deals'] ?>)</button>
+      <?php endif; ?>
+      <?php if ((int) ($filterCounts['trending'] ?? 0) > 0): ?>
       <button class="filter-pill <?= $trendingFilter ? 'is-active' : '' ?>" type="button" data-filter="trending" data-filter-url="browse.php?trending=1<?= $q !== '' ? '&q=' . urlencode($q) : '' ?>">Trending (<?= (int) $filterCounts['trending'] ?>)</button>
+      <?php endif; ?>
       <?php foreach ($categories as $cat): ?>
         <?php $catSlug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', trim($cat))); ?>
         <?php $catUrl = 'browse.php?category=' . urlencode($catSlug) . ($q !== '' ? '&q=' . urlencode($q) : ''); ?>
