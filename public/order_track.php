@@ -135,8 +135,8 @@ require __DIR__ . '/partials/dashboard-layout.php';
 </div>
 
 <!-- Leaflet map -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css" />
+<script src="assets/vendor/leaflet/leaflet.js"></script>
 <script>
 (function () {
   var map = L.map('delivery-map').setView([14.5995, 120.9842], 12);

@@ -667,7 +667,7 @@ return [
     'listing' => [
         'en' => [
             'back_to_market' => 'Back to marketplace',
-            'organic' => 'Organic',
+            'organic' => 'Organic (seller-declared)',
             'available' => 'available',
             'min_order' => 'min order',
             'harvest_date' => 'Harvest date',
@@ -685,7 +685,7 @@ return [
         ],
         'tl' => [
             'back_to_market' => 'Bumalik sa palengke',
-            'organic' => 'Organik',
+            'organic' => 'Organik (deklara ng seller)',
             'available' => 'available',
             'min_order' => 'minimum na order',
             'harvest_date' => 'Petsa ng ani',

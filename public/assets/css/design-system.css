@@ -3928,6 +3928,40 @@ td .empty-state {
 .listing-price .per { color: var(--text-soft); font-size: 1rem; }
 .listing-meta { color: var(--text-soft); font-size: 0.93rem; line-height: 1.7; margin-bottom: 1.1rem; }
 .listing-desc { max-width: 42rem; line-height: 1.65; margin-bottom: 1.2rem; }
+/* Seller card + fulfilment rows (were unstyled markup: text overlapped the CTA) */
+.listing-seller {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--borders);
+  border-radius: var(--radius-card);
+  margin-bottom: 1.2rem;
+}
+.listing-seller__head { display: flex; align-items: center; gap: 0.75rem; }
+.listing-seller__avatar {
+  width: 2.6rem; height: 2.6rem; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-pill);
+  background: var(--primary-tint); color: var(--primary);
+  font-size: 1.15rem;
+}
+.listing-seller__id { display: flex; flex-direction: column; min-width: 0; }
+.listing-seller__name { font-weight: 600; color: var(--primary); }
+.listing-seller__place { color: var(--text-soft); font-size: 0.85rem; }
+.listing-seller__trust { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.listing-seller__rating { display: inline-flex; align-items: center; gap: 0.3rem; }
+.listing-fulfilment { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.2rem; }
+.listing-fulfilment__row { display: flex; align-items: flex-start; gap: 0.65rem; }
+.listing-fulfilment__row i { color: var(--primary); margin-top: 0.15rem; }
+.listing-fulfilment__row strong { display: block; }
+.listing-fulfilment__row span { color: var(--text-soft); font-size: 0.9rem; }
+.listing-buybox { margin: 1.1rem 0; }
+/* g-5's horizontal gutter exceeds container padding below lg, causing an 8px
+   overflow at 360px; keep only the vertical rhythm on stacked layout. */
+@media (max-width: 991.98px) {
+  .listing-wrap { --bs-gutter-x: 0; row-gap: 2.5rem; }
+}
 .listing-facts {
   display: grid;
   grid-auto-flow: column;

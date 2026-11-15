@@ -349,7 +349,7 @@ if ($sidebarShell) {
                   <span class="badge" style="background:#f97316;color:#fff;"><i class="bi bi-exclamation-triangle"></i> Only <?= rtrim(rtrim(number_format((float)$item['available_quantity'], 2), '0'), '.') ?> left</span>
                 <?php endif; ?>
                 <?php if ((int) ($item['is_organic'] ?? 0) === 1): ?>
-                  <span class="badge text-bg-success"><i class="bi bi-leaf"></i> Organic</span>
+                  <span class="badge text-bg-success"><i class="bi bi-leaf"></i> Organic (seller-declared)</span>
                 <?php endif; ?>
                 <?php
                   $harvest = $item['harvest_date'] ?? null;
@@ -501,8 +501,8 @@ if ($sidebarShell) {
       </button>
       <div id="browse-map" style="display:none;height:420px;border-radius:var(--radius-card);overflow:hidden;border:1px solid var(--borders);"></div>
     </div>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css" />
+    <script src="assets/vendor/leaflet/leaflet.js"></script>
     <script>
     (function () {
       const pins = <?= json_encode($mapPins, JSON_UNESCAPED_UNICODE) ?>;

@@ -180,7 +180,11 @@ $fmtQty = function ($value, $symbol): string {
                     <?php endif; ?>
                 </div>
                 <div class="listing-meta">
-                    <span class="badge text-bg-success"><i class="bi bi-box-seam me-1"></i>In stock: <?= $fmtQty($item['available_quantity'], $item['unit_symbol']) ?></span>
+                    <?php if (listing_is_expired($item)): ?>
+                        <span class="badge text-bg-light text-muted"><i class="bi bi-clock-history me-1"></i>No longer available (expired)</span>
+                    <?php else: ?>
+                        <span class="badge text-bg-success"><i class="bi bi-box-seam me-1"></i>In stock: <?= $fmtQty($item['available_quantity'], $item['unit_symbol']) ?></span>
+                    <?php endif; ?>
                     <span class="sep">&middot;</span>
                     <?= $l($copy['listing'], 'min_order') ?> <?= $fmtQty($item['minimum_order_qty'], $item['unit_symbol']) ?>
                     <span class="sep">&middot;</span>
@@ -230,9 +234,6 @@ $fmtQty = function ($value, $symbol): string {
                             <a href="profile.php?id=<?= (int) $item['farmer_id'] ?>" class="listing-seller__name"><?= e($item['farm_name']) ?></a>
                             <span class="listing-seller__place"><i class="bi bi-geo-alt" aria-hidden="true"></i><?= e($item['barangay']) ?>, <?= e($item['municipality_city']) ?>, <?= e($item['province']) ?></span>
                         </div>
-                        <?php if ($item['verification_status'] === 'approved'): ?>
-                            <span class="pill pill--verified"><i class="bi bi-patch-check-fill" aria-hidden="true"></i><?= $l($copy['listing'], 'verified_farm') ?></span>
-                        <?php endif; ?>
                     </div>
                     <div class="listing-seller__trust">
                         <?php if ($ratingAvg !== null): ?>
