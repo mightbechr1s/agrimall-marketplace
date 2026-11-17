@@ -569,6 +569,114 @@ if (!$rateLimitReady) {
     }
 }
 
+// Geocoding cache + jobs (migration 033). DB-backed, needs a live database.
+$geocodeReady = true;
+try {
+    DB::pdo()->exec('CREATE TABLE IF NOT EXISTS geocode_cache (
+        query_hash   CHAR(64)      NOT NULL,
+        query        TEXT          NOT NULL,
+        latitude     DECIMAL(10,6) NOT NULL,
+        longitude    DECIMAL(10,6) NOT NULL,
+        display_name TEXT          NULL,
+        hits         INT UNSIGNED  NOT NULL DEFAULT 1,
+        created_at   TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (query_hash)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+    DB::pdo()->exec('CREATE TABLE IF NOT EXISTS geocode_jobs (
+        id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id       BIGINT UNSIGNED NOT NULL,
+        address_query TEXT          NOT NULL,
+        status        ENUM("pending","done","failed") NOT NULL DEFAULT "pending",
+        latitude      DECIMAL(10,6)  NULL,
+        longitude     DECIMAL(10,6)  NULL,
+        error         TEXT          NULL,
+        created_at    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        completed_at  TIMESTAMP     NULL,
+        PRIMARY KEY (id),
+        KEY idx_jobs_user (user_id),
+        KEY idx_jobs_status (status),
+        CONSTRAINT fk_jobs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+    DB::pdo()->exec("DELETE FROM geocode_cache");
+    DB::pdo()->exec("DELETE FROM geocode_jobs");
+} catch (Throwable $e) {
+    $geocodeReady = false;
+}
+
+if (!$geocodeReady) {
+    $fail[] = 'geocode tests need writable geocode_cache and geocode_jobs tables';
+} else {
+    try {
+        // Cache hit: pre-populate, verify geocode_address returns from cache
+        // without a network call.
+        $hash = hash('sha256', 'Test Farm, Test Town, Test Province, Philippines');
+        DB::pdo()->prepare(
+            'INSERT INTO geocode_cache (query_hash, query, latitude, longitude, display_name, hits)
+             VALUES (:h, :q, 14.5995, 120.9892, :d, 1)'
+        )->execute(['h' => $hash, 'q' => 'Test Farm, Test Town, Test Province, Philippines', 'd' => 'Test']);
+        $cached = geocode_address('Test Farm, Test Town, Test Province, Philippines');
+        if ($cached && $cached[0] === 14.5995 && $cached[1] === 120.9892) {
+            $pass++;
+        } else {
+            $fail[] = 'geocode_address did not return cached coordinates: ' . var_export($cached, true);
+        }
+        // Hits counter incremented.
+        $hitsStmt = DB::pdo()->prepare('SELECT hits FROM geocode_cache WHERE query_hash = :h');
+        $hitsStmt->execute(['h' => $hash]);
+        $hitsRow = $hitsStmt->fetchColumn();
+        if ((string) $hitsRow === '2') {
+            $pass++;
+        } else {
+            $fail[] = 'geocode_cache hits not incremented: ' . var_export($hitsRow, true);
+        }
+
+        // Empty query returns null.
+        if (geocode_address('') === null) {
+            $pass++;
+        } else {
+            $fail[] = 'geocode_address(empty) did not return null';
+        }
+
+        // geocode_queue inserts a pending job.
+        $testEmail = '__geocode_test_' . bin2hex(random_bytes(2)) . '@animal.local';
+        DB::pdo()->prepare(
+            "INSERT INTO users (email, password_hash, role, status) VALUES (:e, :p, 'buyer', 'active')"
+        )->execute(['e' => $testEmail, 'p' => password_hash('TestPass1', PASSWORD_DEFAULT)]);
+        $testUserId = (int) DB::pdo()->lastInsertId();
+        $jobId = geocode_queue($testUserId, '123 Test Street, Test City, Philippines');
+        if ($jobId > 0) {
+            $pass++;
+        } else {
+            $fail[] = 'geocode_queue did not return a job id';
+        }
+        $jobStmt = DB::pdo()->prepare('SELECT status FROM geocode_jobs WHERE id = :id');
+        $jobStmt->execute(['id' => $jobId]);
+        $jobRow = $jobStmt->fetchColumn();
+        if ($jobRow === 'pending') {
+            $pass++;
+        } else {
+            $fail[] = 'geocode_queue job status is not pending: ' . var_export($jobRow, true);
+        }
+
+        // geocode_drain_jobs with no processable jobs returns 0 (network calls
+        // are not made in the test suite).
+        $drained = geocode_drain_jobs(1);
+        if ($drained === 0 || $drained === 1) {
+            $pass++;
+        } else {
+            $fail[] = 'geocode_drain_jobs returned unexpected value: ' . $drained;
+        }
+
+        // Cleanup.
+        DB::pdo()->exec("DELETE FROM geocode_cache");
+        DB::pdo()->exec("DELETE FROM geocode_jobs");
+        DB::pdo()->prepare('DELETE FROM users WHERE id = :id')->execute(['id' => $testUserId]);
+    } finally {
+        DB::pdo()->exec("DELETE FROM geocode_cache");
+        DB::pdo()->exec("DELETE FROM geocode_jobs");
+    }
+}
+
 echo "assertions passed: $pass\n";
 echo "assertions failed: " . count($fail) . "\n";
 

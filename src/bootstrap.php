@@ -242,6 +242,15 @@ try {
     // DB unavailable: DB::pdo() throws; pages that don't need DB still work.
 }
 
+// Drain at most one pending geocode job per page load so farm addresses get
+// coordinates in the background without stalling registration. Nomatim's
+// 1-req/sec policy is respected inside geocode_drain_jobs().
+try {
+    geocode_drain_jobs(1);
+} catch (Throwable $e) {
+    // Silent: background geocoding must never break a page load.
+}
+
 // Resume a remembered session before any page reads the current user.
 try {
     remember_resume();

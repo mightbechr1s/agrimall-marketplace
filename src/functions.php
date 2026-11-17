@@ -532,6 +532,23 @@ function geocode_address(string $query): ?array
     if (!function_exists('curl_init')) {
         return null;
     }
+
+    // 1. Check the cache first: same address never hits Nominatim twice.
+    $pdo = DB::pdo();
+    $hash = hash('sha256', $query);
+    $stmt = $pdo->prepare(
+        "SELECT latitude, longitude FROM geocode_cache WHERE query_hash = :h LIMIT 1"
+    );
+    $stmt->execute(['h' => $hash]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row) {
+        $pdo->prepare(
+            "UPDATE geocode_cache SET hits = hits + 1 WHERE query_hash = :h"
+        )->execute(['h' => $hash]);
+        return [(float) $row['latitude'], (float) $row['longitude']];
+    }
+
+    // 2. Cache miss: call Nominatim (best-effort, short timeout, never fatal).
     $url = 'https://nominatim.openstreetmap.org/search?' . http_build_query([
         'q' => $query,
         'format' => 'json',
@@ -540,13 +557,15 @@ function geocode_address(string $query): ?array
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 8,
+        CURLOPT_TIMEOUT => 5,          // short timeout: registration must not stall
+        CURLOPT_CONNECTTIMEOUT => 3,
         CURLOPT_USERAGENT => 'AgriMALL/1.0 (contact@agrimall.ph)',
         CURLOPT_HTTPHEADER => ['Accept: application/json'],
     ]);
     $resp = curl_exec($ch);
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+
     if ($resp === false || $code !== 200) {
         return null;
     }
@@ -554,7 +573,110 @@ function geocode_address(string $query): ?array
     if (!is_array($data) || empty($data[0]['lat']) || empty($data[0]['lon'])) {
         return null;
     }
-    return [(float) $data[0]['lat'], (float) $data[0]['lon']];
+    $lat = (float) $data[0]['lat'];
+    $lon = (float) $data[0]['lon'];
+    $display = $data[0]['display_name'] ?? null;
+
+    // 3. Store in cache for next time (ignore failures: cache is a performance
+    //    optimisation, not a correctness requirement).
+    try {
+        $pdo->prepare(
+            "INSERT INTO geocode_cache (query_hash, query, latitude, longitude, display_name)
+             VALUES (:h, :q, :lat, :lon, :d)
+             ON DUPLICATE KEY UPDATE hits = hits + 1"
+        )->execute([
+            'h' => $hash,
+            'q' => $query,
+            'lat' => $lat,
+            'lon' => $lon,
+            'd' => $display,
+        ]);
+    } catch (Throwable $e) {
+        // Cache write failure is not fatal.
+    }
+
+    return [$lat, $lon];
+}
+
+/**
+ * Queue an address for background geocoding. Registration calls this instead of
+ * blocking on the external API. Returns the job id.
+ */
+function geocode_queue(int $userId, string $addressQuery): ?int
+{
+    $pdo = DB::pdo();
+    try {
+        $pdo->prepare(
+            "INSERT INTO geocode_jobs (user_id, address_query, status)
+             VALUES (:uid, :q, 'pending')"
+        )->execute(['uid' => $userId, 'q' => $addressQuery]);
+        return (int) $pdo->lastInsertId();
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+/**
+ * Drain pending geocode jobs: geocode any pending jobs that haven't been
+ * attempted yet, mark done/failed. Safe to run frequently (called from a cron
+ * or the next page load). Returns the number of jobs processed.
+ */
+function geocode_drain_jobs(int $limit = 10): int
+{
+    if (!function_exists('curl_init')) {
+        return 0;
+    }
+    $pdo = DB::pdo();
+    $processed = 0;
+    try {
+        $stmt = $pdo->prepare(
+            "SELECT id, address_query FROM geocode_jobs
+             WHERE status = 'pending'
+             ORDER BY created_at ASC
+             LIMIT :n"
+        );
+        $stmt->bindValue(':n', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        $jobs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {
+        return 0;
+    }
+
+    foreach ($jobs as $job) {
+        $coords = geocode_address($job['address_query']);
+        $status = $coords ? 'done' : 'failed';
+        try {
+            $pdo->prepare(
+                "UPDATE geocode_jobs
+                 SET status = :s, latitude = :lat, longitude = :lng,
+                     completed_at = NOW()
+                 WHERE id = :id"
+            )->execute([
+                's' => $status,
+                'lat' => $coords[0] ?? null,
+                'lng' => $coords[1] ?? null,
+                'id' => $job['id'],
+            ]);
+            if ($coords) {
+                $uidStmt = $pdo->prepare('SELECT user_id FROM geocode_jobs WHERE id = :id');
+                $uidStmt->execute(['id' => $job['id']]);
+                $uidRow = $uidStmt->fetch(PDO::FETCH_ASSOC);
+                if ($uidRow) {
+                    $pdo->prepare(
+                        'UPDATE farmer_profiles SET latitude = :lat, longitude = :lng WHERE user_id = :uid'
+                    )->execute(['lat' => $coords[0], 'lng' => $coords[1], 'uid' => $uidRow['user_id']]);
+                }
+            }
+        } catch (Throwable $e) {
+            // Job processing failure: leave status as pending for next drain.
+        }
+        $processed++;
+        // Nominatim rate limit: 1 request per second.
+        if ($processed < count($jobs)) {
+            usleep(1000000); // 1 second
+        }
+    }
+    return $processed;
 }
 
 /** FR-VAL-005: a decoded image may not exceed 20 megapixels or 6,000 px a side.
