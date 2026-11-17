@@ -917,6 +917,31 @@ function rate_limit_check(string $key, int $maxAttempts = 5, int $windowSeconds 
 }
 
 /**
+ * API rate limit helper. Returns retry-after seconds if the request should be
+ * blocked (HTTP 429), or 0 if it is allowed. The key is namespaced with the
+ * category so different endpoint families never collide.
+ *
+ * Fail behaviour is the caller's decision: auth endpoints fail closed, write
+ * endpoints fail open (see api/_bootstrap.php).
+ */
+function api_rate_limit(string $category, string $identifier, int $maxAttempts, int $windowSeconds): int
+{
+    $key = 'api:' . $category . ':' . $identifier;
+    if (!rate_limit_check($key, $maxAttempts, $windowSeconds)) {
+        return 0; // allowed (and counter incremented by rate_limit_check)
+    }
+    // Blocked: how long until the current window resets?
+    $pdo = DB::pdo();
+    $stmt = $pdo->prepare("SELECT window_start FROM rate_limits WHERE `key` = :key");
+    $stmt->execute(['key' => $key]);
+    $row = $stmt->fetch();
+    if (!$row) {
+        return 0;
+    }
+    return max(0, (int) $row['window_start'] + $windowSeconds - time());
+}
+
+/**
  * OTP helpers (email/phone verification, replaces CAPTCHA).
  *
  * generate_otp() returns a 6-digit code. store_otp() persists a hashed copy

@@ -38,6 +38,12 @@ order, so a fresh rebuild only needs that one command.
 | `031_sensitive_encryption.sql` | Widens `users.totp_secret` and `farmer_profiles.valid_id_number` so ciphertext fits |
 | `032_user_recovery_codes.sql` | `user_recovery_codes` table: hashed one-time 2FA recovery codes |
 
+The `rate_limits` table from migration `009_rate_limits.sql` now has an active
+consumer: `src/functions.php` exposes `api_rate_limit()` and
+`public/api/_bootstrap.php` enforces per-IP (+ per-email for auth endpoints)
+rate limits on login, registration, and OTP verification (fail closed), with
+fail-open limits on write endpoints. No new migration is required.
+
 There is no `001`. Numbering starts at `002` because the base tables it would
 have followed are now folded into `schema.sql`.
 

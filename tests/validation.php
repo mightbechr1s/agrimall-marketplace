@@ -507,6 +507,68 @@ if (!$recoveryReady || $recoveryUserId <= 0) {
     }
 }
 
+// API rate limiting (migration 009 rate_limits table). DB-backed, needs a live
+// database.
+$rateLimitReady = true;
+try {
+    DB::pdo()->exec('CREATE TABLE IF NOT EXISTS rate_limits (
+        `key`         VARCHAR(128) NOT NULL PRIMARY KEY,
+        attempts      INT UNSIGNED NOT NULL DEFAULT 0,
+        window_start  INT UNSIGNED NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
+    // Prune any stray rows from prior runs.
+    DB::pdo()->exec("DELETE FROM rate_limits WHERE `key` LIKE 'api:%'");
+} catch (Throwable $e) {
+    $rateLimitReady = false;
+}
+
+if (!$rateLimitReady) {
+    $fail[] = 'rate-limit tests need a writable rate_limits table';
+} else {
+    try {
+        // Under the limit: allowed, counter incremented, no retry-after.
+        if (api_rate_limit('test_cat', 'test_id_1', 5, 900) === 0) {
+            $pass++;
+        } else {
+            $fail[] = 'api_rate_limit blocked a request under the limit';
+        }
+
+        // Exhaust the limit: 5 attempts should all pass, the 6th should block.
+        for ($i = 0; $i < 5; $i++) {
+            if (api_rate_limit('test_cat', 'test_id_2', 5, 900) > 0) {
+                $fail[] = 'api_rate_limit blocked attempt ' . ($i + 1) . ' of 5';
+                break;
+            }
+        }
+        // The 6th attempt must be blocked with a positive retry-after.
+        $ra = api_rate_limit('test_cat', 'test_id_2', 5, 900);
+        if ($ra > 0 && $ra <= 900) {
+            $pass++;
+        } else {
+            $fail[] = 'api_rate_limit did not block after 5 attempts (retry_after=' . $ra . ')';
+        }
+
+        // Different categories are independent: test_id_2 under 'other_cat' still allowed.
+        if (api_rate_limit('other_cat', 'test_id_2', 5, 900) === 0) {
+            $pass++;
+        } else {
+            $fail[] = 'api_rate_limit categories collided';
+        }
+
+        // Different identifiers are independent.
+        if (api_rate_limit('test_cat', 'test_id_3', 5, 900) === 0) {
+            $pass++;
+        } else {
+            $fail[] = 'api_rate_limit identifiers collided';
+        }
+
+        // Cleanup test rows.
+        DB::pdo()->exec("DELETE FROM rate_limits WHERE `key` LIKE 'api:test_%' OR `key` LIKE 'api:other_cat:%'");
+    } finally {
+        DB::pdo()->exec("DELETE FROM rate_limits WHERE `key` LIKE 'api:%'");
+    }
+}
+
 echo "assertions passed: $pass\n";
 echo "assertions failed: " . count($fail) . "\n";
 

@@ -22,10 +22,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 function api_input(): array
 {
+    static $cached = null;
+    if ($cached !== null) {
+        return $cached;
+    }
     $raw = file_get_contents('php://input');
     if ($raw === false || $raw === '') return [];
     $data = json_decode($raw, true);
-    return is_array($data) ? $data : [];
+    $cached = is_array($data) ? $data : [];
+    return $cached;
+}
+
+function api_client_ip(): string
+{
+    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 }
 
 function api_ok(array $data = [], int $status = 200): void
@@ -88,4 +98,64 @@ function api_require_auth(): array
         api_error('Authentication required.', 401);
     }
     return $user;
+}
+
+// ---- API rate limiting ----
+// [URL path prefix, category, max attempts, window seconds, fail closed, also key by email]
+// Fail closed = reject when the rate-limit table is unavailable (auth endpoints).
+// Fail open   = let the request through (write endpoints).
+$apiRateLimitRules = [
+    ['/api/auth/login',       'auth_login',   5, 900,  true,  true],   // 5 per 15 min, IP + email
+    ['/api/auth/register',    'auth_register', 3, 900,  true,  true],   // 3 per 15 min, IP + email
+    ['/api/auth/verify-otp',  'auth_otp',      5, 900,  true,  true],   // 5 per 15 min, IP + email
+];
+
+$requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+$ip = api_client_ip();
+
+foreach ($apiRateLimitRules as [$prefix, $category, $maxAttempts, $windowSeconds, $failClosed, $keyByEmail]) {
+    if (!str_starts_with($requestUri, $prefix)) {
+        continue;
+    }
+
+    try {
+        // Per-IP limit.
+        $retryAfter = api_rate_limit($category, $ip, $maxAttempts, $windowSeconds);
+        if ($retryAfter > 0) {
+            http_response_code(429);
+            header('Retry-After: ' . $retryAfter);
+            echo json_encode([
+                'ok' => false,
+                'error' => 'Too many requests. Try again later.',
+                'retry_after' => $retryAfter,
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        // Optional per-account limit (email from the request body).
+        if ($keyByEmail) {
+            $input = api_input();
+            $email = trim((string) ($input['email'] ?? ''));
+            if ($email !== '') {
+                $retryAfter = api_rate_limit($category . '_email', $ip . ':' . $email, $maxAttempts, $windowSeconds);
+                if ($retryAfter > 0) {
+                    http_response_code(429);
+                    header('Retry-After: ' . $retryAfter);
+                    echo json_encode([
+                        'ok' => false,
+                        'error' => 'Too many requests for this account. Try again later.',
+                        'retry_after' => $retryAfter,
+                    ], JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        app_log_exception($e, 'api_rate_limit:' . $category);
+        if ($failClosed) {
+            api_error('Authentication temporarily unavailable.', 503);
+        }
+        // Fail open: let non-auth requests through.
+    }
+    break; // only the first matching rule applies
 }
