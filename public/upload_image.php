@@ -39,9 +39,9 @@ $fileExtension = match($mimeType) {
     default => 'bin'
 };
 $filename = uniqid('listing_', true) . '.' . $fileExtension;
-$uploadPath = listing_upload_dir() . '/' . $filename;
 
-if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
+$imageUrl = storage_upload_image($file, $mimeType, $filename);
+if (!$imageUrl) {
     http_response_code(500);
     exit('Failed to upload file');
 }
@@ -49,7 +49,7 @@ if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
 header('Content-Type: application/json');
 echo json_encode([
     'success' => true,
-    'filename' => $filename,
-    'path' => '/uploads/listings/' . $filename
+    'filename' => basename($imageUrl),
+    'path' => $imageUrl
 ]);
 exit;

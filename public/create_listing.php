@@ -138,26 +138,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($file['size'] > 5 * 1024 * 1024) { // 5MB
             $errors[] = $l($copy['lf'], 'err_img_primary_large');
         } else {
-            // Generate unique filename
-            $fileExtension = match($mimeType) {
-                'image/jpeg' => 'jpg',
-                'image/png' => 'png',
-                'image/webp' => 'webp',
-                default => 'bin'
-            };
-            $filename = uniqid('listing_', true) . '.' . $fileExtension;
-            $uploadPath = listing_upload_dir() . '/' . $filename;
-
-            if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                $optimized = optimize_uploaded_image($uploadPath);
-                if ($optimized) {
-                    @unlink($uploadPath);
-                    $primaryImage = $optimized;
-                } else {
-                    $primaryImage = '/uploads/listings/' . $filename;
-                }
-            } else {
+            $imageUrl = storage_upload_image($file, $mimeType, uniqid('listing_', true));
+            if (!$imageUrl) {
                 $errors[] = $l($copy['lf'], 'err_upload_primary');
+            } else {
+                $primaryImage = $imageUrl;
             }
         }
     }
@@ -189,26 +174,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } elseif ($file['size'] > 5 * 1024 * 1024) { // 5MB
                     $errors[] = $l($copy['lf'], 'err_img_gallery_large');
                 } else {
-                    // Generate unique filename
-                    $fileExtension = match($mimeType) {
-                        'image/jpeg' => 'jpg',
-                        'image/png' => 'png',
-                        'image/webp' => 'webp',
-                        default => 'bin'
-                    };
-                    $filename = uniqid('listing_gallery_', true) . '.' . $fileExtension;
-                    $uploadPath = listing_upload_dir() . '/' . $filename;
-
-                    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                        $optimized = optimize_uploaded_image($uploadPath);
-                        if ($optimized) {
-                            @unlink($uploadPath);
-                            $galleryImages[] = $optimized;
-                        } else {
-                            $galleryImages[] = '/uploads/listings/' . $filename;
-                        }
-                    } else {
+                    $imageUrl = storage_upload_image($file, $mimeType, uniqid('listing_gallery_', true));
+                    if (!$imageUrl) {
                         $errors[] = $l($copy['lf'], 'err_upload_gallery');
+                    } else {
+                        $galleryImages[] = $imageUrl;
                     }
                 }
             }

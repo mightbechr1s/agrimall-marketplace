@@ -173,6 +173,104 @@ function optimize_uploaded_image(string $srcPath, string $relativeDir = '/upload
     return $relativeDir . '/' . basename($webpPath);
 }
 
+/**
+ * Persist an uploaded image. Returns the public URL/path to store in the DB.
+ *
+ * Local provider: writes to public/uploads/listings/ (current behaviour;
+ * ephemeral on Render's free tier).
+ * Cloudinary provider: uploads to Cloudinary via signed HTTP API; returns the
+ * secure_url. Requires CLOUDINARY_URL env (cloudinary://key:secret@cloud).
+ *
+ * On success returns the image path/URL; on failure returns null.
+ * The caller is responsible for deleting the temp file ($file['tmp_name'] is
+ * auto-cleared by PHP after the request).
+ */
+function storage_upload_image(array $file, string $mimeType, ?string $suggestedName = null): ?string
+{
+    $storage = $GLOBALS['config']['storage'] ?? [];
+    $provider = $storage['provider'] ?? 'local';
+
+    if ($provider === 'cloudinary' && !empty($storage['cloudinary_url'])) {
+        return storage_upload_to_cloudinary($file, $mimeType, $suggestedName, $storage);
+    }
+
+    // Local disk: validate + optimize + store under public/uploads/listings/.
+    $uploadDir = listing_upload_dir();
+    $ext = match ($mimeType) {
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+        default => 'bin',
+    };
+    $filename = $suggestedName ?: (uniqid('listing_', true) . '.' . $ext);
+    $uploadPath = $uploadDir . '/' . $filename;
+
+    if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
+        return null;
+    }
+
+    $optimized = optimize_uploaded_image($uploadPath);
+    if ($optimized) {
+        @unlink($uploadPath);
+        return $optimized;
+    }
+    return '/uploads/listings/' . $filename;
+}
+
+/**
+ * Upload an image to Cloudinary via a signed HTTP request. No composer SDK
+ * needed: Cloudinary's upload endpoint accepts form parameters with an
+ * HMAC-SHA1 signature.
+ */
+function storage_upload_to_cloudinary(array $file, string $mimeType, ?string $suggestedName, array $storage): ?string
+{
+    $url = $storage['cloudinary_url'];
+    if (!preg_match('#^cloudinary://([^:]+):([^@]+)@(.+)$#', $url, $m)) {
+        return null;
+    }
+    [$apiKey, $apiSecret, $cloud] = [$m[1], $m[2], $m[3]];
+    $folder = $storage['cloudinary_folder'] ?? 'agrimall';
+    $publicId = $folder . '/' . ($suggestedName ?: uniqid('listing_', true));
+
+    $timestamp = time();
+    $toSign = [
+        'api_key' => $apiKey,
+        'folder' => $folder,
+        'public_id' => $publicId,
+        'timestamp' => $timestamp,
+    ];
+    uksort($toSign, 'strcmp');
+    $sigString = '';
+    foreach ($toSign as $k => $v) {
+        $sigString .= ($sigString !== '' ? '&' : '') . "$k=$v";
+    }
+    $signature = hash_hmac('sha1', $sigString, $apiSecret);
+
+    $post = $toSign;
+    $post['signature'] = $signature;
+    $post['file'] = new CURLFile($file['tmp_name'], $mimeType, $file['name']);
+
+    $ch = curl_init("https://api.cloudinary.com/v1_1/$cloud/image/upload");
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $post,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 30,
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode !== 200 || $response === false) {
+        return null;
+    }
+    $data = json_decode($response, true);
+    if (!is_array($data) || empty($data['secure_url'])) {
+        return null;
+    }
+    return $data['secure_url'];
+}
+
 /** Base32 alphabet (RFC 4648) for TOTP secrets. */
 function totp_base32_encode(string $bytes): string
 {
@@ -860,6 +958,11 @@ function asset(string $path): string
 function listing_card_image(?string $path): string
 {
     $path = (string) $path;
+    if ($path !== '' && preg_match('/^https?:\/\//', $path)) {
+        // Remote image (e.g. Cloudinary): return as-is; the CDN handles its own
+        // optimization and thumbnails via URL transformations.
+        return $path;
+    }
     if ($path !== '' && preg_match('/\.webp$/i', $path)) {
         $thumb = preg_replace('/\.webp$/i', '_thumb.webp', $path, 1);
         if (is_file(dirname(__DIR__) . '/public/' . ltrim($thumb, '/'))) {

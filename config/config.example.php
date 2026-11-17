@@ -77,6 +77,17 @@ return [
         'resend_api_key' => getenv('RESEND_API_KEY') ?: '',
     ],
 
+    // Image storage. Render's free tier has an ephemeral disk: any file written
+    // to public/uploads/ is lost on redeploy. Set STORAGE_PROVIDER=cloudinary
+    // (and the three Cloudinary env vars) to persist images on Cloudinary's
+    // free tier (25 GB storage, 25 GB bandwidth/month). Otherwise images are
+    // stored on local disk (fine for localhost and persistent-disk hosts).
+    'storage' => [
+        'provider'        => getenv('STORAGE_PROVIDER') ?: 'local',
+        'cloudinary_url'  => getenv('CLOUDINARY_URL') ?: '',       // cloudinary://key:secret@cloud
+        'cloudinary_folder' => getenv('CLOUDINARY_FOLDER') ?: 'agrimall',
+    ],
+
     // Web Push (VAPID). Generate a pair with `php tools/vapid-keys.php` and paste
     // the block below into config/config.php. Disabled until both keys exist.
     // The subject must be a mailto: or https: URL the push service can contact.
