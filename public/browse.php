@@ -97,17 +97,42 @@ try {
     $stmt->execute();
     $listings = $stmt->fetchAll();
 
-    // Map pins: listings whose farmer has geocoded coordinates.
+    // Map pins: listings whose farmer has geocoded coordinates,
+    // filtered by the same criteria as the listing grid so the map
+    // and the list always show the same properties.
     $mapPins = [];
     try {
-        $mapPins = DB::pdo()->query(
+        $mapWhere = "pl.status = 'active' AND fp.latitude IS NOT NULL AND fp.longitude IS NOT NULL";
+        $mapBind = [];
+        if ($categoryFilter !== '') {
+            $mapWhere .= ' AND pc.slug = :cat';
+            $mapBind[':cat'] = $categoryFilter;
+        }
+        if ($dealsFilter) {
+            $mapWhere .= " AND pl.discount_percent > 0 AND (pl.expiry_date IS NULL OR pl.expiry_date = '' OR pl.expiry_date >= CURDATE())";
+        }
+        if ($trendingFilter) {
+            $mapWhere .= ' AND (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = pl.id) >= 3';
+        }
+        if ($priceMin > 0) { $mapWhere .= ' AND pl.price_per_unit >= :pmin'; $mapBind[':pmin'] = $priceMin; }
+        if ($priceMax > 0) { $mapWhere .= ' AND pl.price_per_unit <= :pmax'; $mapBind[':pmax'] = $priceMax; }
+        if ($hasSearch && !empty($matchIds)) {
+            $mapWhere .= ' AND pl.id IN (' . implode(',', $matchIds) . ')';
+        } elseif ($hasSearch) {
+            $mapWhere .= ' AND 1 = 0';
+        }
+        $mapJoin = $categoryFilter !== '' ? 'JOIN produce_categories pc ON pc.id = pl.category_id' : '';
+        $mapStmt = DB::pdo()->prepare(
             "SELECT pl.id, pl.name, pl.price_per_unit, pl.available_quantity, pl.unit_symbol,
                     fp.farm_name, fp.latitude, fp.longitude, fp.municipality_city, fp.province
                FROM produce_listings pl
                JOIN farmer_profiles fp ON pl.farmer_id = fp.user_id
-              WHERE pl.status = 'active' AND fp.latitude IS NOT NULL AND fp.longitude IS NOT NULL
-              LIMIT 200"
-        )->fetchAll(PDO::FETCH_ASSOC);
+               $mapJoin
+               WHERE $mapWhere
+               LIMIT 200"
+        );
+        foreach ($mapBind as $k => $v) $mapStmt->bindValue($k, $v);
+        $mapPins = $mapStmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Throwable $e) {
         $mapPins = [];
     }
