@@ -8,6 +8,12 @@ if (!in_array($user['role'], ['farmer', 'admin', 'manager'], true)) {
 
 $pdo = DB::pdo();
 $farmerId = (int) $user['id'];
+if (in_array($user['role'], ['admin', 'manager'], true)) {
+    $farmerId = (int) ($_GET['farmer_id'] ?? 0);
+    if ($farmerId <= 0) {
+        api_error('farmer_id is required for staff.', 422);
+    }
+}
 
 $stmt = $pdo->prepare(
     "SELECT pl.id, pl.name, pl.description, pl.price_per_unit, pl.discount_percent,

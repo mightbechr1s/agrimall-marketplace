@@ -10,18 +10,18 @@ $statusFilter = trim((string) ($_GET['status'] ?? ''));
 $page = max(1, (int) ($_GET['page'] ?? 1));
 $perPage = 15;
 
-$column = in_array($role, ['farmer', 'admin', 'manager'], true) && $role !== 'buyer' ? 'farmer_id' : 'buyer_id';
-// For buyers, filter by buyer_id. For farmers/admins, filter by farmer_id (their orders as seller).
+$where = '';
+$params = [];
 if ($role === 'buyer') {
-    $column = 'buyer_id';
-} else {
-    $column = 'farmer_id';
+    $where = 'WHERE buyer_id = :id';
+    $params = ['id' => $userId];
+} elseif ($role === 'farmer') {
+    $where = 'WHERE farmer_id = :id';
+    $params = ['id' => $userId];
 }
-
-$where = "WHERE $column = :id";
-$params = ['id' => $userId];
+// Admin/manager see every order; $where stays empty.
 if ($statusFilter !== '') {
-    $where .= " AND status = :status";
+    $where .= ($where === '' ? 'WHERE' : ' AND') . ' status = :status';
     $params['status'] = $statusFilter;
 }
 

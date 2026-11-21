@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'contact_phone' => $a['contact_phone'],
             'location' => implode(', ', array_filter([$a['barangay'], $a['municipality_city'], $a['province']])),
             'id_type' => $idLabels[$a['valid_id_type']] ?? $a['valid_id_type'],
-            'id_number' => $a['valid_id_number'],
+            'id_number' => sensitive_decrypt((string) $a['valid_id_number']),
             'has_id_image' => (bool) $a['has_id_image'],
             'verification_status' => $a['verification_status'],
             'rejection_reason' => $a['rejection_reason'],

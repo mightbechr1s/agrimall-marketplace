@@ -6,6 +6,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $user = api_require_auth();
+if (!in_array($user['role'], ['buyer', 'admin', 'manager'], true)) {
+    api_error('Only buyers can add items to a cart.', 403);
+}
+
 $input = api_input();
 $listingId = (int) ($input['listing_id'] ?? 0);
 $quantity = (float) ($input['quantity'] ?? 0);
@@ -19,20 +23,35 @@ if ($quantity <= 0) {
 
 $pdo = DB::pdo();
 
-// Verify listing exists and is active
-$stmt = $pdo->prepare("SELECT id, minimum_order_qty, available_quantity FROM v_active_listings WHERE id = :id");
+// v_active_listings already requires an active listing from an approved farm.
+$stmt = $pdo->prepare(
+    'SELECT id, farmer_id, minimum_order_qty, maximum_order_qty, available_quantity, unit_symbol
+     FROM v_active_listings WHERE id = :id'
+);
 $stmt->execute(['id' => $listingId]);
 $listing = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$listing) {
     api_error('Listing not found or unavailable.', 404);
 }
+if ((int) $listing['farmer_id'] === (int) $user['id']) {
+    api_error('You cannot buy your own listing.', 403);
+}
+
+$existingStmt = $pdo->prepare('SELECT quantity FROM cart_items WHERE buyer_id = :buyer AND listing_id = :listing');
+$existingStmt->execute(['buyer' => $user['id'], 'listing' => $listingId]);
+$newTotal = $quantity + (float) ($existingStmt->fetchColumn() ?: 0);
 
 $minQty = (float) $listing['minimum_order_qty'];
-if ($quantity < $minQty) {
-    api_error("Minimum order is {$minQty}.");
+$maxQty = $listing['maximum_order_qty'] === null ? null : (float) $listing['maximum_order_qty'];
+$unit = $listing['unit_symbol'];
+if ($newTotal < $minQty) {
+    api_error("Minimum order is {$minQty} {$unit}.");
 }
-if ($quantity > (float) $listing['available_quantity']) {
-    api_error("Only {$listing['available_quantity']} available.");
+if ($maxQty !== null && $newTotal > $maxQty) {
+    api_error("Maximum order is {$maxQty} {$unit}.");
+}
+if ($newTotal > (float) $listing['available_quantity']) {
+    api_error("Only {$listing['available_quantity']} {$unit} available.");
 }
 
 // Upsert cart item

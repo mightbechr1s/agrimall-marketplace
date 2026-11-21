@@ -99,7 +99,9 @@
   --text: #f1f3f5;
   --text-soft: #adb5bd;
   --borders: rgba(255, 255, 255, 0.10);
-  --field-border: var(--borders);
+  /* Form controls need a 3:1 boundary against the page; the hairline used for
+     decorative card borders does not meet it, so fields get a solid grey. */
+  --field-border: #6c757d;
   --danger: #ff6b6b;
   --danger-fill: #dc3545;
   --success: #52b788;

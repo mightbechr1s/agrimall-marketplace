@@ -6,7 +6,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $user = api_require_auth();
-if (!in_array($user['role'], ['farmer', 'admin', 'manager'], true)) {
+if ($user['role'] !== 'farmer') {
     api_error('Farmer access only.', 403);
 }
 

@@ -21,14 +21,17 @@ if ($category !== '') {
 if ($priceMin > 0) { $where .= ' AND price_per_unit >= :pmin'; $bind[':pmin'] = $priceMin; }
 if ($priceMax > 0) { $where .= ' AND price_per_unit <= :pmax'; $bind[':pmax'] = $priceMax; }
 
-// Search
+// Search: a subquery keeps the category/price filters above applied to the
+// outer query, and avoids a PHP-side id list that could grow without bound.
 if ($q !== '') {
-    $sql = "SELECT pl.id FROM produce_listings pl JOIN produce_categories pc ON pc.id = pl.category_id
-            WHERE pl.status = 'active' AND (MATCH(pl.name, pl.description) AGAINST(:fts IN NATURAL LANGUAGE MODE) OR pl.name LIKE :like)";
-    $idsStmt = $pdo->prepare($sql);
-    $idsStmt->execute([':fts' => $q, ':like' => '%' . $q . '%']);
-    $matchIds = array_map('intval', $idsStmt->fetchAll(PDO::FETCH_COLUMN));
-    $where = $matchIds ? 'id IN (' . implode(',', $matchIds) . ')' : '1 = 0';
+    $where .= " AND id IN (
+        SELECT pl.id FROM produce_listings pl
+        WHERE pl.status = 'active'
+          AND (MATCH(pl.name, pl.description) AGAINST(:fts IN NATURAL LANGUAGE MODE)
+               OR pl.name LIKE :like)
+    )";
+    $bind[':fts'] = $q;
+    $bind[':like'] = '%' . $q . '%';
 }
 
 // Count

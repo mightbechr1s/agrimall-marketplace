@@ -8,6 +8,14 @@ if (!in_array($user['role'], ['farmer', 'admin', 'manager'], true)) {
 
 $pdo = DB::pdo();
 $farmerId = (int) $user['id'];
+if (in_array($user['role'], ['admin', 'manager'], true)) {
+    // Staff act on a farmer's account; require the target explicitly instead
+    // of silently returning an empty dashboard for the staff member's own id.
+    $farmerId = (int) ($_GET['farmer_id'] ?? 0);
+    if ($farmerId <= 0) {
+        api_error('farmer_id is required for staff.', 422);
+    }
+}
 
 $count = function (string $sql) use ($pdo, $farmerId): int {
     $stmt = $pdo->prepare($sql);

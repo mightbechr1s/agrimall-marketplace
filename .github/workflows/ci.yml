@@ -64,6 +64,9 @@ jobs:
       - name: Validation helpers
         run: php tests/validation.php
 
+      - name: Contrast (WCAG AA tokens)
+        run: php tests/contrast_test.php
+
       - name: PDF rendering
         run: php tests/pdf_test.php
 
