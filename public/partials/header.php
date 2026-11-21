@@ -23,6 +23,17 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
     <meta name="description" content="<?= e($currentLocale === 'tl' ? 'AgriMALL — Merkadong agrikultura at alagang hayop ng Pilipinas. Mga na-verify na magsasaka at raiser, patas na presyo, sariwa mula sa sakahan.' : 'AgriMALL — Philippine agribusiness marketplace connecting verified farms and raisers directly with buyers. Farm to table, no middlemen.') ?>" />
     <meta name="theme-color" content="#1b4332" />
     <meta name="color-scheme" content="light dark" />
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="<?= e($appName) ?>" />
+    <meta property="og:title" content="<?= e($pageTitle) ?> | <?= e($appName) ?>" />
+    <meta property="og:description" content="<?= e($currentLocale === 'tl' ? 'AgriMALL — Merkadong agrikultura at alagang hayop ng Pilipinas. Mga na-verify na magsasaka at raiser, patas na presyo, sariwa mula sa sakahan.' : 'AgriMALL — Philippine agribusiness marketplace connecting verified farms and raisers directly with buyers. Farm to table, no middlemen.') ?>" />
+    <meta property="og:url" content="<?= e($canonicalUrl) ?>" />
+    <meta property="og:locale" content="<?= $currentLocale === 'tl' ? 'fil_PH' : 'en_PH' ?>" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="<?= e($pageTitle) ?> | <?= e($appName) ?>" />
+    <meta name="twitter:description" content="<?= e($currentLocale === 'tl' ? 'AgriMALL — Merkadong agrikultura at alagang hayop ng Pilipinas.' : 'AgriMALL — Philippine agribusiness marketplace connecting verified farms and raisers directly with buyers.') ?>" />
 
     <!-- Canonical & hreflang -->
     <link rel="canonical" href="<?= e($canonicalUrl) ?>" />

@@ -115,6 +115,33 @@ require __DIR__ . '/partials/header.php';
 </div>
 <?php endif; ?>
 
+<!-- Structured Data (JSON-LD) for SEO -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "AgriMALL",
+  "url": "<?= e($baseUrl) ?>",
+  "description": "Philippine agribusiness marketplace connecting verified farms and raisers directly with buyers.",
+  "inLanguage": ["en", "tl"],
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "<?= e($baseUrl) ?>/browse.php?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "AgriMALL",
+  "url": "<?= e($baseUrl) ?>",
+  "description": "Philippine agricultural marketplace connecting verified farmers and buyers directly.",
+  "areaServed": "PH"
+}
+</script>
+
 <!-- Our Story / Meet the farmers -->
 <section id="story" class="story-section py-5" data-reveal>
     <div class="container">

@@ -1,9 +1,26 @@
-# AgriMALL robots.txt
 User-agent: *
-Allow: /
+Disallow: /admin_*
+Disallow: /account.php
+Disallow: /account_delete.php
+Disallow: /cart.php
+Disallow: /cart_checkout.php
+Disallow: /orders.php
+Disallow: /order.php
+Disallow: /order_track.php
+Disallow: /my_listings.php
+Disallow: /create_listing.php
+Disallow: /dashboard.php
+Disallow: /farmer_analytics.php
+Disallow: /farmer_reports.php
+Disallow: /profile.php
+Disallow: /settings.php
+Disallow: /saved.php
+Disallow: /saved_searches.php
+Disallow: /notifications.php
+Disallow: /api/
+Disallow: /login.php
+Disallow: /register.php
+Disallow: /forgot.php
+Disallow: /reset.php
 
-Disallow: /dashboard
-Disallow: /uploads
-Disallow: /admin
-
-Sitemap: https://agrimall.kesug.com/sitemap.xml
+Sitemap: /sitemap.xml
