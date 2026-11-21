@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS `password_resets` (
 
 -- Add remember-me support to users (idempotent, guarded on information_schema).
 SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = 'animal_marketplace' AND TABLE_NAME = 'users'
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'
     AND COLUMN_NAME = 'remember_token');
 
 SET @ddl = IF(@col_exists = 0,
@@ -32,7 +32,7 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = 'animal_marketplace' AND TABLE_NAME = 'users'
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'
     AND COLUMN_NAME = 'remember_expires');
 
 SET @ddl = IF(@col_exists = 0,
@@ -43,7 +43,7 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 SET @idx_exists = (SELECT COUNT(*) FROM information_schema.STATISTICS
-  WHERE TABLE_SCHEMA = 'animal_marketplace' AND TABLE_NAME = 'users'
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'
     AND INDEX_NAME = 'idx_users_remember_token');
 
 SET @ddl = IF(@idx_exists = 0,

@@ -7,7 +7,7 @@
 
 
 SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = 'animal_marketplace' AND TABLE_NAME = 'notifications'
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'notifications'
     AND COLUMN_NAME = 'push_sent_at');
 
 SET @ddl = IF(@col_exists = 0,
@@ -18,7 +18,7 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 SET @idx_exists = (SELECT COUNT(*) FROM information_schema.STATISTICS
-  WHERE TABLE_SCHEMA = 'animal_marketplace' AND TABLE_NAME = 'notifications'
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'notifications'
     AND INDEX_NAME = 'idx_notify_push_pending');
 
 SET @ddl = IF(@idx_exists = 0,

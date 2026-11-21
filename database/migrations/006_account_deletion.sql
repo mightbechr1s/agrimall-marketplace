@@ -10,7 +10,7 @@ ALTER TABLE `users`
         NOT NULL DEFAULT 'pending_verification';
 
 SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = 'animal_marketplace' AND TABLE_NAME = 'users'
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'
     AND COLUMN_NAME = 'anonymized_at');
 
 SET @ddl = IF(@col_exists = 0,
@@ -22,7 +22,7 @@ DEALLOCATE PREPARE stmt;
 
 -- login.php refuses any status but 'active'; this index keeps that lookup cheap.
 SET @idx_exists = (SELECT COUNT(*) FROM information_schema.STATISTICS
-  WHERE TABLE_SCHEMA = 'animal_marketplace' AND TABLE_NAME = 'users'
+  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'
     AND INDEX_NAME = 'idx_users_status');
 
 SET @ddl = IF(@idx_exists = 0,

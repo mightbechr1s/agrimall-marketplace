@@ -4,7 +4,7 @@
 -- Guarded on DATA_TYPE; the no-op branch is DO 0, not SELECT 1, which the harness reads as failure.
 
 SET @col_type = (SELECT DATA_TYPE FROM information_schema.COLUMNS
-  WHERE TABLE_SCHEMA = 'animal_marketplace'
+  WHERE TABLE_SCHEMA = DATABASE()
     AND TABLE_NAME = 'password_resets'
     AND COLUMN_NAME = 'expires_at');
 
