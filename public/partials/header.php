@@ -22,6 +22,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
     <title><?= e($pageTitle) ?> | <?= e($appName) ?></title>
     <meta name="description" content="<?= e($currentLocale === 'tl' ? 'AgriMALL — Merkadong agrikultura at alagang hayop ng Pilipinas. Mga na-verify na magsasaka at raiser, patas na presyo, sariwa mula sa sakahan.' : 'AgriMALL — Philippine agribusiness marketplace connecting verified farms and raisers directly with buyers. Farm to table, no middlemen.') ?>" />
     <meta name="theme-color" content="#1b4332" />
+    <meta name="color-scheme" content="light dark" />
 
     <!-- Canonical & hreflang -->
     <link rel="canonical" href="<?= e($canonicalUrl) ?>" />
@@ -51,6 +52,7 @@ $i18nCopy = include __DIR__ . '/../../src/i18n_copy.php';
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json" />
     <meta name="theme-color" content="#1b4332" />
+    <meta name="color-scheme" content="light dark" />
 
     <!-- Bootstrap 5.3.3 CSS (local vendor copy — offline) -->
     <link href="assets/vendor/bootstrap/bootstrap.min.css" rel="stylesheet" />

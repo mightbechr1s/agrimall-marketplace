@@ -193,7 +193,7 @@ require __DIR__ . '/partials/header.php';
                 $placeholder = 'you@example.com';
                 $required = true;
                 $autofocus = true;
-                $attrs = ['maxlength' => FIELD_LIMITS['email']];
+                $attrs = ['maxlength' => FIELD_LIMITS['email'], 'autocomplete' => 'email'];
                 $error = $error && str_contains($error, 'email') ? $error : '';
                 include __DIR__ . '/partials/form-field.php';
                 ?>
@@ -204,7 +204,7 @@ require __DIR__ . '/partials/header.php';
                 $value = '';
                 $placeholder = 'Your password';
                 $required = true;
-                $attrs = ['maxlength' => FIELD_LIMITS['password']];
+                $attrs = ['maxlength' => FIELD_LIMITS['password'], 'autocomplete' => 'current-password'];
                 $error = $error && str_contains($error, 'password') ? $error : '';
                 include __DIR__ . '/partials/form-field.php';
                 ?>

@@ -321,7 +321,7 @@ require __DIR__ . '/partials/header.php';
                     $value = $old['email'] ?? '';
                     $placeholder = 'you@example.com';
                     $required = true;
-                    $attrs = ['maxlength' => FIELD_LIMITS['email']];
+                    $attrs = ['maxlength' => FIELD_LIMITS['email'], 'autocomplete' => 'email'];
                     $error = in_array($l($copy['auth'], 'err_email_valid'), $errors) ? $l($copy['auth'], 'err_email_valid') : '';
                     include __DIR__ . '/partials/form-field.php';
                     ?>
@@ -353,7 +353,7 @@ require __DIR__ . '/partials/header.php';
                         $value = '';
                         $placeholder = 'Confirm';
                         $required = true;
-                        $attrs = ['minlength' => 8, 'maxlength' => FIELD_LIMITS['password']];
+                        $attrs = ['minlength' => 8, 'maxlength' => FIELD_LIMITS['password'], 'autocomplete' => 'new-password'];
                         $error = in_array($l($copy['auth'], 'err_pass_match'), $errors) ? $l($copy['auth'], 'err_pass_match') : '';
                         include __DIR__ . '/partials/form-field.php';
                         ?>

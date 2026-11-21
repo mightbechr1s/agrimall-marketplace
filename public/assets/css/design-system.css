@@ -5,6 +5,8 @@
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Tokens Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 :root {
+  /* Adapt native UI (scrollbars, form controls, canvas) to the user's theme. */
+  color-scheme: light dark;
   /* Agrimall palette: deep forest on pure white, sage accent. */
   --canvas: #ffffff;
   --canvas-deep: #f8f9fa;
@@ -3961,6 +3963,12 @@ td .empty-state {
    overflow at 360px; keep only the vertical rhythm on stacked layout. */
 @media (max-width: 991.98px) {
   .listing-wrap { --bs-gutter-x: 0; row-gap: 2.5rem; }
+}
+/* content-visibility: skip rendering of below-the-fold sections until scrolled
+   into view, reducing initial paint cost. contain-intrinsic-size prevents CLS. */
+.story-section, .market-preview, .how-it-works, .faq-section, .cta-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 500px;
 }
 /* Message thread on order detail (was entirely unstyled) */
 .message-thread { display: flex; flex-direction: column; gap: 0.6rem; }

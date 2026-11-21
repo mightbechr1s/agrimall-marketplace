@@ -50,7 +50,8 @@ require __DIR__ . '/partials/header.php';
                 <h1 class="hero-title editorial-serif"><?= e($heroCopy['headline']) ?></h1>
                 <p class="hero-lead"><?= e($heroCopy['subhead']) ?></p>
                 <!-- Hero search is the primary CTA: a marketplace's conversion action -->
-                <form class="hero-search mt-4 mb-4" method="get" action="browse.php" role="search">
+                <search class="hero-search mt-4 mb-4">
+                    <form method="get" action="browse.php">
                     <label class="visually-hidden" for="hero-search-q"><?= t($copy['search'], 'label') ?></label>
                     <div class="hero-search__bar">
                         <i class="bi bi-search hero-search__icon" aria-hidden="true"></i>
@@ -68,6 +69,7 @@ require __DIR__ . '/partials/header.php';
                         <a href="browse.php?q=okra">Okra</a>
                     </div>
                 </form>
+                </search>
                 <div class="d-flex flex-column flex-sm-row gap-3 mb-4">
                     <a href="browse.php" class="btn btn-primary btn-lg"><?= t($copy['hero'], 'cta_primary') ?></a>
                     <a href="#steps" class="btn btn-outline-primary btn-lg"><?= t($copy['hero'], 'cta_secondary') ?></a>
@@ -78,6 +80,8 @@ require __DIR__ . '/partials/header.php';
                     <img src="assets/images/products/farmer.jpg"
                          alt="Filipino farmer harvesting rice"
                          class="img-shimmer hero-image"
+                         fetchpriority="high"
+                         width="1200" height="800"
                          onerror="this.onerror=null;this.parentNode.classList.add('image-failed');">
                 </div>
                 <div class="origin-badge">Verified Origin</div>
