@@ -2,7 +2,6 @@
 -- explicit_defaults_for_timestamp=0 MariaDB rewrites a bare TIMESTAMP to add ON UPDATE,
 -- so any unrelated UPDATE silently revives an expired token (002's plain TIMESTAMP hit this).
 -- Guarded on DATA_TYPE; the no-op branch is DO 0, not SELECT 1, which the harness reads as failure.
-USE `animal_marketplace`;
 
 SET @col_type = (SELECT DATA_TYPE FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = 'animal_marketplace'

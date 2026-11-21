@@ -4,7 +4,6 @@
 -- token from Expo's push service instead. One row per device; re-registering
 -- the same token updates it rather than duplicating.
 
-USE `animal_marketplace`;
 
 CREATE TABLE IF NOT EXISTS `mobile_push_tokens` (
   `id`           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

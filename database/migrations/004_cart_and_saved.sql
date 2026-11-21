@@ -1,7 +1,6 @@
 -- AgriMALL Migration 004: cart and saved listings.
 -- Run after 003 against `animal_marketplace`; additive, creates two tables.
 
-USE `animal_marketplace`;
 
 CREATE TABLE IF NOT EXISTS `cart_items` (
   `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

@@ -2,7 +2,6 @@
 -- Run after 011 against `animal_marketplace`. Guarded per index (the information_schema
 -- + PREPARE pattern of 002) so a rerun by tools/db-reset.php is a clean no-op.
 
-USE `animal_marketplace`;
 
 -- Every order list / dashboard sorts "my orders" newest first.
 SET @idx_exists = (SELECT COUNT(*) FROM information_schema.STATISTICS

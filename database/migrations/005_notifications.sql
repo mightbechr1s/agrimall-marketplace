@@ -1,7 +1,6 @@
 -- AgriMALL Migration 005: in-app notifications.
 -- Run after 004 against `animal_marketplace`; additive, creates one table.
 
-USE `animal_marketplace`;
 
 CREATE TABLE IF NOT EXISTS `notifications` (
   `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

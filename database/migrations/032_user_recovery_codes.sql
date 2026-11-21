@@ -1,7 +1,6 @@
 -- 032: one-time 2FA recovery codes.
 -- Safe to re-run: the table is created only when absent. TiDB has no
 -- multi-clause ALTER with AFTER, so this stays a plain CREATE TABLE.
-USE `animal_marketplace`;
 
 CREATE TABLE IF NOT EXISTS `user_recovery_codes` (
   `id`         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

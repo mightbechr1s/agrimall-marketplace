@@ -1,7 +1,6 @@
 -- AgriMALL Migration 002: Password resets + remember-me tokens
 -- Run after schema.sql against `animal_marketplace`
 
-USE `animal_marketplace`;
 
 -- Password reset tokens table
 CREATE TABLE IF NOT EXISTS `password_resets` (

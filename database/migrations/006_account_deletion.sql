@@ -3,7 +3,6 @@
 -- retention_holds, user_suspensions, stock_adjustments) make a real delete impossible;
 -- the row and its PK survive as the subject reference. Adds 'anonymized' status + anonymized_at.
 
-USE `animal_marketplace`;
 
 ALTER TABLE `users`
     MODIFY COLUMN `status`

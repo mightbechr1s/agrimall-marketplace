@@ -2,7 +2,6 @@
 -- whatever endpoint wrote them. number_in() (src/functions.php) stays first-line and
 -- owns the user-facing message. MariaDB 10.4 takes one ADD clause per ALTER; the tuple
 -- form parses but silently drops every constraint. No-op branch is DO 0, not SELECT 1.
-USE `animal_marketplace`;
 
 -- ---- produce_listings: price must be positive ------------------------
 SET @ddl = IF(EXISTS(SELECT 1 FROM information_schema.TABLE_CONSTRAINTS

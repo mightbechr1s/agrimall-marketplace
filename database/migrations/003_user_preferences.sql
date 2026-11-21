@@ -1,7 +1,6 @@
 -- AgriMALL Migration 003: per-user preferences (settings page storage).
 -- Run after 002 against `animal_marketplace`; additive, touches no existing data.
 
-USE `animal_marketplace`;
 
 CREATE TABLE IF NOT EXISTS `user_preferences` (
   `user_id`           BIGINT UNSIGNED NOT NULL,

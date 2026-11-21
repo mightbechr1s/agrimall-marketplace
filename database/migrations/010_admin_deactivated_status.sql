@@ -3,7 +3,6 @@
 -- This closes the gap where FR-LIST-025 required an administrator deactivation
 -- path but no state existed to represent it.
 
-USE `animal_marketplace`;
 
 ALTER TABLE `produce_listings`
     MODIFY `status` ENUM('draft','active','paused','sold_out','archived','admin_deactivated')

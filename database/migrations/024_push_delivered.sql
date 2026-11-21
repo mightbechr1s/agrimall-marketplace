@@ -5,7 +5,6 @@
 -- Guarded like 002: db-reset.php replays this whole directory, so a second run
 -- must not abort on a duplicate column or index.
 
-USE `animal_marketplace`;
 
 SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS
   WHERE TABLE_SCHEMA = 'animal_marketplace' AND TABLE_NAME = 'notifications'
