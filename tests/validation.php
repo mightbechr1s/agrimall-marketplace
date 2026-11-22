@@ -677,6 +677,29 @@ if (!$geocodeReady) {
     }
 }
 
+// TiDB rejects MATCH ... AGAINST at parse time (UnknownType: *ast.MatchAgainst),
+// so any reintroduced full-text query would 500 only in production. Guard the
+// source tree rather than relying on a MySQL-only test database.
+$fulltextFiles = [];
+foreach ([dirname(__DIR__) . '/public', dirname(__DIR__) . '/src'] as $dir) {
+    $files = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS)
+    );
+    foreach ($files as $file) {
+        if ($file->getExtension() !== 'php') {
+            continue;
+        }
+        if (stripos((string) file_get_contents($file->getPathname()), 'AGAINST(') !== false) {
+            $fulltextFiles[] = $file->getPathname();
+        }
+    }
+}
+if ($fulltextFiles === []) {
+    $pass++;
+} else {
+    $fail[] = 'MATCH ... AGAINST is unsupported on TiDB: ' . implode(', ', $fulltextFiles);
+}
+
 echo "assertions passed: $pass\n";
 echo "assertions failed: " . count($fail) . "\n";
 

@@ -32,9 +32,8 @@ $totalPages = 0;
 $listingsFailed = false;
 try {
     $hasSearch = $q !== '';
-    // Search path: resolve matching ids on the base table first (one indexed
-    // scan using ft_listing_search + a substring fallback for prefixes the
-    // tokenizer misses) and let the 5-join view drive only off `id IN (...)`.
+    // Search path: resolve matching ids on the base table first and let the
+    // 5-join view drive only off `id IN (...)`.
     // LIKE '%...%' over the view full-scanned every join per keystroke.
     if ($hasSearch) {
         $sql = "SELECT pl.id FROM produce_listings pl";
@@ -51,9 +50,12 @@ try {
         if ($trendingFilter) {
             $sql .= " AND (SELECT COUNT(*) FROM saved_listings sl WHERE sl.listing_id = pl.id) >= 3";
         }
-        $sql .= " AND (MATCH(pl.name, pl.description) AGAINST(:fts IN NATURAL LANGUAGE MODE) OR pl.name LIKE :like)";
+        // TiDB does not implement MATCH ... AGAINST, so search is a plain
+        // substring match. shortcut: this scans the active catalogue; move to a
+        // search index/engine when it outgrows a few thousand listings.
+        $sql .= " AND (pl.name LIKE :like_name OR pl.description LIKE :like_desc)";
         $idsStmt = DB::pdo()->prepare($sql);
-        $params = [':fts' => $q, ':like' => '%' . $q . '%'];
+        $params = [':like_name' => '%' . $q . '%', ':like_desc' => '%' . $q . '%'];
         if ($categoryFilter !== '') $params[':cat'] = $categoryFilter;
         $idsStmt->execute($params);
         $matchIds = array_map('intval', $idsStmt->fetchAll(PDO::FETCH_COLUMN));

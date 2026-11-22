@@ -23,4 +23,4 @@ Disallow: /register.php
 Disallow: /forgot.php
 Disallow: /reset.php
 
-Sitemap: /sitemap.xml
+Sitemap: https://agrimall-marketplace.onrender.com/sitemap.xml

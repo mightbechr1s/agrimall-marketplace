@@ -467,3 +467,36 @@ The product is ready for real-world use with the following caveats:
 3. Migration 033 needs to be applied to TiDB
 4. Android app needs production build
 5. SEO structured data would improve discoverability
+---
+
+## Progress Log
+
+### 2026-11-22
+- CI repaired: schema + migrations now load on MySQL 8, PHP 8.4, all migrations
+  made re-runnable and TiDB-compatible (`DATABASE()` instead of a literal schema,
+  no `ADD COLUMN IF NOT EXISTS`, no `USE`).
+- Migration 033 (`geocode_cache`, `geocode_jobs`) applied to TiDB production.
+- Mobile API hardened to match the web rules:
+  - cart add/checkout now enforce buyer roles, approved/active listings,
+    min/max/stock limits, self-purchase block, address and note length limits;
+  - staff order list no longer silently filters to the staff member's own id;
+  - farmer overview/listings accept `farmer_id` for admin/manager;
+  - admin verification returns the decrypted ID number, not ciphertext;
+  - listing search now keeps category/price filters and cannot throw on a
+    stray placeholder.
+- Accessibility: `tests/contrast_test.php` measures every text/border token pair
+  in both themes; dark-mode field borders raised from 1.31:1 to 4.0:1.
+- SEO: sitemap lists public pages only and matches robots.txt; robots points at
+  the absolute sitemap URL.
+- Android: release build no longer requests `SYSTEM_ALERT_WINDOW` and no longer
+  permits cleartext traffic; release default API base is the deployed HTTPS API.
+
+### Remaining
+1. Generate a production keystore and configure release signing before Play
+   distribution (current release build uses the debug key and is test-only).
+2. Set `MAIL_*` (Resend) and `STORAGE_PROVIDER=cloudinary` env vars on Render.
+3. Run the Android build on an emulator/device and verify the login, browse,
+   cart, checkout, order and admin journeys against the live API.
+4. Add Playwright end-to-end tests for the web critical journeys.
+5. Evaluate analytics/error monitoring and a monetization model; neither is
+   implemented.

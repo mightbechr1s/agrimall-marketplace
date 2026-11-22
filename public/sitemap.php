@@ -28,10 +28,13 @@ $xml = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT_XML1, 'UTF
 function staticUrls(string $baseUrl): array
 {
     return [
-        [$baseUrl . '/',         'weekly',  1.0],
-        [$baseUrl . '/index.php', 'weekly',  0.8],
-        [$baseUrl . '/login.php', 'monthly', 0.5],
-        [$baseUrl . '/register.php', 'monthly', 0.5],
+        [$baseUrl . '/',                'weekly',  1.0],
+        [$baseUrl . '/browse.php',      'daily',   0.9],
+        [$baseUrl . '/compare.php',     'weekly',  0.6],
+        [$baseUrl . '/get_app.php',     'monthly', 0.6],
+        [$baseUrl . '/terms.php',       'monthly', 0.4],
+        [$baseUrl . '/privacy.php',     'monthly', 0.4],
+        [$baseUrl . '/cookies.php',     'monthly', 0.4],
     ];
 }
 

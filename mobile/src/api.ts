@@ -2,11 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { clearCache, readCache, writeCache } from './cache';
 
-// In dev the API lives on the same machine as the Expo dev server.
+// In dev the API lives on the same machine as the Expo dev server. A release
+// build has no hostUri, so it must fall back to the deployed HTTPS origin.
 const devHost = Constants.expoConfig?.hostUri?.split(':')[0];
+const LIVE_BASE = 'https://agrimall-marketplace.onrender.com/api';
 const DEFAULT_BASE =
   process.env.EXPO_PUBLIC_API_URL ??
-  (devHost ? `http://${devHost}:8000/api` : 'http://localhost:8000/api');
+  (devHost ? `http://${devHost}:8000/api` : LIVE_BASE);
 
 // Mutable so the address can be changed on the sign-in screen: a tunnel URL
 // changes, and rebuilding the APK just to follow it is not practical.

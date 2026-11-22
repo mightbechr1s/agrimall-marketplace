@@ -23,15 +23,16 @@ if ($priceMax > 0) { $where .= ' AND price_per_unit <= :pmax'; $bind[':pmax'] = 
 
 // Search: a subquery keeps the category/price filters above applied to the
 // outer query, and avoids a PHP-side id list that could grow without bound.
+// TiDB has no MATCH ... AGAINST, so this is a substring match.
+// shortcut: scans the active catalogue; add a search index when it grows.
 if ($q !== '') {
     $where .= " AND id IN (
         SELECT pl.id FROM produce_listings pl
         WHERE pl.status = 'active'
-          AND (MATCH(pl.name, pl.description) AGAINST(:fts IN NATURAL LANGUAGE MODE)
-               OR pl.name LIKE :like)
+          AND (pl.name LIKE :like_name OR pl.description LIKE :like_desc)
     )";
-    $bind[':fts'] = $q;
-    $bind[':like'] = '%' . $q . '%';
+    $bind[':like_name'] = '%' . $q . '%';
+    $bind[':like_desc'] = '%' . $q . '%';
 }
 
 // Count
