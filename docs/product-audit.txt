@@ -500,3 +500,19 @@ The product is ready for real-world use with the following caveats:
 4. Add Playwright end-to-end tests for the web critical journeys.
 5. Evaluate analytics/error monitoring and a monetization model; neither is
    implemented.
+
+### 2026-11-23
+- Production TiDB was live but unseeded (1 admin user, 0 listings), so the public
+  marketplace looked broken. `database/seed.php` now accepts `SEED_CONFIG` (point
+  it at another database) and `SEED_PASSWORD` (non-local runs must not use the
+  default demo password), and stores farmer ID numbers through
+  `sensitive_store()` instead of plaintext. Seeded: 2 farmers, 2 buyers,
+  6 active listings, 3 orders. Demo account passwords are deliberately not
+  committed to the repository.
+- Farmer reports page is farmer-only again (it redirected admins to the farmer
+  analytics view but the nav never linked it for them).
+- Windows release builds: CMake 3.22.1 ships Ninja 1.10.2, which rejects the
+  React Native codegen object paths (>260 chars). The SDK copy of `ninja.exe`
+  was replaced with 1.13.2 (original kept as `ninja-1.10.2.exe.bak`), and the
+  CMake configure step must complete before Gradle builds. Documented here
+  because it is a local machine fix, not a repo change.

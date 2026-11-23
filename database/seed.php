@@ -1,8 +1,14 @@
 <?php
 declare(strict_types=1);
 
-$config = require __DIR__ . '/../config/config.php';
+// SEED_CONFIG points the seeder at another config (e.g. the deployed database);
+// SEED_PASSWORD replaces the demo password on any database other than local.
+$configPath = getenv('SEED_CONFIG');
+$config = $configPath ? require $configPath : require __DIR__ . '/../config/config.php';
+define('SEED_PASSWORD', getenv('SEED_PASSWORD') ?: 'password123');
+
 require_once __DIR__ . '/../src/DB.php';
+require_once __DIR__ . '/../src/functions.php';
 DB::init($config['db']);
 
 $pdo = DB::pdo();
@@ -39,7 +45,7 @@ function makeUser(PDO $pdo, string $email): int
     );
     $stmt->execute([
         'email' => $email,
-        'hash' => password_hash('password123', PASSWORD_DEFAULT),
+        'hash' => password_hash(SEED_PASSWORD, PASSWORD_DEFAULT),
         'role' => 'farmer',
         'status' => 'active',
     ]);
@@ -58,7 +64,7 @@ function makeBuyer(PDO $pdo, string $email, string $fullName, string $phone): in
     );
     $stmt->execute([
         'email' => $email,
-        'hash' => password_hash('password123', PASSWORD_DEFAULT),
+        'hash' => password_hash(SEED_PASSWORD, PASSWORD_DEFAULT),
         'role' => 'buyer',
         'status' => 'active',
     ]);
@@ -107,7 +113,7 @@ function makeFarmerProfile(PDO $pdo, int $userId, array $farm): void
         'province' => $farm['province'],
         'region' => $farm['region'],
         'valid_id_type' => 'national_id',
-        'valid_id_number' => $farm['valid_id_number'],
+        'valid_id_number' => sensitive_store((string) $farm['valid_id_number']),
         'verification_status' => 'approved',
     ]);
 }
@@ -444,8 +450,9 @@ try {
     $pdo->commit();
 
     echo "Seed complete." . PHP_EOL;
-    echo "  Farmers: delagracia@animal.local, encarnacion@animal.local (password123)" . PHP_EOL;
-    echo "  Buyers:  mercado@animal.local, dizon@animal.local (password123)" . PHP_EOL;
+    echo "  Farmers: delagracia@animal.local, encarnacion@animal.local" . PHP_EOL;
+    echo "  Buyers:  mercado@animal.local, dizon@animal.local" . PHP_EOL;
+    echo "  Password for all seeded accounts: " . SEED_PASSWORD . PHP_EOL;
     echo "  6 listings, 3 orders inserted." . PHP_EOL;
 } catch (Throwable $ex) {
     $pdo->rollBack();

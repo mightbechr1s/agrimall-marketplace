@@ -10,7 +10,7 @@ $l = function ($dict, $key) use ($copy, $locale) {
 require_login();
 $userId = current_user_id();
 $role = current_user_role();
-if ($role !== 'farmer' && $role !== 'admin') {
+if ($role !== 'farmer') {
     redirect_to('dashboard.php');
 }
 
