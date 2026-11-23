@@ -22,11 +22,11 @@ services:
       - key: ENCRYPTION_KEY
         sync: false
       - key: MAIL_ENABLED
-        value: "false"
+        sync: false
       - key: MAIL_PROVIDER
-        value: mail
+        sync: false
       - key: MAIL_FROM
-        value: no-reply@agrimall.ph
+        sync: false
       - key: RESEND_API_KEY
         sync: false
       - key: TZ
