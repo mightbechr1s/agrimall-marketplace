@@ -52,9 +52,30 @@ function api_error(string $message, int $status = 400, array $extra = []): void
     exit;
 }
 
+function api_request_header(string $name): string
+{
+    $key = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
+    $value = $_SERVER[$key] ?? $_SERVER['REDIRECT_' . $key] ?? '';
+    if ($value !== '') {
+        return (string) $value;
+    }
+    // Some Apache setups hide Authorization from $_SERVER but keep it here.
+    foreach (['getallheaders', 'apache_request_headers'] as $fn) {
+        if (!function_exists($fn)) {
+            continue;
+        }
+        foreach ((array) $fn() as $header => $headerValue) {
+            if (strcasecmp((string) $header, $name) === 0) {
+                return (string) $headerValue;
+            }
+        }
+    }
+    return '';
+}
+
 function api_auth_user(): ?array
 {
-    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    $header = api_request_header('Authorization');
     if (!preg_match('/^Bearer\s+(.+)$/i', $header, $m)) {
         if (current_user_id()) {
             return ['id' => current_user_id(), 'role' => current_user_role()];

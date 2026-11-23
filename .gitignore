@@ -5,6 +5,7 @@
 # --- Local configuration (contains credentials) ---
 # Never commit real credentials. Copy config.example.php over config.php locally.
 config/config.php
+.env
 
 # --- Uploaded user content ---
 # Keep the directory empty, but the upload guard must stay versioned: it is

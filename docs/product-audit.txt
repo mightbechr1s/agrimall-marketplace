@@ -516,3 +516,16 @@ The product is ready for real-world use with the following caveats:
   was replaced with 1.13.2 (original kept as `ninja-1.10.2.exe.bak`), and the
   CMake configure step must complete before Gradle builds. Documented here
   because it is a local machine fix, not a repo change.
+
+### 2026-11-23 (mobile auth + mail)
+- The Android app got `401 Authentication required.` on every authenticated
+  request while the same token verified against the production database. The
+  Apache container was not exposing the `Authorization` header to PHP. Fixed
+  with the standard re-expose rewrite in `public/.htaccess` plus a header lookup
+  fallback (`REDIRECT_HTTP_AUTHORIZATION`, `getallheaders()`,
+  `apache_request_headers()`) in `public/api/_bootstrap.php`.
+- `.env` support: `src/bootstrap.php` loads an optional gitignored `.env` before
+  the config, and the local `config/config.php` mail block now reads
+  `MAIL_ENABLED`, `MAIL_PROVIDER`, `MAIL_FROM` and `RESEND_API_KEY`. Real OTP
+  email therefore works locally the same way it works from host env vars; a
+  value already present in the real environment always wins.

@@ -1,5 +1,11 @@
 Options -Indexes
 
 RewriteEngine On
+
+# Apache can hand PHP an empty Authorization header; re-expose it so the mobile
+# API's Bearer tokens are readable. mod_php sees it either way.
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
 RewriteRule ^sitemap-([0-9]+)\.xml$ sitemap.php [L,QSA]

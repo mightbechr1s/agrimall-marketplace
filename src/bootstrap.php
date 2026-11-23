@@ -2,6 +2,23 @@
 // Central bootstrap: loads config, starts the session, registers helpers and DB.
 declare(strict_types=1);
 
+// Optional local .env (gitignored). Real hosts set the same names as real
+// environment variables, so a value already in the environment always wins.
+$envFile = __DIR__ . '/../.env';
+if (is_readable($envFile)) {
+    foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        $line = trim($line);
+        if ($line === '' || $line[0] === '#' || !str_contains($line, '=')) {
+            continue;
+        }
+        [$key, $value] = explode('=', $line, 2);
+        $key = trim($key);
+        if ($key === '' || getenv($key) !== false) {
+            continue;
+        }
+        putenv($key . '=' . trim(trim($value), "\"'"));
+    }
+}
 
 $config = require __DIR__ . '/../config/config.php';
 
